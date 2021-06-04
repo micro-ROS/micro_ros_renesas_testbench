@@ -24,19 +24,25 @@ jobs:
     # container:
     #   image: ${{ matrix.docker_image }}
     steps:
-    - uses: actions/checkout@v2
-      with:
-        path: checkout/
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
     #     required-ros-distributions: foxy
+    - name: Create ROS 2 workspace
+      run: |
+        mkdir -p ros_ws/src
+    - uses: actions/checkout@v2
+      with:
+        path: ros_ws/src/micro_ros_renesas_testbench
     - name: Install toolchain
       run: |
-        pwd
-        cd checkout
+        cd ros_ws/src/micro_ros_renesas_testbench
         ./installtoolchain.sh
+    - name: Download dependencies
+      run: |
+        cd ros_ws
+        vcs import --input src/micro_ros_renesas_testbench/requirements.repos
     - name: Build
       run: |
-        sudo apt update
-        echo hola
-        echo $ROS_DISTRO
+        source /opt/ros/foxy/setup.sh
+        cd ros_ws
+        colcon build
