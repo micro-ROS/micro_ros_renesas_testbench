@@ -32,6 +32,7 @@ jobs:
         required-ros-distributions: foxy
     - name: Install toolchain
       run: |
+        pwd
         cd checkout
         ./installtoolchain.sh
     - name: Build
