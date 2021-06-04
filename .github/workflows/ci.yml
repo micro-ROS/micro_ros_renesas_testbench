@@ -1,6 +1,10 @@
 name: CI micro_ros_renesas_testbench
 
 on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Manual trigger"
   schedule:
     - cron: '33 6 * * *'
 
