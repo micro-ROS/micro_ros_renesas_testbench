@@ -40,7 +40,7 @@ jobs:
     - name: Download dependencies
       run: |
         cd ros_ws
-        vcs import --input src/micro_ros_renesas_testbench/requirements.repos
+        vcs import --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build
       run: |
         source /opt/ros/foxy/setup.sh

@@ -1,18 +1,30 @@
 # vcs import --input ros2.repos
 repositories:
-  src/micro_ros_msgs:
+  micro_ros_msgs:
     type: git
     url: https://github.com/micro-ROS/micro_ros_msgs.git
     version: foxy
-  src/micro-ROS-Agent:
+  micro-ROS-Agent:
     type: git
     url: https://github.com/micro-ROS/micro-ROS-Agent.git
     version: foxy
-  src/Micro-XRCE-DDS-Agent:
+  Micro-XRCE-DDS-Agent:
     type: git
     url: https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
     version: foxy
-  src/rosidl_typesupport_microxrcedds:
+  rosidl_typesupport_microxrcedds:
     type: git
     url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+    version: foxy
+  rosidl_typesupport_microxrcedds:
+    type: git
+    url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
+    version: foxy
+  Micro-CDR :
+    type: git
+    url: https://github.com/eProsima/Micro-CDR src/Micro-CDR
+    version: foxy
+  Micro-XRCE-DDS-Client:
+    type: git
+    url: https://github.com/eProsima/Micro-XRCE-DDS-Client
     version: foxy
