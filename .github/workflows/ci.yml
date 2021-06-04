@@ -30,6 +30,10 @@ jobs:
     - uses: ros-tooling/setup-ros@0.2.1
       with:
         required-ros-distributions: foxy
+    - name: Install toolchain
+      run: |
+        cd checkout
+        ./installtoolchain.sh
     - name: Build
       run: |
         sudo apt update
