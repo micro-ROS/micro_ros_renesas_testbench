@@ -9,7 +9,7 @@ on:
     - cron: '33 6 * * *'
 
 jobs:
-  build:
+  micro_ros_renesas_testbench:
     runs-on: ubuntu-20.04
     # strategy:
     #   fail-fast: false
@@ -32,6 +32,6 @@ jobs:
         required-ros-distributions: foxy
     - name: Build
       run: |
-        apt update
+        sudo apt update
         echo hola
         echo $ROS_DISTRO
