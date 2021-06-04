@@ -24,6 +24,7 @@
 #include <vector>
 #include <chrono>
 #include <thread>
+#include <unistd.h>
 
 using namespace std::chrono_literals;
 
@@ -31,6 +32,10 @@ class HardwareTest : public testing::Test
 {
 public:
     void SetUp() override {
+      char * cwd_str = get_current_dir_name();
+      cwd = std::string(cwd_str);
+      free(cwd_str);
+
       ASSERT_TRUE(checkConnection());
       agent.reset(new TestAgent("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00", 0));
       rclcpp::init(0, NULL);
@@ -51,9 +56,9 @@ public:
 
     bool buildClientCode(std::string filename){
       std::cout << "Building " << filename << std::endl;
-      bool ret = 0 == system("cd /project/micro-ROS_tests && mv makefile.init makefile.init.backup");
-      ret &= 0 == system("cd /project/micro-ROS_tests && make clean > /dev/null 2>&1 && make -j$(nproc) > /dev/null");
-      ret &= 0 == system("cd /project/micro-ROS_tests && mv makefile.init.backup makefile.init");
+      bool ret = 0 == system(("cd " + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests && mv makefile.init makefile.init.backup").c_str());
+      ret &= 0 == system(("cd " + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests && make clean > /dev/null 2>&1 && make -j$(nproc) > /dev/null").c_str());
+      ret &= 0 == system(("cd " + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests && mv makefile.init.backup makefile.init").c_str());
       return ret;
     }
 
@@ -74,6 +79,7 @@ public:
 protected:
     std::unique_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
+    std::string cwd;
 };
 
 TEST_F(HardwareTest, EntityCreation) {
