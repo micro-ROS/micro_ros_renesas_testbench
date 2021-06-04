@@ -4,7 +4,7 @@
 sudo apt update
 sudo apt install wget
 
-if [ ! -d "~/toolchain" ]
+if [ ! -d ~/toolchain ]
 then
     mkdir ~/toolchain && cd ~/toolchain
     wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2020q2/gcc-arm-none-eabi-9-2020-q2-update-x86_64-linux.tar.bz2

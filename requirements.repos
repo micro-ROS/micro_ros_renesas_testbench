@@ -16,11 +16,7 @@ repositories:
     type: git
     url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
     version: foxy
-  rosidl_typesupport_microxrcedds:
-    type: git
-    url: https://github.com/micro-ROS/rosidl_typesupport_microxrcedds.git
-    version: foxy
-  Micro-CDR :
+  Micro-CDR:
     type: git
     url: https://github.com/eProsima/Micro-CDR
     version: foxy
