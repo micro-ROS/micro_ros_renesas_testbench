@@ -166,3 +166,12 @@ TEST_F(HardwareTest, Parameters) {
 TEST_F(HardwareTest, ExecutorRate) {
   // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
 }
+
+TEST_F(HardwareTest, Domain) {
+  // TODO(pablogs): this test should nodes from different domains are visible
+}
+
+TEST_F(HardwareTest, Multithread) {
+  // TODO(pablogs): this test should check if pub/sub/services works from different threads
+  // Rensas hardware have no threads at this moment
+}
