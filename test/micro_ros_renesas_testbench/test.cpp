@@ -28,6 +28,8 @@
 
 using namespace std::chrono_literals;
 
+// TODO(pablogs): use this for client code naming: https://github.com/google/googletest/blob/master/docs/advanced.md#getting-the-current-tests-name
+
 class HardwareTest : public testing::Test
 {
 public:
@@ -99,7 +101,13 @@ TEST_F(HardwareTest, EntityCreation) {
     }
   }
 
+  // TODO(pablogs): this test should wait for publishers/subscribers/services
+
   ASSERT_TRUE(found);
+}
+
+TEST_F(HardwareTest, EntitiesQoS) {
+  // TODO(pablogs): this test should check if pub/sub/req can be created using different QoS
 }
 
 TEST_F(HardwareTest, Publisher) {
@@ -117,4 +125,44 @@ TEST_F(HardwareTest, Publisher) {
   );
 
   rclcpp::spin_until_future_complete(node, future.share());
+}
+
+TEST_F(HardwareTest, Subscriber) {
+  // TODO(pablogs): this test should send a value and wait for the same in a subscriber
+  // the client should act as a ping pong
+}
+
+TEST_F(HardwareTest, CustomTypeIntrospection) {
+  // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
+  // strings
+  // arrays
+  // sequences
+}
+
+TEST_F(HardwareTest, PublisherContinousFragment) {
+  // TODO(pablogs): this test should wait for a topic bigger than default MTU*historic
+}
+
+TEST_F(HardwareTest, TimeSync) {
+  // TODO(pablogs): this test should wait for a topic with the POSIX time of a synchronized client and check if MCU epoch is ok
+}
+
+TEST_F(HardwareTest, Ping) {
+  // TODO(pablogs): this test should rely on a publisher that will publish only if ping works ok
+}
+
+TEST_F(HardwareTest, ServiceServer) {
+  // TODO(pablogs): this test should prepare a service server and wait for client requests
+}
+
+TEST_F(HardwareTest, ServiceClient) {
+  // TODO(pablogs): this test should prepare a service client and send requests to the client
+}
+
+TEST_F(HardwareTest, Parameters) {
+  // TODO(pablogs): this test should test the client's parameter server
+}
+
+TEST_F(HardwareTest, ExecutorRate) {
+  // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
 }

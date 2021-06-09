@@ -25,6 +25,7 @@
 
 #include <thread>
 
+// TODO(pablogs): Make this compatible with transports: USB, serial, network
 class TestAgent
 {
 private:
