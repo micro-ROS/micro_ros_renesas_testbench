@@ -17,51 +17,67 @@
 
 #include <gtest/gtest.h>
 
-#include <uxr/agent/transport/serial/TermiosAgentLinux.hpp>
-#include <uxr/agent/middleware/utils/Callbacks.hpp>
-
-#include <termios.h>
-#include <fcntl.h>
-
+#include <chrono>
 #include <thread>
+
+enum class Transport
+{
+    SERIAL_TRANSPORT,
+    USB_TRANSPORT,
+    UDP_IPV4_TRANSPORT,
+    UDP_IPV6_TRANSPORT,
+};
 
 // TODO(pablogs): Make this compatible with transports: USB, serial, network
 class TestAgent
 {
-private:
-    std::unique_ptr<eprosima::uxr::TermiosAgent> agent;
-    struct termios getAttibutes();
-
 public:
-    TestAgent(std::string serial_dev, uint8_t verbosity);
+    TestAgent(Transport transport, std::string args, uint8_t verbosity)
+    {
+        std::string transport_type;
+
+        switch (transport)
+        {
+            case Transport::UDP_IPV4_TRANSPORT:
+                transport_type = "udp4";
+                break;
+
+            case Transport::UDP_IPV6_TRANSPORT:
+                transport_type = "udp6";
+                break;
+
+            case Transport::SERIAL_TRANSPORT:
+            case Transport::USB_TRANSPORT:
+                transport_type = "serial";
+                break;
+
+            default:
+                //FAIL() << "Transport type not supported";
+                break;
+        }
+
+        command = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + args + " -v" +  std::to_string(verbosity);
+    }
+
     ~TestAgent(){};
 
-    void start();
-    void stop();
+    void start()
+    {
+        agent_thread.reset(new std::thread(
+            [&]() -> void {
+                system(command.c_str());
+            }
+        ));
+    }
+
+    void stop()
+    {
+        system("pkill micro_ros_agent");
+        agent_thread->join();
+    }
 
     std::unique_ptr<std::thread> agent_thread;
     std::string command;
 };
-
-TestAgent::TestAgent(std::string serial_dev, uint8_t verbosity = 6)
-{
-    command = "ros2 run micro_ros_agent micro_ros_agent serial --dev " + serial_dev + " -v" +  std::to_string(verbosity);
-}
-
-void TestAgent::start()
-{
-    agent_thread.reset(new std::thread(
-        [&]() -> void {
-            system(command.c_str());
-        }
-    ));
-}
-
-
-void TestAgent::stop()
-{
-    system("pkill micro_ros_agent");
-    agent_thread->join();
-}
 
 #endif //TEST_AGENT__HPP
