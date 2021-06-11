@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 
+#include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
 
 using namespace std::chrono_literals;
@@ -65,6 +66,9 @@ public:
 
         ASSERT_TRUE(checkConnection());
         agent.reset(new TestAgent(transport, agent_args, 0));
+
+        rclcpp::init(0, NULL);
+        node = std::make_shared<rclcpp::Node>("test_node");
     }
 
     void TearDown() override 
@@ -109,6 +113,7 @@ public:
 
 protected:
     std::unique_ptr<TestAgent> agent;
+    std::shared_ptr<rclcpp::Node> node;
     std::string agent_args;
     Transport transport;
 
