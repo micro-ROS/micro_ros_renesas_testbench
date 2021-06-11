@@ -24,9 +24,6 @@ jobs:
     # container:
     #   image: ${{ matrix.docker_image }}
     steps:
-    - uses: ros-tooling/setup-ros@0.2.1
-      with:
-        required-ros-distributions: foxy
     - name: Create ROS 2 workspace
       run: |
         mkdir -p ros_ws/src
