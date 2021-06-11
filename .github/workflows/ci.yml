@@ -40,8 +40,12 @@ jobs:
         cd ros_ws
         pip3 install vcstool
         vcs import --input src/micro_ros_renesas_testbench/requirements.repos src
-    - name: Build
+    - name: Build micro-ROS library
       run: |
-        source /opt/ros/foxy/setup.sh
-        cd ros_ws
-        colcon build
+        cd ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests
+        make clean && make -j$(nproc)
+    # - name: Build tests
+    #   run: |
+    #     source /opt/ros/foxy/setup.sh
+    #     cd ros_ws
+    #     colcon build
