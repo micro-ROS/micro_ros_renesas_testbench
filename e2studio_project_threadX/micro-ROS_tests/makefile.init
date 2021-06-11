@@ -1,0 +1,11 @@
+################################################################################
+# Automatically-generated file. Do not edit!
+################################################################################
+
+arg1 = $(1)
+export PATH=/home/username/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/:/home/username/.eclipse/com.renesas.platform_1177272026/Utilities:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+export TCINSTALL=/home/username/toolchain/gcc-arm-none-eabi-9-2020-q2-update/
+export CWD=$(CURDIR)
+export TC_VERSION=9.3.1.20200408
+export PWD=$(CURDIR)
+export GCC_VERSION=9.3.1
