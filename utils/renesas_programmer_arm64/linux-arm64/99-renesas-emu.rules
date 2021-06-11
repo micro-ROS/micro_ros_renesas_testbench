@@ -1,0 +1,14 @@
+ACTION!="add", SUBSYSTEM!="usb_device", GOTO="emu_rules_end"
+# Remove sudo access to E2/E2 Lite/E1/E20/IE850A emulator
+ATTR{idProduct}=="82a1", ATTR{idVendor}=="045b", MODE="666"
+ATTR{idProduct}=="82a0", ATTR{idVendor}=="045b", MODE="666"
+ATTR{idProduct}=="823b", ATTR{idVendor}=="045b", MODE="666"
+ATTR{idProduct}=="823c", ATTR{idVendor}=="045b", MODE="666"
+ATTR{idProduct}=="0250", ATTR{idVendor}=="045b", MODE="666"
+# Prevent E2/E2Lite/E1/E20/IE850A from being captured by modem manager service as E2/E2 Lite/E1/E20/IE850A is not a modem
+ATTR{idProduct}=="82a1", ATTR{idVendor}=="045b", ENV{ID_MM_DEVICE_IGNORE}="1"
+ATTR{idProduct}=="82a0", ATTR{idVendor}=="045b", ENV{ID_MM_DEVICE_IGNORE}="1"
+ATTR{idProduct}=="823b", ATTR{idVendor}=="045b", ENV{ID_MM_DEVICE_IGNORE}="1"
+ATTR{idProduct}=="823c", ATTR{idVendor}=="045b", ENV{ID_MM_DEVICE_IGNORE}="1"
+ATTR{idProduct}=="0250", ATTR{idVendor}=="045b", ENV{ID_MM_DEVICE_IGNORE}="1"
+LABEL="emu_rules_end"
