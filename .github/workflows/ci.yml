@@ -30,7 +30,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
-        submodules: recursive
+        # submodules: recursive
     - name: Install toolchain
       run: |
         cd ros_ws/src/micro_ros_renesas_testbench
