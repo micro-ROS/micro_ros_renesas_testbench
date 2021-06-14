@@ -371,7 +371,7 @@ publisher_memory    0x10              ../micro_ros_renesas2estudio_component/lib
 errno               0x4               /home/ubuntu/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/hard/libg_nano.a(lib_a-reent.o)
 g_usb_pstd_pipe0_request
                     0x2               ./ra/fsp/src/r_usb_basic/src/driver/r_usb_pdriver.o
-custom_publishers   0x660             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+custom_publishers   0xff0             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 client_memory       0x10              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 g_usb_pstd_req_reg  0x8               ./ra/fsp/src/r_usb_basic/src/driver/r_usb_pdriver.o
 gtls_rcutils_error_string
@@ -389,12 +389,12 @@ g_usb_pstd_eptbl_index
 rmw_uxrce_entity_naming_buffer
                     0x64              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 custom_subscriptions
-                    0x280             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+                    0x500             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 __lock___malloc_recursive_mutex
                     0x1               /home/ubuntu/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/hard/libg_nano.a(lib_a-lock.o)
 g_usb_pdata         0x230             ./ra/fsp/src/r_usb_basic/r_usb_basic.o
 g_usb_open_class    0x4               ./ra/fsp/src/r_usb_basic/r_usb_basic.o
-custom_clients      0x28              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+custom_clients      0x190             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 custom_static_buffers
                     0x20c0            ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 g_usb_cstd_bemp_skip
@@ -411,13 +411,13 @@ g_usb_pstd_usb_int  0x54              ./ra/fsp/src/r_usb_basic/src/driver/r_usb_
 node_memory         0x10              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 g_usb_pstd_stall_pipe
                     0x14              ./ra/fsp/src/r_usb_basic/src/driver/r_usb_pdriver.o
-custom_topics       0x1c0             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+custom_topics       0x348             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 topics_memory       0x10              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 session_memory      0x10              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 g_uart0_ctrl        0x30              ./ra_gen/hal_data.o
 g_usb_pstd_stall_cb
                     0x4               ./ra/fsp/src/r_usb_basic/src/driver/r_usb_pdriver.o
-custom_nodes        0x1c              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+custom_nodes        0x118             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 service_memory      0x10              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 rmw_uxrce_transport_default_params
                     0x1c              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-custom_transport.c.obj)
@@ -435,7 +435,7 @@ g_usb_pstd_data_cnt
 g_timer0_ctrl       0x1c              ./ra_gen/hal_data.o
 gtls_rcutils_error_state
                     0x3f0             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librcutils-error_handling.c.obj)
-custom_services     0x2c              ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+custom_services     0x1b8             ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
 g_usb_pstd_req_type
                     0x2               ./ra/fsp/src/r_usb_basic/src/driver/r_usb_pdriver.o
 custom_sessions     0x1598            ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
@@ -5791,7 +5791,7 @@ END GROUP
  *(.heap.*)
                 0x00000000200002d8                __noinit_end = .
 
-.bss            0x00000000200002d8     0x56b8
+.bss            0x00000000200002d8     0x6840
                 0x00000000200002d8                . = ALIGN (0x4)
                 0x00000000200002d8                __bss_start__ = .
  *(.bss*)
@@ -5933,62 +5933,62 @@ END GROUP
  COMMON         0x0000000020001710       0x1c ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-custom_transport.c.obj)
                 0x0000000020001710                rmw_uxrce_transport_default_params
  *fill*         0x000000002000172c        0x4 
- COMMON         0x0000000020001730     0x4250 ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
+ COMMON         0x0000000020001730     0x53d8 ../micro_ros_renesas2estudio_component/libmicroros/libmicroros.a(librmw_microxrcedds-types.c.obj)
                 0x0000000020001730                static_buffer_memory
                 0x0000000020001740                publisher_memory
                 0x0000000020001750                custom_publishers
-                0x0000000020001db0                client_memory
-                0x0000000020001dc0                rmw_uxrce_entity_naming_buffer
-                0x0000000020001e28                custom_subscriptions
-                0x00000000200020a8                custom_clients
-                0x00000000200020d0                custom_static_buffers
-                0x0000000020004190                node_memory
-                0x00000000200041a0                custom_topics
-                0x0000000020004360                topics_memory
-                0x0000000020004370                session_memory
-                0x0000000020004380                custom_nodes
-                0x000000002000439c                service_memory
-                0x00000000200043ac                subscription_memory
-                0x00000000200043bc                custom_services
-                0x00000000200043e8                custom_sessions
- COMMON         0x0000000020005980        0x9 /home/ubuntu/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/hard/libg_nano.a(lib_a-lock.o)
-                0x0000000020005980                __lock___atexit_recursive_mutex
-                0x0000000020005981                __lock___arc4random_mutex
-                0x0000000020005982                __lock___env_recursive_mutex
-                0x0000000020005983                __lock___sinit_recursive_mutex
-                0x0000000020005984                __lock___malloc_recursive_mutex
-                0x0000000020005985                __lock___at_quick_exit_mutex
-                0x0000000020005986                __lock___dd_hash_mutex
-                0x0000000020005987                __lock___tz_mutex
-                0x0000000020005988                __lock___sfp_recursive_mutex
- *fill*         0x0000000020005989        0x3 
- COMMON         0x000000002000598c        0x4 /home/ubuntu/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/hard/libg_nano.a(lib_a-reent.o)
-                0x000000002000598c                errno
-                0x0000000020005990                . = ALIGN (0x4)
-                0x0000000020005990                __bss_end__ = .
+                0x0000000020002740                client_memory
+                0x0000000020002750                rmw_uxrce_entity_naming_buffer
+                0x00000000200027b8                custom_subscriptions
+                0x0000000020002cb8                custom_clients
+                0x0000000020002e48                custom_static_buffers
+                0x0000000020004f08                node_memory
+                0x0000000020004f18                custom_topics
+                0x0000000020005260                topics_memory
+                0x0000000020005270                session_memory
+                0x0000000020005280                custom_nodes
+                0x0000000020005398                service_memory
+                0x00000000200053a8                subscription_memory
+                0x00000000200053b8                custom_services
+                0x0000000020005570                custom_sessions
+ COMMON         0x0000000020006b08        0x9 /home/ubuntu/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/hard/libg_nano.a(lib_a-lock.o)
+                0x0000000020006b08                __lock___atexit_recursive_mutex
+                0x0000000020006b09                __lock___arc4random_mutex
+                0x0000000020006b0a                __lock___env_recursive_mutex
+                0x0000000020006b0b                __lock___sinit_recursive_mutex
+                0x0000000020006b0c                __lock___malloc_recursive_mutex
+                0x0000000020006b0d                __lock___at_quick_exit_mutex
+                0x0000000020006b0e                __lock___dd_hash_mutex
+                0x0000000020006b0f                __lock___tz_mutex
+                0x0000000020006b10                __lock___sfp_recursive_mutex
+ *fill*         0x0000000020006b11        0x3 
+ COMMON         0x0000000020006b14        0x4 /home/ubuntu/toolchain/gcc-arm-none-eabi-9-2020-q2-update/bin/../lib/gcc/arm-none-eabi/9.3.1/../../../../arm-none-eabi/lib/thumb/v8-m.main+fp/hard/libg_nano.a(lib_a-reent.o)
+                0x0000000020006b14                errno
+                0x0000000020006b18                . = ALIGN (0x4)
+                0x0000000020006b18                __bss_end__ = .
 
-.heap           0x0000000020005990     0x1388
-                0x0000000020005990                . = ALIGN (0x8)
-                0x0000000020005990                __HeapBase = .
+.heap           0x0000000020006b18     0x1388
+                0x0000000020006b18                . = ALIGN (0x8)
+                0x0000000020006b18                __HeapBase = .
  *(.heap)
- .heap          0x0000000020005990     0x1388 ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
-                0x0000000020006d18                __HeapLimit = .
+ .heap          0x0000000020006b18     0x1388 ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
+                0x0000000020007ea0                __HeapLimit = .
 
-.stack_dummy    0x0000000020006d18     0x1388
-                0x0000000020006d18                . = ALIGN (0x8)
-                0x0000000020006d18                __StackLimit = .
+.stack_dummy    0x0000000020007ea0     0x1388
+                0x0000000020007ea0                . = ALIGN (0x8)
+                0x0000000020007ea0                __StackLimit = .
  *(.stack)
- .stack         0x0000000020006d18     0x1388 ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
-                0x00000000200080a0                __StackTop = .
+ .stack         0x0000000020007ea0     0x1388 ./ra/fsp/src/bsp/cmsis/Device/RENESAS/Source/startup.o
+                0x0000000020009228                __StackTop = .
  *(.stack*)
-                0x00000000200080a0                __StackTopAll = .
-                0x00000000200080a0                PROVIDE (__stack = __StackTopAll)
-                0x00000000200080a0                __RAM_segment_used_end__ = ALIGN (__StackTopAll, 0x4)
-                0x0000000020008400                __tz_RAM_C = DEFINED (RAM_NSC_START)?ABSOLUTE (RAM_NSC_START):__RESERVE_NS_RAM?ABSOLUTE (RAM_NS_BUFFER_BLOCK_START):ALIGN (__RAM_segment_used_end__, 0x400)
+                0x0000000020009228                __StackTopAll = .
+                0x0000000020009228                PROVIDE (__stack = __StackTopAll)
+                0x0000000020009228                __RAM_segment_used_end__ = ALIGN (__StackTopAll, 0x4)
+                0x0000000020009400                __tz_RAM_C = DEFINED (RAM_NSC_START)?ABSOLUTE (RAM_NSC_START):__RESERVE_NS_RAM?ABSOLUTE (RAM_NS_BUFFER_BLOCK_START):ALIGN (__RAM_segment_used_end__, 0x400)
                 0x000000002000a000                __tz_RAM_N = DEFINED (RAM_NS_START)?ABSOLUTE (RAM_NS_START):__RESERVE_NS_RAM?ABSOLUTE (RAM_NS_BUFFER_BLOCK_START):ALIGN (__tz_RAM_C, 0x2000)
 
-.ns_buffer      0x00000000200080a0        0x0
-                0x00000000200080a0                . = __RESERVE_NS_RAM?ABSOLUTE ((RAM_NS_BUFFER_START & 0xffffffe0)):.
+.ns_buffer      0x0000000020009228        0x0
+                0x0000000020009228                . = __RESERVE_NS_RAM?ABSOLUTE ((RAM_NS_BUFFER_START & 0xffffffe0)):.
  *(.ns_buffer*)
 
 .data_flash     0x0000000008000000        0x0
