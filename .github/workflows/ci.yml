@@ -11,22 +11,14 @@ on:
 jobs:
   micro_ros_renesas_testbench:
     runs-on: self-hosted
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     os: [ ubuntu-20.04 ]
-    #     ros_distribution: [ rolling, galactic ]
-    #     include:
-    #       - docker_image: ubuntu:focal
-    #         ros_distribution: rolling
-    #       - docker_image: ubuntu:focal
-    #         ros_distribution: galactic
-    # container:
-    #   image: ${{ matrix.docker_image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distribution: [ foxy ]
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
-    #     required-ros-distributions: foxy
+    #     required-ros-distributions: ${{ matrix.ros_distribution }}
     - name: Create ROS 2 workspace
       run: |
         mkdir -p ros_ws/src
@@ -42,15 +34,14 @@ jobs:
     - name: Download dependencies
       run: |
         cd ros_ws
-        pip3 install vcstool
         vcs import --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS library
       run: |
         cd ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests
         mv makefile.init makefile.init.old
         make clean && make -j$(nproc)
-    # - name: Build tests
-    #   run: |
-    #     source /opt/ros/foxy/setup.sh
-    #     cd ros_ws
-    #     colcon build
+    - name: Build tests
+      run: |
+        source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
+        cd ros_ws
+        colcon build --cmake-clean-cache --cmake-force-configure
