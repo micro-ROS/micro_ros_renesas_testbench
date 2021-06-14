@@ -64,13 +64,13 @@ public:
 
     bool flashClientCode(){
       std::cout << "Flashing code" << std::endl;
-      bool ret = 0 == system("rfp-cli -device RA -tool jlink -e -p '/project/micro-ROS_tests/microros_testbench.hex'");
+      bool ret = 0 == system("rfp-cli -device RA -tool jlink -e -p '" + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests/microros_testbench.hex'");
       return ret;
     }
 
     void runClientCode(std::string filename){
       ASSERT_TRUE(buildClientCode(filename));
-      // ASSERT_TRUE(flashClientCode());
+      ASSERT_TRUE(flashClientCode());
       std::this_thread::sleep_for(500ms);
       agent->start();
       std::this_thread::sleep_for(1000ms);
