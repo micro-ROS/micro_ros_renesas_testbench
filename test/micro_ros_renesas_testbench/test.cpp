@@ -57,14 +57,14 @@ public:
     }
 
     bool buildClientCode(std::string filename){
-      std::cout << "Building " << filename << std::endl;
+      std::cout << "Building client firmware: " << filename << std::endl;
       bool ret = 0 == system(("cd " + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests && make clean > /dev/null 2>&1 && make -j$(nproc) > /dev/null").c_str());
       return ret;
     }
 
     bool flashClientCode(){
       std::cout << "Flashing code" << std::endl;
-      bool ret = 0 == system("rfp-cli -device RA -tool jlink -e -p '" + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests/microros_testbench.hex'");
+      bool ret = 0 == system(("rfp-cli -device RA -tool jlink -e -p '" + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests/microros_testbench.hex'").c_str());
       return ret;
     }
 
