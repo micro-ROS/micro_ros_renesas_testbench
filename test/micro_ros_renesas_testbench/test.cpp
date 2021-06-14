@@ -58,7 +58,7 @@ public:
 
     bool buildClientCode(std::string filename){
       std::cout << "Building " << filename << std::endl;
-      ret &= 0 == system(("cd " + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests && make clean > /dev/null 2>&1 && make -j$(nproc) > /dev/null").c_str());
+      bool ret = 0 == system(("cd " + cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests && make clean > /dev/null 2>&1 && make -j$(nproc) > /dev/null").c_str());
       return ret;
     }
 
