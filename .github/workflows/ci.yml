@@ -34,6 +34,7 @@ jobs:
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
+        token: ${{ secrets.PRIVATE_KEY }}
     - name: Install toolchain
       run: |
         cd ros_ws/src/micro_ros_renesas_testbench
