@@ -47,6 +47,7 @@ jobs:
     - name: Build micro-ROS library
       run: |
         cd ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests
+        mv makefile.init makefile.init.old
         make clean && make -j$(nproc)
     # - name: Build tests
     #   run: |
