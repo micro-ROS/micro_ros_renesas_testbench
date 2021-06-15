@@ -25,6 +25,7 @@
 #include <chrono>
 #include <thread>
 #include <unistd.h>
+#include <fstream>
 
 using namespace std::chrono_literals;
 
@@ -142,18 +143,26 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam()))
         {
-            filename = "threadx_publish_" + std::to_string(expected_freq) + "hz";
+            std::string confPath = build_path + "/../src/config.h";
+            std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
+            std::filebuf fb;
+            fb.open (confPath, std::ios::out);
+
+            std::ostream confFile(&fb);
+            confFile << setFreq << '\n';
         }
 
     ~FreqTest(){}
 
 protected:
-    std::string filename;
     int expected_freq;
 };
 
 TEST_P(FreqTest, PublisherFreq) 
 {
+    // TODO: Add test file for USB/Serial
+    std::string filename = "threadx_publish_hz";
+
     auto promise = std::make_shared<std::promise<float>>();
     auto future = promise->get_future().share();
     auto clock = node->get_clock();

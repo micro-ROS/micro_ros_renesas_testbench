@@ -10,10 +10,10 @@
 
 #include <std_msgs/msg/int32.h>
 
-#include <microros_allocators.h>
-#include <microros_transports.h>
+#include "microros_allocators.h"
+#include "microros_transports.h"
 
-#define PUBLISH_PERIOD_MS 10
+#include "config.h"
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
 

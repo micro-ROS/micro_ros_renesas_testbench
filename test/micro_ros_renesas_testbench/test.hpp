@@ -25,13 +25,8 @@ class HardwareTestBase : public ::testing::Test
 {
 public:
     HardwareTestBase(TestAgent::Transport transport_)
-        : transport(transport_){}
-
-    ~HardwareTestBase(){}
-
-    void SetUp() override {
-        std::string agent_args;
-
+        : transport(transport_)
+    {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
         free(cwd_str);
@@ -53,10 +48,13 @@ public:
                 break;
 
             default:
-                FAIL() << "Transport type not supported";
                 break;
         }
+    }
 
+    ~HardwareTestBase(){}
+
+    void SetUp() override {
         ASSERT_TRUE(checkConnection());
 
         agent.reset(new TestAgent(transport, agent_args, 6));
@@ -109,6 +107,7 @@ protected:
     std::string cwd;
     std::string build_path;
     std::string project_main;
+    std::string agent_args;
 };
 
 class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
