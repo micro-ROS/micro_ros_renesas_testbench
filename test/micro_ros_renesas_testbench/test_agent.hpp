@@ -17,10 +17,16 @@
 
 #include <gtest/gtest.h>
 
-#include <termios.h>
-#include <fcntl.h>
-
+#include <chrono>
 #include <thread>
+
+enum class Transport
+{
+    SERIAL_TRANSPORT,
+    USB_TRANSPORT,
+    UDP_IPV4_TRANSPORT,
+    UDP_IPV6_TRANSPORT,
+};
 
 // TODO(pablogs): Make this compatible with transports: USB, serial, network
 class TestAgent
@@ -50,6 +56,8 @@ void TestAgent::start()
   ));
 }
 
+        command = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + args + " -v" +  std::to_string(verbosity);
+    }
 
 void TestAgent::stop()
 {

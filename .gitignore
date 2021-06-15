@@ -1,0 +1,14 @@
+e2studio_project/micro-ROS_tests
+.vscode/launch.json
+.vscode/settings.json
+*.o
+*.d
+build
+test_build
+e2studio_project_threadX/micro_ros_renesas2estudio_component
+e2studio_project_threadX/micro-ROS_tests/microros_testbench.elf
+e2studio_project_threadX/micro-ROS_tests/microros_testbench.hex
+e2studio_project_threadX/micro-ROS_tests/microros_testbench.map
+test/CMakeLists.txt
+test/gtest.cmake
+e2studio_project_threadX/micro-ROS_tests/microros_testbench.map

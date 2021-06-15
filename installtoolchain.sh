@@ -1,5 +1,6 @@
 sudo apt update
 sudo apt install wget
+echo "export PATH=/home/username/Downloads/gcc-arm-none-eabi-10-2020-q4-major-x86_64-linux/gcc-arm-none-eabi-10-2020-q4-major/:$PATH" >> ~/.bashrc
 
 if [ ! -d ~/toolchain ]
 then
