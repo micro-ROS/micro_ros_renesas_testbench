@@ -24,12 +24,12 @@ uint8_t g_packet_pool0_pool_memory[G_PACKET_POOL0_PACKET_NUM * (G_PACKET_POOL0_P
 
 // Configure micro-ROS agent IP and port
 #define UDP_SERVER_PORT          8888
-#define UDP_SERVER_ADDRESS       IP_ADDRESS(192, 168, 1, 185)
+#define UDP_SERVER_ADDRESS       IP_ADDRESS(192, 168, 20, 20)
 
 #define LINK_ENABLE_WAIT_TIME (1000U)
 
 // TODO: Check conflict with g_packet_pool0 packet number
-#define SOCKET_FIFO_SIZE 512    
+#define SOCKET_FIFO_SIZE 512
 
 // Set TX_TIMER_TICKS_PER_SECOND to 1000 (1 ms tick) in thread conf
 #define TX_MS_TO_TICKS(milliseconds) ((milliseconds / 1000.0) * TX_TIMER_TICKS_PER_SECOND)
@@ -103,7 +103,7 @@ bool renesas_e2_transport_open(struct uxrCustomTransport * transport){
     {
         return false;
     }
-    
+
     status = nx_udp_socket_create(&g_ip0, &socket, "Micro socket", NX_IP_NORMAL, NX_DONT_FRAGMENT, NX_IP_TIME_TO_LIVE, SOCKET_FIFO_SIZE);
 
     if(NX_SUCCESS != status)

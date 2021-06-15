@@ -46,7 +46,7 @@ extern uint8_t g_packet_pool0_pool_memory[(G_PACKET_POOL0_PACKET_NUM * (G_PACKET
 
 /* Quick Setup for g_packet_pool0 instance. */
 void g_packet_pool0_quick_setup();
-#define G_IP0_ADDRESS      (IP_ADDRESS(192,168,1,180))
+#define G_IP0_ADDRESS      (IP_ADDRESS(192,168,20,200))
 #define G_IP0_SUBNET_MASK     (IP_ADDRESS(255,255,255,0))
 #define G_IP0_GATEWAY_ADDRESS (IP_ADDRESS(0,0,0,0))
 #define G_IP0_TASK_STACK_SIZE (2048)
