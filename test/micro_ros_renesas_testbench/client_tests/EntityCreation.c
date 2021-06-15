@@ -56,7 +56,7 @@ void microros_app(void)
             buf);
     }
 
-    // create extra entities in node 1
+    // create extra entities in node 0
     rcl_publisher_t extra_publisher;
     rcl_subscription_t extra_subscriber;
 
@@ -64,13 +64,13 @@ void microros_app(void)
         &extra_publisher,
         &nodes[0],
         ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-        "test_pub_1_extra");
+        "test_pub_0_extra");
 
     rclc_subscription_init_default(
         &extra_subscriber,
         &nodes[0],
         ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
-        "test_sub_1_extra");
+        "test_sub_0_extra");
 
     // rclc_executor_t executor;
     // rclc_executor_init(&executor, &support.context, 1, &allocator);
