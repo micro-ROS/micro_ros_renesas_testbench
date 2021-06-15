@@ -143,18 +143,21 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam()))
         {
-            std::string confPath = build_path + "/../src/config.h";
             std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
             std::filebuf fb;
-            fb.open (confPath, std::ios::out);
 
+            configPath = build_path + "/../src/config.h";
+            fb.open (configPath, std::ios::out);
             std::ostream confFile(&fb);
             confFile << setFreq << '\n';
         }
 
-    ~FreqTest(){}
+    ~FreqTest(){
+        remove(configPath.c_str());
+    }
 
 protected:
+    std::string configPath;
     int expected_freq;
 };
 
