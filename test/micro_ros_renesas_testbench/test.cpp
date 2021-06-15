@@ -177,7 +177,7 @@ TEST_P(HardwareTest, PublisherFreq) {
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTest,
-    ::testing::Values(Transport::UDP_IPV4_TRANSPORT));
+    ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT));
 
 int main(int args, char** argv)
 {
