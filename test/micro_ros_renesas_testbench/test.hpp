@@ -57,7 +57,7 @@ public:
     void SetUp() override {
         ASSERT_TRUE(checkConnection());
 
-        agent.reset(new TestAgent(transport, agent_args, 6));
+        agent.reset(new TestAgent(transport, agent_args, 5));
 
         rclcpp::init(0, NULL);
         node = std::make_shared<rclcpp::Node>("test_node");
@@ -93,11 +93,11 @@ public:
     }
 
     void runClientCode(std::string filename){
-        ASSERT_TRUE(buildClientCode(filename));
-        ASSERT_TRUE(flashClientCode());
+        // ASSERT_TRUE(buildClientCode(filename));
+        // ASSERT_TRUE(flashClientCode());
         std::this_thread::sleep_for(500ms);
         agent->start();
-        std::this_thread::sleep_for(3000ms);
+        // std::this_thread::sleep_for(3000ms);
     }
 
 protected:

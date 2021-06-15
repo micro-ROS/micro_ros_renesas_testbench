@@ -28,6 +28,7 @@ if(BUILD_TESTING)
   find_package(fastrtps_cmake_module REQUIRED)
   find_package(microxrcedds_agent REQUIRED)
   find_package(rclcpp REQUIRED)
+  find_package(rmw REQUIRED)
   find_package(std_msgs REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
@@ -48,6 +49,7 @@ if(BUILD_TESTING)
     fastrtps
     microxrcedds_agent
     rclcpp
+    rmw
     std_msgs
   )
 endif()

@@ -18,6 +18,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int32.hpp>
+#include <rmw/types.h>
 
 #include <string>
 #include <memory>
@@ -31,44 +32,173 @@ using namespace std::chrono_literals;
 
 // TODO(pablogs): use this for client code naming: https://github.com/google/googletest/blob/master/docs/advanced.md#getting-the-current-tests-name
 
-TEST_P(HardwareTest, EntityCreation) {
-  runClientCode("microros_app");
+// TEST_P(HardwareTest, EntityCreation) {
+//   runClientCode("EntityCreation");
 
-  rclcpp::spin_some(node);
-  auto nodes = node->get_node_names();
+//   bool timeout, found;
+//   std::shared_ptr<std::thread> timeout_thread;
 
-  ASSERT_GT(nodes.size(), 0U);
+//   // Utilities
+//   auto timeout_function = [&](){
+//     std::this_thread::sleep_for (std::chrono::seconds(5));
+//     timeout = true;
+//   };
 
-  bool found = false;
-  for(auto node : nodes){
-    // std::cout << node << std::endl;
-    // TODO: Set node name for each test
-    if (node == "/renesas_node")
-    {
-      found = true;
+//   auto check_all_found = [&](std::map<const std::string, bool> & map, bool assert = false) -> bool{
+//     for(auto const& it : map){
+//       if(!it.second) {
+//         if(assert) {
+//           EXPECT_TRUE(it.second) << "Element not found: " << it.first;
+//         }
+//         return false;
+//       }
+//     }
+//     return true;
+//   };
+
+//   // Look for created nodes
+//   std::map<const std::string, bool> node_map =
+//   {
+//     {"/test_node_0", false},
+//     {"/test_node_1", false},
+//     {"/test_node_2", false},
+//     {"/test_node_3", false},
+//     {"/test_node_4", false},
+//   };
+
+//   timeout = false;
+//   found = false;
+//   timeout_thread.reset(new std::thread(timeout_function));
+
+//   while(!timeout && !found){
+//     rclcpp::spin_some(node);
+//     auto nodes = node->get_node_names();
+//     for(auto node : nodes){
+//       if (node_map.find(node) != node_map.end()) {
+//           node_map[node] = true;
+//       }
+//       found = check_all_found(node_map);
+//     }
+//   }
+
+//   ASSERT_TRUE(check_all_found(node_map, true));
+//   timeout_thread->detach();
+
+//   // Look for created publishers and subscribers
+//   std::map<const std::string, bool> topics_map =
+//   {
+//     {"/ns_0/test_pub_0", false},
+//     {"/ns_1/test_pub_1", false},
+//     {"/ns_2/test_pub_2", false},
+//     {"/ns_3/test_pub_3", false},
+//     {"/ns_4/test_pub_4", false},
+//     {"/ns_0/test_sub_0", false},
+//     {"/ns_1/test_sub_1", false},
+//     {"/ns_2/test_sub_2", false},
+//     {"/ns_3/test_sub_3", false},
+//     {"/ns_4/test_sub_4", false},
+//     {"/ns_0/test_pub_0_extra", false},
+//     {"/ns_0/test_sub_0_extra", false},
+//   };
+
+//   timeout = false;
+//   found = false;
+//   timeout_thread.reset(new std::thread(timeout_function));
+
+//   while(!timeout && !found){
+//     rclcpp::spin_some(node);
+//     auto topics = node->get_topic_names_and_types();
+//     for(auto topic : topics){
+//       if (topics_map.find(topic.first) != topics_map.end()) {
+//           topics_map[topic.first] = true;
+//       }
+//       found = check_all_found(topics_map);
+//     }
+//   }
+
+//   ASSERT_TRUE(check_all_found(topics_map, true));
+//   timeout_thread->detach();
+// }
+
+TEST_P(HardwareTest, EntitiesQoS) {
+  runClientCode("EntitiesQoS");
+
+  bool timeout, found;
+  std::shared_ptr<std::thread> timeout_thread;
+
+  // Utilities
+  auto timeout_function = [&](){
+    std::this_thread::sleep_for (std::chrono::seconds(5));
+    timeout = true;
+  };
+
+  auto check_all_found = [&](std::map<const std::string, bool> & map, bool assert = false) -> bool{
+    for(auto const& it : map){
+      if(!it.second) {
+        if(assert) {
+          EXPECT_TRUE(it.second) << "Element not found: " << it.first;
+        }
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Wait for topics
+  std::map<const std::string, bool> topics_map =
+  {
+    {"/test_pub_reliable", false},
+    {"/test_pub_best_effort", false},
+    {"/test_sub_reliable", false},
+    {"/test_sub_best_effort", false},
+  };
+
+  timeout = false;
+  found = false;
+  timeout_thread.reset(new std::thread(timeout_function));
+
+  while(!timeout && !found){
+    rclcpp::spin_some(node);
+    auto topics = node->get_topic_names_and_types();
+    for(auto topic : topics){
+      if (topics_map.find(topic.first) != topics_map.end()) {
+          topics_map[topic.first] = true;
+      }
+      found = check_all_found(topics_map);
     }
   }
 
-  // TODO(pablogs): this test should wait for publishers/subscribers/services
+  ASSERT_TRUE(check_all_found(topics_map, true));
 
-  ASSERT_TRUE(found);
-}
+  std::this_thread::sleep_for(500ms);
 
-TEST_P(HardwareTest, EntitiesQoS) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should check if pub/sub/req can be created using different QoS
+  // Check topics QoS
+  auto pub_reliable = node->get_publishers_info_by_topic("/test_pub_reliable");
+  ASSERT_EQ(pub_reliable.size(), 1U);
+  std::cout << pub_reliable[0].topic_type() << std::endl;
+  std::cout << pub_reliable[0].qos_profile().get_rmw_qos_profile().reliability << std::endl;
+  std::cout << pub_reliable[0].qos_profile().get_rmw_qos_profile().history << std::endl;
+  std::cout << pub_reliable[0].qos_profile().get_rmw_qos_profile().durability << std::endl;
+
+  auto pub_best_effort = node->get_publishers_info_by_topic("/test_pub_best_effort");
+  ASSERT_EQ(pub_best_effort.size(), 1U);
+
+  auto sub_reliable = node->get_subscriptions_info_by_topic("/test_sub_reliable");
+  ASSERT_EQ(sub_reliable.size(), 1U);
+
+  auto sub_best_effort = node->get_subscriptions_info_by_topic("/test_sub_best_effort");
+  ASSERT_EQ(sub_best_effort.size(), 1U);
 }
 
 TEST_P(HardwareTest, Publisher) {
-  runClientCode("");
+  runClientCode("Publisher");
 
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
   auto subscription = node->create_subscription<std_msgs::msg::Int32>(
-    "renesas_publisher", 10,
+    "test_pub", 10,
     [&](std_msgs::msg::Int32::UniquePtr /* msg */) {
-      // std::cout << msg->data << " client data\n";
       promise->set_value();
     }
   );
