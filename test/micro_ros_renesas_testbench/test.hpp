@@ -34,15 +34,15 @@ public:
 
         switch (transport)
         {
-            case Transport::UDP_IPV4_TRANSPORT:
-            case Transport::UDP_IPV6_TRANSPORT:
+            case TestAgent::Transport::UDP_IPV4_TRANSPORT:
+            case TestAgent::Transport::UDP_IPV6_TRANSPORT:
                 build_path = cwd + "/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/e2studio_project_threadX/src/thread_microros_entry.c";
                 agent_args = "--port 8888";
                 break;
 
-            case Transport::SERIAL_TRANSPORT:
-            case Transport::USB_TRANSPORT:
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+            case TestAgent::Transport::USB_TRANSPORT:
                 build_path = cwd + "/e2studio_project/micro-ROS_tests";
                 project_main = cwd + "/e2studio_project/src/hal_entry.c";
                 agent_args = "--dev /dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
