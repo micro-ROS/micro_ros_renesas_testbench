@@ -31,7 +31,7 @@ using namespace std::chrono_literals;
 // TODO(pablogs): use this for client code naming: https://github.com/google/googletest/blob/master/docs/advanced.md#getting-the-current-tests-name
 
 TEST_P(HardwareTest, EntityCreation) {
-  runClientCode("");
+  runClientCode("microros_app");
 
   rclcpp::spin_some(node);
   auto nodes = node->get_node_names();
@@ -177,7 +177,7 @@ TEST_P(HardwareTest, PublisherFreq) {
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTest,
-    ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT));
+    ::testing::Values(TestAgent::Transport::USB_TRANSPORT));
 
 int main(int args, char** argv)
 {

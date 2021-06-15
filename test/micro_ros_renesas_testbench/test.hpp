@@ -32,19 +32,24 @@ public:
     void SetUp() override {
         std::string agent_args;
 
+        char * cwd_str = get_current_dir_name();
+        cwd = std::string(cwd_str);
+        free(cwd_str);
+
         switch (transport)
         {
             case TestAgent::Transport::UDP_IPV4_TRANSPORT:
             case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-                build_path = cwd + "/e2studio_project_threadX/micro-ROS_tests";
-                project_main = cwd + "/e2studio_project_threadX/src/thread_microros_entry.c";
+
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/thread_microros_entry.c";
                 agent_args = "--port 8888";
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
-                build_path = cwd + "/e2studio_project/micro-ROS_tests";
-                project_main = cwd + "/e2studio_project/src/hal_entry.c";
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/src/microros_app.c";
                 agent_args = "--dev /dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
                 break;
 
@@ -55,7 +60,7 @@ public:
 
         ASSERT_TRUE(checkConnection());
 
-        agent.reset(new TestAgent(transport, agent_args, 0));
+        agent.reset(new TestAgent(transport, agent_args, 6));
 
         rclcpp::init(0, NULL);
         node = std::make_shared<rclcpp::Node>("test_node");
@@ -75,7 +80,7 @@ public:
 
     bool buildClientCode(std::string filename){
         std::cout << "Building client firmware: " << filename << std::endl;
-        std::string copy_command = "cp " + cwd  + "/test/micro_ros_renesas_testbench/client_tests/" + filename + ".c " + project_main;
+        std::string copy_command = "cp " + cwd  + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/" + filename + ".c " + project_main;
         bool ret = 0 == system(copy_command.c_str());
         std::string build_command = "cd " + build_path + " && make clean > /dev/null 2>&1 && make -j$(nproc)"; //> /dev/null
         ret &= 0 == system(build_command.c_str());
@@ -91,9 +96,9 @@ public:
     }
 
     void runClientCode(std::string filename){
-        // ASSERT_TRUE(buildClientCode(filename));
-        // ASSERT_TRUE(flashClientCode());
-        // std::this_thread::sleep_for(500ms);
+        ASSERT_TRUE(buildClientCode(filename));
+        ASSERT_TRUE(flashClientCode());
+        std::this_thread::sleep_for(500ms);
         agent->start();
         std::this_thread::sleep_for(3000ms);
     }
