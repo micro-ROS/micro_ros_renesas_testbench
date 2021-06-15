@@ -72,15 +72,5 @@ void microros_app(void)
         ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
         "test_sub_0_extra");
 
-    // rclc_executor_t executor;
-    // rclc_executor_init(&executor, &support.context, 1, &allocator);
-
-    // std_msgs__msg__Int32 msg;
-    // rclc_executor_add_subscription(&executor, &extra_subscriber, &msg, NULL, ON_NEW_DATA);
-
-    for(;;)
-    {
-        // rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-        // sleep_ms(10);
-    }
+    for(;;){}
 }

@@ -120,126 +120,126 @@ TEST_P(HardwareTest, EntityCreation) {
   timeout_thread->detach();
 }
 
-// TEST_P(HardwareTest, EntitiesQoS) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should check if pub/sub/req can be created using different QoS
-// }
+TEST_P(HardwareTest, EntitiesQoS) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should check if pub/sub/req can be created using different QoS
+}
 
-// TEST_P(HardwareTest, Publisher) {
-//   runClientCode("");
+TEST_P(HardwareTest, Publisher) {
+  runClientCode("");
 
-//   auto promise = std::make_shared<std::promise<void>>();
-//   auto future = promise->get_future();
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
 
-//   auto subscription = node->create_subscription<std_msgs::msg::Int32>(
-//     "test_publisher", 10,
-//     [&](std_msgs::msg::Int32::UniquePtr msg) {
-//       // std::cout << msg->data << " client data\n";
-//       promise->set_value();
-//     }
-//   );
+  auto subscription = node->create_subscription<std_msgs::msg::Int32>(
+    "test_publisher", 10,
+    [&](std_msgs::msg::Int32::UniquePtr msg) {
+      // std::cout << msg->data << " client data\n";
+      promise->set_value();
+    }
+  );
 
-//   rclcpp::spin_until_future_complete(node, future.share());
-// }
+  rclcpp::spin_until_future_complete(node, future.share());
+}
 
-// TEST_P(HardwareTest, Subscriber) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should send a value and wait for the same in a subscriber
-//   // the client should act as a ping pong
-// }
+TEST_P(HardwareTest, Subscriber) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should send a value and wait for the same in a subscriber
+  // the client should act as a ping pong
+}
 
-// TEST_P(HardwareTest, CustomTypeIntrospection) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
-//   // strings
-//   // arrays
-//   // sequences
-// }
+TEST_P(HardwareTest, CustomTypeIntrospection) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
+  // strings
+  // arrays
+  // sequences
+}
 
-// TEST_P(HardwareTest, PublisherContinousFragment) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should wait for a topic bigger than default MTU*historic
-// }
+TEST_P(HardwareTest, PublisherContinousFragment) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should wait for a topic bigger than default MTU*historic
+}
 
-// TEST_P(HardwareTest, TimeSync) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should wait for a topic with the POSIX time of a synchronized client and check if MCU epoch is ok
-// }
+TEST_P(HardwareTest, TimeSync) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should wait for a topic with the POSIX time of a synchronized client and check if MCU epoch is ok
+}
 
-// TEST_P(HardwareTest, Ping) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should rely on a publisher that will publish only if ping works ok
-// }
+TEST_P(HardwareTest, Ping) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should rely on a publisher that will publish only if ping works ok
+}
 
-// TEST_P(HardwareTest, ServiceServer) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should prepare a service server and wait for client requests
-// }
+TEST_P(HardwareTest, ServiceServer) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should prepare a service server and wait for client requests
+}
 
-// TEST_P(HardwareTest, ServiceClient) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should prepare a service client and send requests to the client
-// }
+TEST_P(HardwareTest, ServiceClient) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should prepare a service client and send requests to the client
+}
 
-// TEST_P(HardwareTest, Parameters) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should test the client's parameter server
-// }
+TEST_P(HardwareTest, Parameters) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should test the client's parameter server
+}
 
-// TEST_P(HardwareTest, ExecutorRate) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
-// }
+TEST_P(HardwareTest, ExecutorRate) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
+}
 
-// TEST_P(HardwareTest, Domain) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should nodes from different domains are visible
-// }
+TEST_P(HardwareTest, Domain) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should nodes from different domains are visible
+}
 
-// TEST_P(HardwareTest, Multithread) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should check if pub/sub/services works from different threads
-//   // Rensas hardware have no threads at this moment
-// }
+TEST_P(HardwareTest, Multithread) {
+  ASSERT_TRUE(1);
+  // TODO(pablogs): this test should check if pub/sub/services works from different threads
+  // Rensas hardware have no threads at this moment
+}
 
-// TEST_P(HardwareTest, PublisherFreq) {
-
-
-//     // manually enable topic statistics via options
-//     auto options = rclcpp::SubscriptionOptions();
-//     options.topic_stats_options.state = rclcpp::TopicStatisticsState::Enable;
-
-//     // configure the collection window and publish period (default 1s)
-//     //options.topic_stats_options.publish_period = std::chrono::seconds(10);
-
-//     // configure the topic name (default '/statistics')
-//     //options.topic_stats_options.publish_topic = "/test_publisher"
-
-//     auto callback = [this](std_msgs::msg::Int32::SharedPtr msg) {
-
-//       };
-//     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-//       "test_publisher", 10, callback, options);
+TEST_P(HardwareTest, PublisherFreq) {
 
 
-//     switch (transport)
-//     {
-//         case TestAgent::Transport::UDP_IPV4_TRANSPORT:
-//         case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-//             runClientCode("threadx_publish_1hz");
-//             // TODO: Check publish frequency
+    // manually enable topic statistics via options
+    auto options = rclcpp::SubscriptionOptions();
+    options.topic_stats_options.state = rclcpp::TopicStatisticsState::Enable;
 
-//             runClientCode("threadx_publish_20hz");
-//             // TODO: Check publish frequency
+    // configure the collection window and publish period (default 1s)
+    //options.topic_stats_options.publish_period = std::chrono::seconds(10);
 
-//             break;
+    // configure the topic name (default '/statistics')
+    //options.topic_stats_options.publish_topic = "/test_publisher"
 
-//         case TestAgent::Transport::SERIAL_TRANSPORT:
-//         case TestAgent::Transport::USB_TRANSPORT:
+    auto callback = [this](std_msgs::msg::Int32::SharedPtr msg) {
 
-//             break;
-//     }
-// }
+      };
+    rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
+      "test_publisher", 10, callback, options);
+
+
+    switch (transport)
+    {
+        case TestAgent::Transport::UDP_IPV4_TRANSPORT:
+        case TestAgent::Transport::UDP_IPV6_TRANSPORT:
+            runClientCode("threadx_publish_1hz");
+            // TODO: Check publish frequency
+
+            runClientCode("threadx_publish_20hz");
+            // TODO: Check publish frequency
+
+            break;
+
+        case TestAgent::Transport::SERIAL_TRANSPORT:
+        case TestAgent::Transport::USB_TRANSPORT:
+
+            break;
+    }
+}
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
