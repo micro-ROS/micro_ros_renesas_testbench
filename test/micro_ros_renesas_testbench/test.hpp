@@ -21,17 +21,12 @@
 #include "test_agent.hpp"
 
 using namespace std::chrono_literals;
-class HardwareTest : public ::testing::TestWithParam<TestAgent::Transport>
+class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTest()
-        : transport(GetParam()){}
-
-    ~HardwareTest(){}
-
-    void SetUp() override {
-        std::string agent_args;
-
+    HardwareTestBase(TestAgent::Transport transport_)
+        : transport(transport_)
+    {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
         free(cwd_str);
@@ -40,7 +35,6 @@ public:
         {
             case TestAgent::Transport::UDP_IPV4_TRANSPORT:
             case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/thread_microros_entry.c";
                 agent_args = "--port 8888";
@@ -54,10 +48,13 @@ public:
                 break;
 
             default:
-                FAIL() << "Transport type not supported";
                 break;
         }
+    }
 
+    ~HardwareTestBase(){}
+
+    void SetUp() override {
         ASSERT_TRUE(checkConnection());
 
         agent.reset(new TestAgent(transport, agent_args, 5));
@@ -110,6 +107,16 @@ protected:
     std::string cwd;
     std::string build_path;
     std::string project_main;
+    std::string agent_args;
+};
+
+class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
+{
+public:
+    HardwareTest()
+        : HardwareTestBase(GetParam()){}
+
+    ~HardwareTest(){}
 };
 
 #endif //IN_TEST_HPP
