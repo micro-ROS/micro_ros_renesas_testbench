@@ -99,6 +99,7 @@ public:
     }
 
 protected:
+    Transport transport;
     std::shared_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
     std::string cwd;
