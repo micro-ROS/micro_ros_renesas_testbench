@@ -21,13 +21,13 @@
 #include "test_agent.hpp"
 
 using namespace std::chrono_literals;
-class HardwareTest : public ::testing::TestWithParam<TestAgent::Transport>
+class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTest()
-        : transport(GetParam()){}
+    HardwareTestBase(TestAgent::Transport transport_)
+        : transport(transport_){}
 
-    ~HardwareTest(){}
+    ~HardwareTestBase(){}
 
     void SetUp() override {
         std::string agent_args;
@@ -40,7 +40,6 @@ public:
         {
             case TestAgent::Transport::UDP_IPV4_TRANSPORT:
             case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/thread_microros_entry.c";
                 agent_args = "--port 8888";
@@ -110,6 +109,32 @@ protected:
     std::string cwd;
     std::string build_path;
     std::string project_main;
+};
+
+class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+{
+public:
+    FreqTest()
+        : HardwareTestBase(std::get<0>(GetParam()))
+        , expected_freq(std::get<1>(GetParam()))
+        {
+            filename = "threadx_publish_" + std::to_string(expected_freq) + "hz";
+        }
+
+    ~FreqTest(){}
+
+protected:
+    std::string filename;
+    int expected_freq;
+};
+
+class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
+{
+public:
+    HardwareTest()
+        : HardwareTestBase(GetParam()){}
+
+    ~HardwareTest(){}
 };
 
 #endif //IN_TEST_HPP

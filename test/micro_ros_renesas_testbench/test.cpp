@@ -66,7 +66,7 @@ TEST_P(HardwareTest, Publisher) {
 
   auto subscription = node->create_subscription<std_msgs::msg::Int32>(
     "renesas_publisher", 10,
-    [&](std_msgs::msg::Int32::UniquePtr msg) {
+    [&](std_msgs::msg::Int32::UniquePtr /* msg */) {
       // std::cout << msg->data << " client data\n";
       promise->set_value();
     }
@@ -101,7 +101,7 @@ TEST_P(HardwareTest, TimeSync) {
 
 TEST_P(HardwareTest, Ping) {
   ASSERT_TRUE(1);
-  // TODO(pablogs): this test should rely on a publisher that will publish only if ping works ok
+  // TODO(Acuadros95): this test should rely on a publisher that will publish only if ping works ok
 }
 
 TEST_P(HardwareTest, ServiceServer) {
@@ -135,36 +135,40 @@ TEST_P(HardwareTest, Multithread) {
   // Rensas hardware have no threads at this moment
 }
 
-TEST_P(HardwareTest, PublisherFreq) {
+TEST_P(FreqTest, PublisherFreq) 
+{
+    auto promise = std::make_shared<std::promise<float>>();
+    auto future = promise->get_future().share();
+    auto clock = node->get_clock();
+    size_t msg_count = 100;
+    size_t cont = 0;
 
+    auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */) 
+    {
+        static rclcpp::Time begin;
+        
+        if (cont == 0)
+        {
+            begin = clock->now();
+        }
+        else if(cont == msg_count)
+        {
+            auto duration = (clock->now() - begin).nanoseconds();
+            float freq = (cont*1e9)/duration;
+            promise->set_value(freq);
+        }
 
-    // manually enable topic statistics via options
-    auto options = rclcpp::SubscriptionOptions();
-    options.topic_stats_options.state = rclcpp::TopicStatisticsState::Enable;
+        cont++;
+    };
 
-    // configure the collection window and publish period (default 1s)
-    //options.topic_stats_options.publish_period = std::chrono::seconds(10);
-
-    // configure the topic name (default '/statistics')
-    //options.topic_stats_options.publish_topic = "/renesas_publisher"
-
-    auto callback = [this](std_msgs::msg::Int32::SharedPtr msg) {
-
-      };
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-      "renesas_publisher", 10, callback, options);
-
+      "renesas_publisher", 0, callback);
 
     switch (transport)
     {
         case TestAgent::Transport::UDP_IPV4_TRANSPORT:
         case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-            runClientCode("threadx_publish_1hz");
-            // TODO: Check publish frequency
-
-            runClientCode("threadx_publish_20hz");
-            // TODO: Check publish frequency
-
+            runClientCode(filename);
             break;
 
         case TestAgent::Transport::SERIAL_TRANSPORT:
@@ -172,12 +176,23 @@ TEST_P(HardwareTest, PublisherFreq) {
 
             break;
     }
+
+    auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+    ASSERT_NEAR(future.get(), expected_freq, 1.0); 
 }
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTest,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT));
+
+INSTANTIATE_TEST_CASE_P(
+    RenesasTest,
+    FreqTest,
+        ::testing::Combine(
+        ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT),
+        ::testing::Values(10, 50, 100)));
 
 int main(int args, char** argv)
 {

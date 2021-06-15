@@ -13,7 +13,7 @@
 #include <microros_allocators.h>
 #include <microros_transports.h>
 
-#define PUBLISH_PERIOD_MS 1000
+#define PUBLISH_PERIOD_MS 10
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
 
