@@ -20,17 +20,18 @@
 #include <chrono>
 #include <thread>
 
-enum class Transport
-{
-    SERIAL_TRANSPORT,
-    USB_TRANSPORT,
-    UDP_IPV4_TRANSPORT,
-    UDP_IPV6_TRANSPORT,
-};
-
 class TestAgent
 {
 public:
+
+  enum class Transport
+  {
+      SERIAL_TRANSPORT,
+      USB_TRANSPORT,
+      UDP_IPV4_TRANSPORT,
+      UDP_IPV6_TRANSPORT,
+  };
+
   TestAgent(Transport transport, std::string args, uint8_t verbosity);
   ~TestAgent(){};
 

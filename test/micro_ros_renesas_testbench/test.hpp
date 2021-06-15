@@ -21,7 +21,7 @@
 #include "test_agent.hpp"
 
 using namespace std::chrono_literals;
-class HardwareTest : public ::testing::TestWithParam<Transport>
+class HardwareTest : public ::testing::TestWithParam<TestAgent::Transport>
 {
 public:
     HardwareTest()
@@ -99,7 +99,7 @@ public:
     }
 
 protected:
-    Transport transport;
+    TestAgent::Transport transport;
     std::shared_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
     std::string cwd;
