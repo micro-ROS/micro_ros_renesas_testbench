@@ -157,8 +157,8 @@ TEST_P(HardwareTest, PublisherFreq) {
 
     switch (transport)
     {
-        case Transport::UDP_IPV4_TRANSPORT:
-        case Transport::UDP_IPV6_TRANSPORT:
+        case TestAgent::Transport::UDP_IPV4_TRANSPORT:
+        case TestAgent::Transport::UDP_IPV6_TRANSPORT:
             runClientCode("threadx_publish_1hz");
             // TODO: Check publish frequency
 
@@ -167,8 +167,8 @@ TEST_P(HardwareTest, PublisherFreq) {
 
             break;
 
-        case Transport::SERIAL_TRANSPORT:
-        case Transport::USB_TRANSPORT:
+        case TestAgent::Transport::SERIAL_TRANSPORT:
+        case TestAgent::Transport::USB_TRANSPORT:
 
             break;
     }
