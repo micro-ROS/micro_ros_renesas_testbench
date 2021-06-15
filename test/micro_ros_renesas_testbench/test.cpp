@@ -120,164 +120,190 @@ using namespace std::chrono_literals;
 //   timeout_thread->detach();
 // }
 
-TEST_P(HardwareTest, EntitiesQoS) {
-  runClientCode("EntitiesQoS");
+// TEST_P(HardwareTest, EntitiesQoS) {
+//   runClientCode("EntitiesQoS");
 
-  bool timeout, found;
-  std::shared_ptr<std::thread> timeout_thread;
+//   bool timeout, found;
+//   std::shared_ptr<std::thread> timeout_thread;
 
-  // Utilities
-  auto timeout_function = [&](){
-    std::this_thread::sleep_for (std::chrono::seconds(5));
-    timeout = true;
-  };
+//   // Utilities
+//   auto timeout_function = [&](){
+//     std::this_thread::sleep_for (std::chrono::seconds(5));
+//     timeout = true;
+//   };
 
-  auto check_all_found = [&](std::map<const std::string, bool> & map, bool assert = false) -> bool{
-    for(auto const& it : map){
-      if(!it.second) {
-        if(assert) {
-          EXPECT_TRUE(it.second) << "Element not found: " << it.first;
-        }
-        return false;
-      }
-    }
-    return true;
-  };
+//   auto check_all_found = [&](std::map<const std::string, bool> & map, bool assert = false) -> bool{
+//     for(auto const& it : map){
+//       if(!it.second) {
+//         if(assert) {
+//           EXPECT_TRUE(it.second) << "Element not found: " << it.first;
+//         }
+//         return false;
+//       }
+//     }
+//     return true;
+//   };
 
-  // Wait for topics
-  std::map<const std::string, bool> topics_map =
-  {
-    {"/test_pub_reliable", false},
-    {"/test_pub_best_effort", false},
-    {"/test_sub_reliable", false},
-    {"/test_sub_best_effort", false},
-  };
+//   // Wait for topics
+//   std::map<const std::string, bool> topics_map =
+//   {
+//     {"/test_pub_reliable", false},
+//     {"/test_pub_best_effort", false},
+//     {"/test_sub_reliable", false},
+//     {"/test_sub_best_effort", false},
+//   };
 
-  timeout = false;
-  found = false;
-  timeout_thread.reset(new std::thread(timeout_function));
+//   timeout = false;
+//   found = false;
+//   timeout_thread.reset(new std::thread(timeout_function));
 
-  while(!timeout && !found){
-    rclcpp::spin_some(node);
-    auto topics = node->get_topic_names_and_types();
-    for(auto topic : topics){
-      if (topics_map.find(topic.first) != topics_map.end()) {
-          topics_map[topic.first] = true;
-      }
-      found = check_all_found(topics_map);
-    }
-  }
+//   while(!timeout && !found){
+//     rclcpp::spin_some(node);
+//     auto topics = node->get_topic_names_and_types();
+//     for(auto topic : topics){
+//       if (topics_map.find(topic.first) != topics_map.end()) {
+//           topics_map[topic.first] = true;
+//       }
+//       found = check_all_found(topics_map);
+//     }
+//   }
 
-  ASSERT_TRUE(check_all_found(topics_map, true));
-  timeout_thread->detach();
+//   ASSERT_TRUE(check_all_found(topics_map, true));
+//   timeout_thread->detach();
 
-  std::this_thread::sleep_for(500ms);
+//   std::this_thread::sleep_for(500ms);
 
-  // Check topics QoS
-  auto pub_reliable = node->get_publishers_info_by_topic("/test_pub_reliable");
-  ASSERT_EQ(pub_reliable.size(), 1U);
-  ASSERT_EQ(pub_reliable[0].topic_type(), "std_msgs/msg/Int32");
-  ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-  ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
-  ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
+//   // Check topics QoS
+//   auto pub_reliable = node->get_publishers_info_by_topic("/test_pub_reliable");
+//   ASSERT_EQ(pub_reliable.size(), 1U);
+//   ASSERT_EQ(pub_reliable[0].topic_type(), "std_msgs/msg/Int32");
+//   ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+//   ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+//   ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-  auto pub_best_effort = node->get_publishers_info_by_topic("/test_pub_best_effort");
-  ASSERT_EQ(pub_best_effort.size(), 1U);
-  ASSERT_EQ(pub_best_effort[0].topic_type(), "std_msgs/msg/Int32");
-  ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
-  ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
-  ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
+//   auto pub_best_effort = node->get_publishers_info_by_topic("/test_pub_best_effort");
+//   ASSERT_EQ(pub_best_effort.size(), 1U);
+//   ASSERT_EQ(pub_best_effort[0].topic_type(), "std_msgs/msg/Int32");
+//   ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+//   ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+//   ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-  auto sub_reliable = node->get_subscriptions_info_by_topic("/test_sub_reliable");
-  ASSERT_EQ(sub_reliable.size(), 1U);
-  ASSERT_EQ(sub_reliable[0].topic_type(), "std_msgs/msg/Int32");
-  ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_RELIABLE);
-  ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
-  ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
+//   auto sub_reliable = node->get_subscriptions_info_by_topic("/test_sub_reliable");
+//   ASSERT_EQ(sub_reliable.size(), 1U);
+//   ASSERT_EQ(sub_reliable[0].topic_type(), "std_msgs/msg/Int32");
+//   ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+//   ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+//   ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-  auto sub_best_effort = node->get_subscriptions_info_by_topic("/test_sub_best_effort");
-  ASSERT_EQ(sub_best_effort.size(), 1U);
-  ASSERT_EQ(sub_best_effort[0].topic_type(), "std_msgs/msg/Int32");
-  ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
-  ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
-  ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
-}
+//   auto sub_best_effort = node->get_subscriptions_info_by_topic("/test_sub_best_effort");
+//   ASSERT_EQ(sub_best_effort.size(), 1U);
+//   ASSERT_EQ(sub_best_effort[0].topic_type(), "std_msgs/msg/Int32");
+//   ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+//   ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+//   ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
+// }
 
-TEST_P(HardwareTest, Publisher) {
-  runClientCode("Publisher");
+// TEST_P(HardwareTest, Publisher) {
+//   runClientCode("Publisher");
 
-  auto promise = std::make_shared<std::promise<void>>();
-  auto future = promise->get_future();
+//   auto promise = std::make_shared<std::promise<void>>();
+//   auto future = promise->get_future();
 
-  auto subscription = node->create_subscription<std_msgs::msg::Int32>(
-    "test_pub", 10,
-    [&](std_msgs::msg::Int32::UniquePtr /* msg */) {
-      promise->set_value();
-    }
-  );
+//   auto subscription = node->create_subscription<std_msgs::msg::Int32>(
+//     "test_pub", 10,
+//     [&](std_msgs::msg::Int32::UniquePtr /* msg */) {
+//       promise->set_value();
+//     }
+//   );
 
-  rclcpp::spin_until_future_complete(node, future.share());
-}
+//   rclcpp::spin_until_future_complete(node, future.share());
+// }
 
-TEST_P(HardwareTest, Subscriber) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should send a value and wait for the same in a subscriber
-  // the client should act as a ping pong
-}
+// TEST_P(HardwareTest, Subscriber) {
+//   runClientCode("Subscriber");
 
-TEST_P(HardwareTest, CustomTypeIntrospection) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
-  // strings
-  // arrays
-  // sequences
-}
+//   bool received = false;
 
-TEST_P(HardwareTest, PublisherContinousFragment) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should wait for a topic bigger than default MTU*historic
-}
+//   auto out_msg = std::make_shared<std_msgs::msg::Int32>();
+//   out_msg->data = 10;
 
-TEST_P(HardwareTest, TimeSync) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should wait for a topic with the POSIX time of a synchronized client and check if MCU epoch is ok
-}
+//   auto promise = std::make_shared<std::promise<void>>();
+//   auto future = promise->get_future();
 
-TEST_P(HardwareTest, Ping) {
-  ASSERT_TRUE(1);
-  // TODO(Acuadros95): this test should rely on a publisher that will publish only if ping works ok
-}
+//   auto publisher = node->create_publisher<std_msgs::msg::Int32>("test_sub", 10);
+//   auto subscription = node->create_subscription<std_msgs::msg::Int32>(
+//     "test_aux_pub", 10,
+//     [&](std_msgs::msg::Int32::UniquePtr msg) {
+//       ASSERT_EQ(msg->data, out_msg->data * 10);
+//       received = true;
+//       promise->set_value();
+//     }
+//   );
 
-TEST_P(HardwareTest, ServiceServer) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should prepare a service server and wait for client requests
-}
+//   auto publish_message = [&](){
+//     std::cout << "Publishing topic" << std::endl;
+//     publisher->publish(*out_msg);
+//   };
 
-TEST_P(HardwareTest, ServiceClient) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should prepare a service client and send requests to the client
-}
+//   auto timer = node->create_wall_timer(1s, publish_message);
+//   rclcpp::spin_until_future_complete(node, future.share());
 
-TEST_P(HardwareTest, Parameters) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should test the client's parameter server
-}
+//   ASSERT_TRUE(received);
+// }
 
-TEST_P(HardwareTest, ExecutorRate) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
-}
+// TEST_P(HardwareTest, CustomTypeIntrospection) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
+//   // strings
+//   // arrays
+//   // sequences
+// }
 
-TEST_P(HardwareTest, Domain) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should nodes from different domains are visible
-}
+// TEST_P(HardwareTest, PublisherContinousFragment) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should wait for a topic bigger than default MTU*historic
+// }
 
-TEST_P(HardwareTest, Multithread) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should check if pub/sub/services works from different threads
-  // Rensas hardware have no threads at this moment
-}
+// TEST_P(HardwareTest, TimeSync) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should wait for a topic with the POSIX time of a synchronized client and check if MCU epoch is ok
+// }
+
+// TEST_P(HardwareTest, Ping) {
+//   ASSERT_TRUE(1);
+//   // TODO(Acuadros95): this test should rely on a publisher that will publish only if ping works ok
+// }
+
+// TEST_P(HardwareTest, ServiceServer) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should prepare a service server and wait for client requests
+// }
+
+// TEST_P(HardwareTest, ServiceClient) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should prepare a service client and send requests to the client
+// }
+
+// TEST_P(HardwareTest, Parameters) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should test the client's parameter server
+// }
+
+// TEST_P(HardwareTest, ExecutorRate) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
+// }
+
+// TEST_P(HardwareTest, Domain) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should nodes from different domains are visible
+// }
+
+// TEST_P(HardwareTest, Multithread) {
+//   ASSERT_TRUE(1);
+//   // TODO(pablogs): this test should check if pub/sub/services works from different threads
+//   // Rensas hardware have no threads at this moment
+// }
 
 class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
@@ -345,7 +371,7 @@ TEST_P(FreqTest, PublisherFreq)
 
         case TestAgent::Transport::SERIAL_TRANSPORT:
         case TestAgent::Transport::USB_TRANSPORT:
-
+            runClientCode(filename);
             break;
     }
 
@@ -358,7 +384,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     FreqTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
 INSTANTIATE_TEST_CASE_P(

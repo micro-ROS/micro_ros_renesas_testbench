@@ -8,8 +8,6 @@
 #include <std_msgs/msg/int32.h>
 #include <microros_transports.h>
 
-#define ENTITY_NUMBER 5
-
 void microros_app(void);
 
 void microros_app(void)
