@@ -169,25 +169,38 @@ TEST_P(HardwareTest, EntitiesQoS) {
   }
 
   ASSERT_TRUE(check_all_found(topics_map, true));
+  timeout_thread->detach();
 
   std::this_thread::sleep_for(500ms);
 
   // Check topics QoS
   auto pub_reliable = node->get_publishers_info_by_topic("/test_pub_reliable");
   ASSERT_EQ(pub_reliable.size(), 1U);
-  std::cout << pub_reliable[0].topic_type() << std::endl;
-  std::cout << pub_reliable[0].qos_profile().get_rmw_qos_profile().reliability << std::endl;
-  std::cout << pub_reliable[0].qos_profile().get_rmw_qos_profile().history << std::endl;
-  std::cout << pub_reliable[0].qos_profile().get_rmw_qos_profile().durability << std::endl;
+  ASSERT_EQ(pub_reliable[0].topic_type(), "std_msgs/msg/Int32");
+  ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+  ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+  ASSERT_EQ(pub_reliable[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
   auto pub_best_effort = node->get_publishers_info_by_topic("/test_pub_best_effort");
   ASSERT_EQ(pub_best_effort.size(), 1U);
+  ASSERT_EQ(pub_best_effort[0].topic_type(), "std_msgs/msg/Int32");
+  ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+  ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+  ASSERT_EQ(pub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
   auto sub_reliable = node->get_subscriptions_info_by_topic("/test_sub_reliable");
   ASSERT_EQ(sub_reliable.size(), 1U);
+  ASSERT_EQ(sub_reliable[0].topic_type(), "std_msgs/msg/Int32");
+  ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+  ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+  ASSERT_EQ(sub_reliable[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
   auto sub_best_effort = node->get_subscriptions_info_by_topic("/test_sub_best_effort");
   ASSERT_EQ(sub_best_effort.size(), 1U);
+  ASSERT_EQ(sub_best_effort[0].topic_type(), "std_msgs/msg/Int32");
+  ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().reliability, RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+  ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().history, RMW_QOS_POLICY_HISTORY_UNKNOWN);
+  ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 }
 
 TEST_P(HardwareTest, Publisher) {
@@ -291,7 +304,7 @@ protected:
     int expected_freq;
 };
 
-TEST_P(FreqTest, PublisherFreq) 
+TEST_P(FreqTest, PublisherFreq)
 {
     // TODO: Add test file for USB/Serial
     std::string filename = "threadx_publish_hz";
@@ -302,10 +315,10 @@ TEST_P(FreqTest, PublisherFreq)
     size_t msg_count = 100;
     size_t cont = 0;
 
-    auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */) 
+    auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
     {
         static rclcpp::Time begin;
-        
+
         if (cont == 0)
         {
             begin = clock->now();
@@ -338,7 +351,7 @@ TEST_P(FreqTest, PublisherFreq)
 
     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
-    ASSERT_NEAR(future.get(), expected_freq, 1.0); 
+    ASSERT_NEAR(future.get(), expected_freq, 1.0);
 }
 
 INSTANTIATE_TEST_CASE_P(
