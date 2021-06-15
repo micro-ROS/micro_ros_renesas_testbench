@@ -135,6 +135,23 @@ TEST_P(HardwareTest, Multithread) {
   // Rensas hardware have no threads at this moment
 }
 
+class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+{
+public:
+    FreqTest()
+        : HardwareTestBase(std::get<0>(GetParam()))
+        , expected_freq(std::get<1>(GetParam()))
+        {
+            filename = "threadx_publish_" + std::to_string(expected_freq) + "hz";
+        }
+
+    ~FreqTest(){}
+
+protected:
+    std::string filename;
+    int expected_freq;
+};
+
 TEST_P(FreqTest, PublisherFreq) 
 {
     auto promise = std::make_shared<std::promise<float>>();
@@ -184,15 +201,15 @@ TEST_P(FreqTest, PublisherFreq)
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
-    HardwareTest,
-    ::testing::Values(TestAgent::Transport::USB_TRANSPORT));
-
-INSTANTIATE_TEST_CASE_P(
-    RenesasTest,
     FreqTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT),
         ::testing::Values(10, 50, 100)));
+
+INSTANTIATE_TEST_CASE_P(
+    RenesasTest,
+    HardwareTest,
+    ::testing::Values(TestAgent::Transport::USB_TRANSPORT));
 
 int main(int args, char** argv)
 {

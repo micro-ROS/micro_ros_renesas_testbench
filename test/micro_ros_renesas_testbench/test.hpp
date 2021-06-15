@@ -111,23 +111,6 @@ protected:
     std::string project_main;
 };
 
-class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
-{
-public:
-    FreqTest()
-        : HardwareTestBase(std::get<0>(GetParam()))
-        , expected_freq(std::get<1>(GetParam()))
-        {
-            filename = "threadx_publish_" + std::to_string(expected_freq) + "hz";
-        }
-
-    ~FreqTest(){}
-
-protected:
-    std::string filename;
-    int expected_freq;
-};
-
 class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
 {
 public:
