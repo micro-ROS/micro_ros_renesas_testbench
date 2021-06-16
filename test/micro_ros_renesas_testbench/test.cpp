@@ -309,7 +309,11 @@ using namespace std::chrono_literals;
 //   // TODO(pablogs): this test should prepare a service client and send requests to the client
 // }
 
+// Only in galactic
+#ifdef 0
 TEST_P(HardwareTest, Parameters) {
+    runClientCode("Parameters");
+
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
         param_client_node,
@@ -317,7 +321,10 @@ TEST_P(HardwareTest, Parameters) {
 
     std::vector<std::string> param_names;
     param_names.push_back("param1");
+    param_names.push_back("param2");
+    param_names.push_back("param3");
 
+    // TODO use this as previous check
     auto list_params = parameters_client->list_parameters({}, 10);
     ASSERT_EQ(list_params.names.size(), 4u);
     for (auto & name : list_params.names) {
@@ -381,20 +388,24 @@ TEST_P(HardwareTest, Parameters) {
     auto future = promise->get_future();
     size_t on_parameter_calls = 0;
     auto sub = parameters_client->on_parameter_event(
-        [&](const rcl_interfaces::msg::ParameterEvent::SharedPtr /* event */) -> void
+        [&](const rcl_interfaces::msg::ParameterEvent::SharedPtr event) -> void
         {
+            ASSERT_EQ(event->changed_parameters.size(), 1u);
+            ASSERT_EQ(event->changed_parameters[0].name, "param2");
+            ASSERT_EQ(event->changed_parameters[0].value.type, 0);
+            ASSERT_EQ(event->changed_parameters[0].value.integer_value, 49);
+
             on_parameter_calls++;
             promise->set_value();
         });
 
-    rclc_parameter_set_bool(&param_server, "param1", false);
+    rclc_parameter_set_bool(&param_server, "param2", 49);
 
     rclcpp::spin_until_future_complete(param_client_node, future.share());
 
     ASSERT_EQ(on_parameter_calls, 1u);
-
-  // TODO(pablogs): this test should test the client's parameter server
 }
+#endif
 
 // TEST_P(HardwareTest, ExecutorRate) {
 //   ASSERT_TRUE(1);
@@ -467,9 +478,9 @@ TEST_P(HardwareTest, Parameters) {
 
 //     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
 //       "renesas_publisher", 0, callback);
-// 
+//
 //       runClientCode(filename);
-// 
+//
 //     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
 //     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 //     ASSERT_NEAR(future.get(), expected_freq, 1.0);
