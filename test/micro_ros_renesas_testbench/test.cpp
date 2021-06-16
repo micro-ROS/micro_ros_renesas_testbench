@@ -309,10 +309,92 @@ using namespace std::chrono_literals;
 //   // TODO(pablogs): this test should prepare a service client and send requests to the client
 // }
 
-// TEST_P(HardwareTest, Parameters) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should test the client's parameter server
-// }
+TEST_P(HardwareTest, Parameters) {
+    auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
+    auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
+        param_client_node,
+        "test_node");
+
+    std::vector<std::string> param_names;
+    param_names.push_back("param1");
+
+    auto list_params = parameters_client->list_parameters({}, 10);
+    ASSERT_EQ(list_params.names.size(), 4u);
+    for (auto & name : list_params.names) {
+        std::vector<std::string>::iterator it;
+        it = std::find(param_names.begin(), param_names.end(), name);
+        ASSERT_NE(it, param_names.end());
+    }
+
+    bool param_bool_value = parameters_client->get_parameter("param1", false);
+    ASSERT_EQ(param_bool_value, true);
+
+    // External set bool
+    std::vector<rclcpp::Parameter> new_params = {rclcpp::Parameter("param1", false)};
+    auto result = parameters_client->set_parameters(new_params);
+    ASSERT_TRUE(result[0].successful);
+
+    // Check set param
+    param_bool_value = parameters_client->get_parameter("param1", false);
+    ASSERT_EQ(param_bool_value, false);
+
+    // External fail type
+    new_params.clear();
+    new_params.push_back(rclcpp::Parameter("param1", static_cast<double>(12.2)));
+    result = parameters_client->set_parameters(new_params);
+    ASSERT_FALSE(result[0].successful);
+
+    // External set int
+    new_params.clear();
+    new_params.push_back(rclcpp::Parameter("param2", 12));
+    result = parameters_client->set_parameters(new_params);
+    ASSERT_TRUE(result[0].successful);
+
+    // Check set param
+    int param_int_value = parameters_client->get_parameter("param2", 0);
+    ASSERT_EQ(param_int_value, 12);
+
+    // External set double
+    new_params.clear();
+    new_params.push_back(rclcpp::Parameter("param3", 12.12));
+    result = parameters_client->set_parameters(new_params);
+    ASSERT_TRUE(result[0].successful);
+
+    // Check set param
+    double param_double_value = parameters_client->get_parameter("param3", 0.0);
+    ASSERT_EQ(param_double_value, 12.12);
+
+    // External get types
+    const std::vector<std::string> types_query = {
+        "param1",
+        "param2",
+        "param3"
+    };
+    auto types = parameters_client->get_parameter_types(types_query);
+    ASSERT_EQ(types.size(), 3u);
+    ASSERT_EQ(types[0], rclcpp::ParameterType::PARAMETER_BOOL);
+    ASSERT_EQ(types[1], rclcpp::ParameterType::PARAMETER_INTEGER);
+    ASSERT_EQ(types[2], rclcpp::ParameterType::PARAMETER_DOUBLE);
+
+    // Test callback
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    size_t on_parameter_calls = 0;
+    auto sub = parameters_client->on_parameter_event(
+        [&](const rcl_interfaces::msg::ParameterEvent::SharedPtr /* event */) -> void
+        {
+            on_parameter_calls++;
+            promise->set_value();
+        });
+
+    rclc_parameter_set_bool(&param_server, "param1", false);
+
+    rclcpp::spin_until_future_complete(param_client_node, future.share());
+
+    ASSERT_EQ(on_parameter_calls, 1u);
+
+  // TODO(pablogs): this test should test the client's parameter server
+}
 
 // TEST_P(HardwareTest, ExecutorRate) {
 //   ASSERT_TRUE(1);
