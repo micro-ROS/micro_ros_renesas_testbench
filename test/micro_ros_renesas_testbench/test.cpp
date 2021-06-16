@@ -16,8 +16,11 @@
 
 #include "./test.hpp"
 
+#include <unistd.h>
+
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/int64.hpp>
 #include <rmw/types.h>
 
 #include <string>
@@ -25,8 +28,9 @@
 #include <vector>
 #include <chrono>
 #include <thread>
-#include <unistd.h>
 #include <fstream>
+#include <ctime>
+
 
 using namespace std::chrono_literals;
 
@@ -265,8 +269,29 @@ using namespace std::chrono_literals;
 // }
 
 // TEST_P(HardwareTest, TimeSync) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should wait for a topic with the POSIX time of a synchronized client and check if MCU epoch is ok
+//   runClientCode("TimeSync");
+
+//   auto promise = std::make_shared<std::promise<void>>();
+//   auto future = promise->get_future();
+
+//   size_t received_messages = 0;
+
+//   auto subscription = node->create_subscription<std_msgs::msg::Int64>(
+//     "test_epoch", 10,
+//     [&](std_msgs::msg::Int64::UniquePtr msg) {
+//         received_messages++;
+//         std::time_t time = std::time(nullptr); // Unix epoch in seconds
+//         ASSERT_NEAR(msg->data, time, 5);
+
+//         std::cout << "Client: " << msg->data << " Local: " << time << std::endl;
+
+//         if(received_messages > 5){
+//             promise->set_value();
+//         }
+//     }
+//   );
+
+//   rclcpp::spin_until_future_complete(node, future.share());
 // }
 
 // TEST_P(HardwareTest, Ping) {
@@ -305,87 +330,87 @@ using namespace std::chrono_literals;
 //   // Rensas hardware have no threads at this moment
 // }
 
-class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
-{
-public:
-    FreqTest()
-        : HardwareTestBase(std::get<0>(GetParam()))
-        , expected_freq(std::get<1>(GetParam()))
-        {
-            std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
-            std::filebuf fb;
+// class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+// {
+// public:
+//     FreqTest()
+//         : HardwareTestBase(std::get<0>(GetParam()))
+//         , expected_freq(std::get<1>(GetParam()))
+//         {
+//             std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
+//             std::filebuf fb;
 
-            configPath = build_path + "/../src/config.h";
-            fb.open (configPath, std::ios::out);
-            std::ostream confFile(&fb);
-            confFile << setFreq << '\n';
-        }
+//             configPath = build_path + "/../src/config.h";
+//             fb.open (configPath, std::ios::out);
+//             std::ostream confFile(&fb);
+//             confFile << setFreq << '\n';
+//         }
 
-    ~FreqTest(){
-        remove(configPath.c_str());
-    }
+//     ~FreqTest(){
+//         remove(configPath.c_str());
+//     }
 
-protected:
-    std::string configPath;
-    int expected_freq;
-};
+// protected:
+//     std::string configPath;
+//     int expected_freq;
+// };
 
-TEST_P(FreqTest, PublisherFreq)
-{
-    // TODO: Add test file for USB/Serial
-    std::string filename = "threadx_publish_hz";
+// TEST_P(FreqTest, PublisherFreq)
+// {
+//     // TODO: Add test file for USB/Serial
+//     std::string filename = "threadx_publish_hz";
 
-    auto promise = std::make_shared<std::promise<float>>();
-    auto future = promise->get_future().share();
-    auto clock = node->get_clock();
-    size_t msg_count = 100;
-    size_t cont = 0;
+//     auto promise = std::make_shared<std::promise<float>>();
+//     auto future = promise->get_future().share();
+//     auto clock = node->get_clock();
+//     size_t msg_count = 100;
+//     size_t cont = 0;
 
-    auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
-    {
-        static rclcpp::Time begin;
+//     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
+//     {
+//         static rclcpp::Time begin;
 
-        if (cont == 0)
-        {
-            begin = clock->now();
-        }
-        else if(cont == msg_count)
-        {
-            auto duration = (clock->now() - begin).nanoseconds();
-            float freq = (cont*1e9)/duration;
-            promise->set_value(freq);
-        }
+//         if (cont == 0)
+//         {
+//             begin = clock->now();
+//         }
+//         else if(cont == msg_count)
+//         {
+//             auto duration = (clock->now() - begin).nanoseconds();
+//             float freq = (cont*1e9)/duration;
+//             promise->set_value(freq);
+//         }
 
-        cont++;
-    };
+//         cont++;
+//     };
 
-    rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-      "renesas_publisher", 0, callback);
+//     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
+//       "renesas_publisher", 0, callback);
 
-    switch (transport)
-    {
-        case TestAgent::Transport::UDP_IPV4_TRANSPORT:
-        case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-            runClientCode(filename);
-            break;
+//     switch (transport)
+//     {
+//         case TestAgent::Transport::UDP_IPV4_TRANSPORT:
+//         case TestAgent::Transport::UDP_IPV6_TRANSPORT:
+//             runClientCode(filename);
+//             break;
 
-        case TestAgent::Transport::SERIAL_TRANSPORT:
-        case TestAgent::Transport::USB_TRANSPORT:
-            runClientCode(filename);
-            break;
-    }
+//         case TestAgent::Transport::SERIAL_TRANSPORT:
+//         case TestAgent::Transport::USB_TRANSPORT:
+//             runClientCode(filename);
+//             break;
+//     }
 
-    auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
-    ASSERT_NEAR(future.get(), expected_freq, 1.0);
-}
+//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+//     ASSERT_NEAR(future.get(), expected_freq, 1.0);
+// }
 
-INSTANTIATE_TEST_CASE_P(
-    RenesasTest,
-    FreqTest,
-        ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
-        ::testing::Values(10, 50, 100)));
+// INSTANTIATE_TEST_CASE_P(
+//     RenesasTest,
+//     FreqTest,
+//         ::testing::Combine(
+//         ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
+//         ::testing::Values(10, 50, 100)));
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,

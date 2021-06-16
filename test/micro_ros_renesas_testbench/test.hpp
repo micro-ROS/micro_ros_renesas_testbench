@@ -97,7 +97,6 @@ public:
         ASSERT_TRUE(flashClientCode());
         std::this_thread::sleep_for(500ms);
         agent->start();
-        // std::this_thread::sleep_for(3000ms);
     }
 
 protected:
