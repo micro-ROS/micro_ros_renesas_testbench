@@ -439,8 +439,7 @@ TEST_P(HardwareTest, Parameters) {
 
 // TEST_P(FreqTest, PublisherFreq)
 // {
-//     // TODO: Add test file for USB/Serial
-//     std::string filename = "threadx_publish_hz";
+//     std::string filename = "publish_hz";
 
 //     auto promise = std::make_shared<std::promise<float>>();
 //     auto future = promise->get_future().share();
@@ -468,20 +467,9 @@ TEST_P(HardwareTest, Parameters) {
 
 //     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
 //       "renesas_publisher", 0, callback);
-
-//     switch (transport)
-//     {
-//         case TestAgent::Transport::UDP_IPV4_TRANSPORT:
-//         case TestAgent::Transport::UDP_IPV6_TRANSPORT:
-//             runClientCode(filename);
-//             break;
-
-//         case TestAgent::Transport::SERIAL_TRANSPORT:
-//         case TestAgent::Transport::USB_TRANSPORT:
-//             runClientCode(filename);
-//             break;
-//     }
-
+// 
+//       runClientCode(filename);
+// 
 //     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
 //     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 //     ASSERT_NEAR(future.get(), expected_freq, 1.0);
