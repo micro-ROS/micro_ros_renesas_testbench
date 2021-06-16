@@ -29,20 +29,20 @@ void microros_app(void)
     rcl_node_t node;
     rclc_node_init_default(&node, "test_node", "", &support);
 
-   // create service
+    // create service
     rcl_service_t service;
-    RCCHECK(rclc_service_init_default(&service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts), "/test_add_two_ints"));
+    rclc_service_init_default(&service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts), "/addtwoints");
 
     // create executor
     rclc_executor_t executor;
-    RCCHECK(rclc_executor_init(&executor, &support.context, 1, &allocator));
+    rclc_executor_init(&executor, &support.context, 1, &allocator);
 
     example_interfaces__srv__AddTwoInts_Response res;
     example_interfaces__srv__AddTwoInts_Request req;
-    RCCHECK(rclc_executor_add_service(&executor, &service, &req, &res, service_callback));
+    rclc_executor_add_service(&executor, &service, &req, &res, service_callback);
 
     for(;;){
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-        sleep_ms(100);
+        sleep_ms(10);
     }
 }

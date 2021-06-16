@@ -312,6 +312,8 @@ TEST_P(HardwareTest, ServiceServer) {
     request->a = 10;
     request->b = 20;
 
+    std::this_thread::sleep_for (std::chrono::seconds(5));
+
     ASSERT_TRUE(client->wait_for_service(10s));
 
     auto result = client->async_send_request(request);
