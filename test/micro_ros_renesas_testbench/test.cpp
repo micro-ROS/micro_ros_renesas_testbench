@@ -21,6 +21,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_msgs/msg/int64.hpp>
+#include <example_interfaces/srv/add_two_ints.hpp>
 #include <rmw/types.h>
 
 #include <string>
@@ -124,6 +125,10 @@ using namespace std::chrono_literals;
 //   timeout_thread->detach();
 // }
 
+// TEST_P(HardwareTest, EntityDestruction) {
+//   // TODO(pablogs): this test should ensure that entities can be created and destroyed correctly. It can be done using a service for stoping the micro-ROS execution.
+// }
+
 // TEST_P(HardwareTest, EntitiesQoS) {
 //   runClientCode("EntitiesQoS");
 
@@ -220,7 +225,7 @@ using namespace std::chrono_literals;
 //     }
 //   );
 
-//   rclcpp::spin_until_future_complete(node, future.share());
+//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
 // }
 
 // TEST_P(HardwareTest, Subscriber) {
@@ -250,7 +255,7 @@ using namespace std::chrono_literals;
 //   };
 
 //   auto timer = node->create_wall_timer(1s, publish_message);
-//   rclcpp::spin_until_future_complete(node, future.share());
+//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
 
 //   ASSERT_TRUE(received);
 // }
@@ -290,8 +295,7 @@ using namespace std::chrono_literals;
 //         }
 //     }
 //   );
-
-//   rclcpp::spin_until_future_complete(node, future.share());
+//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
 // }
 
 // TEST_P(HardwareTest, Ping) {
@@ -299,10 +303,22 @@ using namespace std::chrono_literals;
 //   // TODO(Acuadros95): this test should rely on a publisher that will publish only if ping works ok
 // }
 
-// TEST_P(HardwareTest, ServiceServer) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should prepare a service server and wait for client requests
-// }
+TEST_P(HardwareTest, ServiceServer) {
+    runClientCode("ServiceServer");
+
+    auto client = node->create_client<example_interfaces::srv::AddTwoInts>("test_add_two_ints");
+
+    auto request = std::make_shared<example_interfaces::srv::AddTwoInts::Request>();
+    request->a = 10;
+    request->b = 20;
+
+    ASSERT_TRUE(client->wait_for_service(10s));
+
+    auto result = client->async_send_request(request);
+
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, result), rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(result.get()->sum, request->a + request->b);
+}
 
 // TEST_P(HardwareTest, ServiceClient) {
 //   ASSERT_TRUE(1);
@@ -400,7 +416,7 @@ using namespace std::chrono_literals;
 
 //     rclc_parameter_set_bool(&param_server, "param2", 49);
 
-//     rclcpp::spin_until_future_complete(param_client_node, future.share());
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
 
 //     ASSERT_EQ(on_parameter_calls, 1u);
 // }

@@ -21,6 +21,9 @@
 #include "test_agent.hpp"
 
 using namespace std::chrono_literals;
+
+// TODO(pablogs): All the system calls should be done using a bash script in order to increase flexibility when using with other platforms.
+
 class HardwareTestBase : public ::testing::Test
 {
 public:
