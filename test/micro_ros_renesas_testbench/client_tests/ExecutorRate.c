@@ -17,6 +17,7 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 rclc_support_t support;
+rcl_allocator_t allocator;
 rcl_node_t node;
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
@@ -32,15 +33,13 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 void microros_app(void)
 {
     // micro-ROS app
-    rcl_allocator_t allocator = rcl_get_default_allocator();
-
-    rcl_ret_t ret;
+    allocator = rcl_get_default_allocator();
 
     // create init_options
-    ret = rclc_support_init(&support, 0, NULL, &allocator);
+    rclc_support_init(&support, 0, NULL, &allocator);
 
     // create node
-    ret = rclc_node_init_default(&node, "test_node", "", &support);
+    rclc_node_init_default(&node, "test_node", "", &support);
 
     // create publisher
     rclc_publisher_init_default(

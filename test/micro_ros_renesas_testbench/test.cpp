@@ -299,8 +299,22 @@ using namespace std::chrono_literals;
 // }
 
 // TEST_P(HardwareTest, Ping) {
-//   ASSERT_TRUE(1);
-//   // TODO(Acuadros95): this test should rely on a publisher that will publish only if ping works ok
+//     runClientCode("Ping");
+
+//     auto promise = std::make_shared<std::promise<void>>();
+//     auto future = promise->get_future().share();
+//     int64_t timeout_ms = 3000;
+
+//     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */) 
+//     {
+//         promise->set_value();
+//     };
+
+//     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
+//       "test_publisher_ping", 0, callback);
+
+//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>(timeout_ms);
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 // }
 
 TEST_P(HardwareTest, ServiceServer) {
@@ -424,15 +438,56 @@ TEST_P(HardwareTest, ServiceServer) {
 // }
 // #endif
 
-// TEST_P(HardwareTest, ExecutorRate) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should check if publication rate is ok when using a executor timer
+// class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+// {
+// public:
+//     DomainTest()
+//         : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
+//         , domain_id(std::get<1>(GetParam()))
+//         {
+//             std::string setFreq = "#define DOMAIN_ID " + std::to_string(domain_id);
+//             std::filebuf fb;
+// 
+//             configPath = build_path + "/../src/config.h";
+//             fb.open (configPath, std::ios::out);
+//             std::ostream confFile(&fb);
+//             confFile << setFreq << '\n';
+//         }
+// 
+//     ~DomainTest(){
+//         remove(configPath.c_str());
+//     }
+// 
+// protected:
+//     std::string configPath;
+//     int domain_id;
+// };
+
+// TEST_P(DomainTest, Domain) {
+//     // TODO: Node appears on default DOMAIN ID, only publisher changes the domain
+//     runClientCode("Domain");
+//     auto promise = std::make_shared<std::promise<void>>();
+//     auto future = promise->get_future().share();
+//     int64_t timeout_ms = 2000;
+ 
+//     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */) 
+//     {
+//         promise->set_value();
+//     };
+ 
+//     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
+//       "test_publisher_domain", 0, callback);
+
+//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>(timeout_ms);
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 // }
 
-// TEST_P(HardwareTest, Domain) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should nodes from different domains are visible
-// }
+// INSTANTIATE_TEST_CASE_P(
+//     RenesasTest,
+//     DomainTest,
+//         ::testing::Combine(
+//         ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT),
+//         ::testing::Values(10, 24)));
 
 // TEST_P(HardwareTest, Multithread) {
 //   ASSERT_TRUE(1);
@@ -465,10 +520,9 @@ TEST_P(HardwareTest, ServiceServer) {
 //     int expected_freq;
 // };
 
-// TEST_P(FreqTest, PublisherFreq)
+// TEST_P(FreqTest, ExecutorRate)
 // {
-//     std::string filename = "publish_hz";
-
+//     runClientCode("ExecutorRate");
 //     auto promise = std::make_shared<std::promise<float>>();
 //     auto future = promise->get_future().share();
 //     auto clock = node->get_clock();
@@ -494,11 +548,10 @@ TEST_P(HardwareTest, ServiceServer) {
 //     };
 
 //     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-//       "renesas_publisher", 0, callback);
+//       "test_publisher", 0, callback);
 //
-//       runClientCode(filename);
 //
-//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq)*10);
+//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq));
 //     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 //     ASSERT_NEAR(future.get(), expected_freq, 1.0);
 // }

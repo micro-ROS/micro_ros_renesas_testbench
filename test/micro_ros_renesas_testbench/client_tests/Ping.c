@@ -22,13 +22,11 @@ void microros_app(void)
     // micro-ROS app
     allocator = rcl_get_default_allocator();
 
-    rcl_ret_t ret;
-
     // create init_options
-    ret = rclc_support_init(&support, 0, NULL, &allocator);
+    rclc_support_init(&support, 0, NULL, &allocator);
 
     // create node
-    ret = rclc_node_init_default(&node, "test_node_ping", "", &support);
+    rclc_node_init_default(&node, "test_node_ping", "", &support);
 
     // create publisher
     rclc_publisher_init_default(
