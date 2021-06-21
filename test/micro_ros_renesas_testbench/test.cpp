@@ -303,29 +303,60 @@ using namespace std::chrono_literals;
 //   // TODO(Acuadros95): this test should rely on a publisher that will publish only if ping works ok
 // }
 
-TEST_P(HardwareTest, ServiceServer) {
-    runClientCode("ServiceServer");
+// TEST_P(HardwareTest, ServiceServer) {
+//     runClientCode("ServiceServer");
 
-    auto client = node->create_client<example_interfaces::srv::AddTwoInts>("test_add_two_ints");
+//     auto client = node->create_client<example_interfaces::srv::AddTwoInts>("test_add_two_ints");
 
-    auto request = std::make_shared<example_interfaces::srv::AddTwoInts::Request>();
-    request->a = 10;
-    request->b = 20;
+//     auto request = std::make_shared<example_interfaces::srv::AddTwoInts::Request>();
+//     request->a = 10;
+//     request->b = 20;
 
-    std::this_thread::sleep_for (std::chrono::seconds(5));
+//     std::this_thread::sleep_for (std::chrono::seconds(5));
 
-    ASSERT_TRUE(client->wait_for_service(10s));
+//     ASSERT_TRUE(client->wait_for_service(10s));
 
-    auto result = client->async_send_request(request);
+//     for(size_t i = 0; i < 10; i++){
+//         request->b += i;
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, result), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_EQ(result.get()->sum, request->a + request->b);
-}
+//         auto result = client->async_send_request(request);
 
-// TEST_P(HardwareTest, ServiceClient) {
-//   ASSERT_TRUE(1);
-//   // TODO(pablogs): this test should prepare a service client and send requests to the client
+//         ASSERT_EQ(rclcpp::spin_until_future_complete(node, result), rclcpp::FutureReturnCode::SUCCESS);
+//         ASSERT_EQ(result.get()->sum, request->a + request->b);
+//     }
 // }
+
+TEST_P(HardwareTest, ServiceClient) {
+    runClientCode("ServiceClient");
+
+    bool received = false;
+    int64_t answer = 0;
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+
+    auto service = node->create_service<example_interfaces::srv::AddTwoInts>(
+        "test_add_two_ints",
+        [&] (const std::shared_ptr<example_interfaces::srv::AddTwoInts::Request> request,
+             std::shared_ptr<example_interfaces::srv::AddTwoInts::Response> response)
+            {
+                answer = request->a + request->b;
+                response->sum = answer;
+            }
+        );
+
+    auto subscription = node->create_subscription<std_msgs::msg::Int64>(
+        "test_aux_pub", 10,
+        [&](std_msgs::msg::Int64::UniquePtr msg) {
+            ASSERT_EQ(msg->data, answer);
+            received = true;
+            promise->set_value();
+        }
+    );
+
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_TRUE(received);
+}
 
 // #if 0 // Only in galactic
 // TEST_P(HardwareTest, Parameters) {
