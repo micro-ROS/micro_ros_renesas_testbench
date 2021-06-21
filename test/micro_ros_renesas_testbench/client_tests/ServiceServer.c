@@ -31,7 +31,7 @@ void microros_app(void)
 
     // create service
     rcl_service_t service;
-    rclc_service_init_default(&service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts), "/addtwoints");
+    rclc_service_init_default(&service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts), "/test_add_two_ints");
 
     // create executor
     rclc_executor_t executor;
