@@ -225,7 +225,7 @@ using namespace std::chrono_literals;
 //     }
 //   );
 
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
+//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 // }
 
 // TEST_P(HardwareTest, Subscriber) {
@@ -255,7 +255,7 @@ using namespace std::chrono_literals;
 //   };
 
 //   auto timer = node->create_wall_timer(1s, publish_message);
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
+//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 
 //   ASSERT_TRUE(received);
 // }
@@ -295,7 +295,7 @@ using namespace std::chrono_literals;
 //         }
 //     }
 //   );
-//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
+//   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 // }
 
 // TEST_P(HardwareTest, Ping) {
@@ -305,7 +305,7 @@ using namespace std::chrono_literals;
 //     auto future = promise->get_future().share();
 //     int64_t timeout_ms = 3000;
 
-//     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */) 
+//     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
 //     {
 //         promise->set_value();
 //     };
@@ -313,8 +313,7 @@ using namespace std::chrono_literals;
 //     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
 //       "test_publisher_ping", 0, callback);
 
-//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>(timeout_ms);
-//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 // }
 
 // TEST_P(HardwareTest, ServiceServer) {
@@ -335,7 +334,7 @@ using namespace std::chrono_literals;
 
 //         auto result = client->async_send_request(request);
 
-//         ASSERT_EQ(rclcpp::spin_until_future_complete(node, result), rclcpp::FutureReturnCode::SUCCESS);
+//         ASSERT_EQ(rclcpp::spin_until_future_complete(node, result, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 //         ASSERT_EQ(result.get()->sum, request->a + request->b);
 //     }
 // }
@@ -368,7 +367,7 @@ TEST_P(HardwareTest, ServiceClient) {
         }
     );
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
     ASSERT_TRUE(received);
 }
 
@@ -463,55 +462,52 @@ TEST_P(HardwareTest, ServiceClient) {
 
 //     rclc_parameter_set_bool(&param_server, "param2", 49);
 
-//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share()), rclcpp::FutureReturnCode::SUCCESS);
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 
 //     ASSERT_EQ(on_parameter_calls, 1u);
 // }
 // #endif
 
-// class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
-// {
-// public:
-//     DomainTest()
-//         : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
-//         , domain_id(std::get<1>(GetParam()))
-//         {
-//             std::string setFreq = "#define DOMAIN_ID " + std::to_string(domain_id);
-//             std::filebuf fb;
-// 
-//             configPath = build_path + "/../src/config.h";
-//             fb.open (configPath, std::ios::out);
-//             std::ostream confFile(&fb);
-//             confFile << setFreq << '\n';
-//         }
-// 
-//     ~DomainTest(){
-//         remove(configPath.c_str());
-//     }
-// 
-// protected:
-//     std::string configPath;
-//     int domain_id;
-// };
+class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+{
+public:
+    DomainTest()
+        : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
+        , domain_id(std::get<1>(GetParam()))
+        {
+            std::string setDomain = "#define DOMAIN_ID " + std::to_string(domain_id);
+            std::filebuf fb;
 
-// TEST_P(DomainTest, Domain) {
-//     // TODO: Node appears on default DOMAIN ID, only publisher changes the domain
-//     runClientCode("Domain");
-//     auto promise = std::make_shared<std::promise<void>>();
-//     auto future = promise->get_future().share();
-//     int64_t timeout_ms = 2000;
- 
-//     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */) 
-//     {
-//         promise->set_value();
-//     };
- 
-//     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-//       "test_publisher_domain", 0, callback);
+            configPath = build_path + "/../src/config.h";
+            fb.open (configPath, std::ios::out);
+            std::ostream confFile(&fb);
+            confFile << setDomain << '\n';
+        }
 
-//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>(timeout_ms);
-//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
-// }
+    ~DomainTest(){
+        remove(configPath.c_str());
+    }
+
+protected:
+    std::string configPath;
+    int domain_id;
+};
+
+TEST_P(DomainTest, Domain) {
+    runClientCode("Domain");
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future().share();
+
+    auto subscription_ = node->create_subscription<std_msgs::msg::Int32>(
+      "test_publisher_domain", 0,
+      [&](std_msgs::msg::Int32::SharedPtr /* msg */)
+        {
+            promise->set_value();
+        }
+    );
+
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+}
 
 // INSTANTIATE_TEST_CASE_P(
 //     RenesasTest,
@@ -581,9 +577,7 @@ TEST_P(HardwareTest, ServiceClient) {
 //     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
 //       "test_publisher", 0, callback);
 //
-//
-//     auto spin_timeout = std::chrono::duration<int64_t, std::milli>((int64_t) (1.5*msg_count*1000/expected_freq));
-//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+//     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
 //     ASSERT_NEAR(future.get(), expected_freq, 1.0);
 // }
 
