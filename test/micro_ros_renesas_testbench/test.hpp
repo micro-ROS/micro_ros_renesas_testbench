@@ -29,8 +29,8 @@ class HardwareTestBase : public ::testing::Test
 public:
     HardwareTestBase(TestAgent::Transport transport_, size_t domain_id = 0)
         : transport(transport_)
-        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(2000))
         , options()
+        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(2000))
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
@@ -127,8 +127,7 @@ protected:
     std::string project_main;
     std::string agent_args;
 
-     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
-
+    std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 
 class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
