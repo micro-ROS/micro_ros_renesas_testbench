@@ -27,8 +27,9 @@ using namespace std::chrono_literals;
 class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTestBase(TestAgent::Transport transport_)
+    HardwareTestBase(TestAgent::Transport transport_, size_t domain_id = 0)
         : transport(transport_)
+        , options()
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
@@ -53,6 +54,18 @@ public:
             default:
                 break;
         }
+
+        if (domain_id != 0)
+        {
+            rcl_allocator_t allocator = rcl_get_default_allocator();
+            rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+
+            rcl_init_options_init(&init_options, allocator);
+            rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+            rmw_options->domain_id = domain_id;
+
+            options = rclcpp::InitOptions(init_options);
+        }
     }
 
     ~HardwareTestBase(){}
@@ -62,7 +75,7 @@ public:
 
         agent.reset(new TestAgent(transport, agent_args, 5));
 
-        rclcpp::init(0, NULL);
+        rclcpp::init(0, NULL, options);
         node = std::make_shared<rclcpp::Node>("test_node");
     }
 
@@ -98,14 +111,16 @@ public:
     void runClientCode(std::string filename){
         ASSERT_TRUE(buildClientCode(filename));
         ASSERT_TRUE(flashClientCode());
-        std::this_thread::sleep_for(500ms);
         agent->start();
+        std::this_thread::sleep_for(3000ms);
     }
 
 protected:
     TestAgent::Transport transport;
     std::shared_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
+    rclcpp::InitOptions options;
+
     std::string cwd;
     std::string build_path;
     std::string project_main;
