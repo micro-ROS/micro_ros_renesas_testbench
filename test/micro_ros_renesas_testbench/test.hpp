@@ -20,6 +20,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
 
+ #include <fstream>
+
 using namespace std::chrono_literals;
 
 // TODO(pablogs): All the system calls should be done using a bash script in order to increase flexibility when using with other platforms.
@@ -61,6 +63,9 @@ public:
             default:
                 break;
         }
+
+        client_config_path = build_path + "/../src/config.h";
+        std::ofstream file(client_config_path); // Delete content
     }
 
     ~HardwareTestBase(){}
@@ -122,6 +127,13 @@ public:
         std::this_thread::sleep_for(3000ms);
     }
 
+    void addDefineToClient(std::string name, std::string value){
+        std::string define_string = "#define " + name + " " + value;
+
+        std::ofstream file(client_config_path, std::ios::app);
+        file << define_string << '\n';
+    }
+
 protected:
     TestAgent::Transport transport;
     std::shared_ptr<TestAgent> agent;
@@ -132,6 +144,7 @@ protected:
     std::string build_path;
     std::string project_main;
     std::string agent_args;
+    std::string client_config_path;
 
     size_t domain_id;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;

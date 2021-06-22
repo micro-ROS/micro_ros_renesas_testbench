@@ -33,7 +33,6 @@
 #include <fstream>
 #include <ctime>
 
-
 using namespace std::chrono_literals;
 
 // TODO(pablogs): use this for client code naming: https://github.com/google/googletest/blob/master/docs/advanced.md#getting-the-current-tests-name
@@ -261,6 +260,7 @@ TEST_P(HardwareTest, Subscriber) {
   ASSERT_TRUE(received);
 }
 
+#ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, CustomTypeIntrospection) {
   ASSERT_TRUE(1);
   // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
@@ -268,6 +268,7 @@ TEST_P(HardwareTest, CustomTypeIntrospection) {
   // arrays
   // sequences
 }
+#endif  // ROS_DISTRO_GALACTIC
 
 TEST_P(HardwareTest, PublisherContinousFragment) {
     // TODO: parametrize msg size
@@ -388,7 +389,7 @@ TEST_P(HardwareTest, ServiceClient) {
     ASSERT_TRUE(received);
 }
 
-#if 0 // Only in galactic
+#ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, Parameters) {
     runClientCode("Parameters");
 
@@ -483,7 +484,7 @@ TEST_P(HardwareTest, Parameters) {
 
     ASSERT_EQ(on_parameter_calls, 1u);
 }
-#endif
+#endif  // ROS_DISTRO_GALACTIC
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
@@ -492,21 +493,9 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
         , domain_id(std::get<1>(GetParam()))
         {
-            std::string setDomain = "#define DOMAIN_ID " + std::to_string(domain_id);
-            std::filebuf fb;
-
-            configPath = build_path + "/../src/config.h";
-            fb.open (configPath, std::ios::out);
-            std::ostream confFile(&fb);
-            confFile << setDomain << '\n';
+          addDefineToClient("DOMAIN_ID", std::to_string(domain_id));
         }
-
-    ~DomainTest(){
-        remove(configPath.c_str());
-    }
-
 protected:
-    std::string configPath;
     int domain_id;
 };
 
@@ -531,7 +520,7 @@ INSTANTIATE_TEST_CASE_P(
     DomainTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::UDP_FREERTOS_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT),
-        ::testing::Values(10)));
+        ::testing::Values(10, 24)));
 
 TEST_P(HardwareTest, Multithread) {
   ASSERT_TRUE(1);
@@ -546,22 +535,9 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam()))
         {
-          // TODO: set this as member function
-            std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
-            std::filebuf fb;
-
-            configPath = build_path + "/../src/config.h";
-            fb.open (configPath, std::ios::out);
-            std::ostream confFile(&fb);
-            confFile << setFreq << '\n';
+          addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
         }
-
-    ~ExecutorRateTest(){
-        remove(configPath.c_str());
-    }
-
 protected:
-    std::string configPath;
     int expected_freq;
 };
 
