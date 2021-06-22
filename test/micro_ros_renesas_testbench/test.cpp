@@ -270,12 +270,14 @@ TEST_P(HardwareTest, CustomTypeIntrospection) {
 }
 
 TEST_P(HardwareTest, PublisherContinousFragment) {
+    // TODO: parametrize msg size
+    size_t expected_size = 4095;
     runClientCode("PublisherContinousFragment");
 
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
     size_t payload_size = 0;
-
+    
     auto callback = [&](std_msgs::msg::String::SharedPtr msg) 
     {
         payload_size = msg->data.size();
@@ -286,7 +288,7 @@ TEST_P(HardwareTest, PublisherContinousFragment) {
         "test_publisher_fragment", 0, callback);
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_EQ(payload_size, 4095);
+    ASSERT_EQ(payload_size, expected_size);
 }
 
 TEST_P(HardwareTest, TimeSync) {
