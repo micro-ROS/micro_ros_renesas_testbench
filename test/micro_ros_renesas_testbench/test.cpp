@@ -521,13 +521,14 @@ TEST_P(HardwareTest, Multithread) {
   // Rensas hardware have no threads at this moment
 }
 
-class FreqTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+class ExecutorRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
 public:
-    FreqTest()
+    ExecutorRateTest()
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam()))
         {
+          // TODO: set this as member function
             std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
             std::filebuf fb;
 
@@ -537,7 +538,7 @@ public:
             confFile << setFreq << '\n';
         }
 
-    ~FreqTest(){
+    ~ExecutorRateTest(){
         remove(configPath.c_str());
     }
 
@@ -546,43 +547,45 @@ protected:
     int expected_freq;
 };
 
-TEST_P(FreqTest, ExecutorRate)
+TEST_P(ExecutorRateTest, ExecutorRate)
 {
     runClientCode("ExecutorRate");
     auto promise = std::make_shared<std::promise<float>>();
     auto future = promise->get_future().share();
     auto clock = node->get_clock();
     size_t msg_count = 100;
-    size_t cont = 0;
+    size_t count = 0;
 
     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
     {
         static rclcpp::Time begin;
 
-        if (cont == 0)
+        if (count == 0)
         {
             begin = clock->now();
         }
-        else if(cont == msg_count)
+        else if(count == msg_count)
         {
             auto duration = (clock->now() - begin).nanoseconds();
-            float freq = (cont*1e9)/duration;
+            float freq = (count*1e9)/duration;
             promise->set_value(freq);
         }
 
-        cont++;
+        count++;
     };
 
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
       "test_publisher", 0, callback);
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+    auto timeout = std::chrono::duration<int64_t, std::milli>(1000U*10U*msg_count/expected_freq);
+
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
     ASSERT_NEAR(future.get(), expected_freq, 1.0);
 }
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
-    FreqTest,
+    ExecutorRateTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
         ::testing::Values(10, 50, 100)));

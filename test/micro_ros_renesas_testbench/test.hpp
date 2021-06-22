@@ -31,7 +31,7 @@ public:
         : transport(transport_)
         , options()
         , domain_id(domain_id)
-        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(2000))
+        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(5000))
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
