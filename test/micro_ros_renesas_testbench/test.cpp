@@ -516,7 +516,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 24)));
 
 TEST_P(HardwareTest, Multithread) {
@@ -578,13 +578,13 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     ExecutorRateTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTest,
-    ::testing::Values(TestAgent::Transport::USB_TRANSPORT));
+    ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
 int main(int args, char** argv)
 {
