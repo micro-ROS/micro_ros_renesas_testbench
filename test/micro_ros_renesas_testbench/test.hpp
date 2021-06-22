@@ -35,6 +35,7 @@ public:
         , domain_id(domain_id)
         , agent_port(8888)
         , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
+        , agent_serial_verbosity(5)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(5000))
     {
         char * cwd_str = get_current_dir_name();
@@ -46,26 +47,25 @@ public:
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
-                agent.reset(new TestAgent(agent_port, 5));
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
-                agent.reset(new TestAgent(agent_port, 5));
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/src/microros_app.c";
-                agent.reset(new TestAgent(agent_serial_dev, 5));
+                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
                 break;
 
             default:
                 break;
         }
-
 
         // Delete content of client config
         client_config_path = build_path + "/../src/config.h";
@@ -74,14 +74,21 @@ public:
         switch (transport)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
-                {
-                    std::string ip_address = TestAgent::getIPAddress();
-                    std::replace(ip_address.begin(), ip_address.end(), '.', ',');
-                    addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
-                    addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
-                }
+            {
+                std::string ip_address = TestAgent::getIPAddress();
+                std::replace(ip_address.begin(), ip_address.end(), '.', ',');
+                addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
+                addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
+                break;
+            }
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+            {
+                std::string ip_address = TestAgent::getIPAddress();
+                addDefineToClient("AGENT_IP_ADDRESS", "\"" + ip_address + "\"");
+                addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
+                break;
+            }
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
             default:
@@ -134,7 +141,17 @@ public:
 
     bool flashClientCode(){
         std::cout << "Flashing code" << std::endl;
-        std::string flash_command = "rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
+        std::ofstream jlink_script("/tmp/renesas_script.jlink");
+        jlink_script << "erase 00000000 001FFFFF" << std::endl;
+        jlink_script << "erase 08000000 08001FFF" << std::endl;
+        jlink_script << "r" << std::endl;
+        jlink_script << "h" << std::endl;
+        jlink_script << "loadfile " + build_path + "/microros_testbench.hex" << std::endl;
+        jlink_script << "r" << std::endl;
+        jlink_script << "q" << std::endl;
+
+        std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -CommandFile /tmp/renesas_script.jlink -NoGui 1";
+        // std::string flash_command = "rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
         bool ret = 0 == system(flash_command.c_str());
         return ret;
     }
@@ -167,6 +184,7 @@ protected:
     size_t domain_id;
     uint16_t agent_port;
     std::string agent_serial_dev;
+    uint8_t agent_serial_verbosity;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 

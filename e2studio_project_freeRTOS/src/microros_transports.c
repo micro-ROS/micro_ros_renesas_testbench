@@ -37,11 +37,11 @@ bool renesas_e2_transport_open(struct uxrCustomTransport * transport){
     (void) transport;
     bool rv = false;
 
-    FreeRTOS_IPInit( ucIPAddress,
-                         ucNetMask,
-                         ucGatewayAddress,
-                         ucDNSServerAddress,
-                         ucMACAddress );
+    FreeRTOS_IPInit(ucIPAddress,
+                    ucNetMask,
+                    ucGatewayAddress,
+                    ucDNSServerAddress,
+                    ucMACAddress);
 
 
     xSocket = FreeRTOS_socket(FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP);

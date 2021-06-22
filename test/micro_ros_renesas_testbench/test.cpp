@@ -516,7 +516,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::UDP_THREADX_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 24)));
 
 TEST_P(HardwareTest, Multithread) {
