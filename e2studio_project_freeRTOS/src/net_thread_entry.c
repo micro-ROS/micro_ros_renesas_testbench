@@ -10,22 +10,21 @@
 #include <rcutils/allocator.h>
 #include <rmw_microros/rmw_microros.h>
 
+const char* ip = "192.168.1.185";
+uint16_t port = 8888;
+
 void net_thread_entry(void *pvParameters)
 {
     (void) pvParameters;
 
-    uxrUDPSocket custom_args;
-
-    const char* ip = "192.168.1.185";
-    uint16_t port = 8888;
-
-    custom_args.remote_addr.sin_family = FREERTOS_AF_INET;
-    custom_args.remote_addr.sin_port = FreeRTOS_htons(port);
-    custom_args.remote_addr.sin_addr = FreeRTOS_inet_addr(ip);
+    struct freertos_sockaddr remote_addr;
+    remote_addr.sin_family = FREERTOS_AF_INET;
+    remote_addr.sin_port = FreeRTOS_htons(port);
+    remote_addr.sin_addr = FreeRTOS_inet_addr(ip);
 
     rmw_uros_set_custom_transport(
           false,
-          (void *) &custom_args,
+          (void *) &remote_addr,
           renesas_e2_transport_open,
           renesas_e2_transport_close,
           renesas_e2_transport_write,

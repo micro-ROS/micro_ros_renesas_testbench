@@ -30,11 +30,11 @@
     static  uint8_t ucDNSServerAddress[ 4 ] = {10, 60, 1, 2};
 #endif
 
-struct freertos_sockaddr remote_addr;
+struct freertos_sockaddr *remote_addr;
+Socket_t xSocket;
 
 bool renesas_e2_transport_open(struct uxrCustomTransport * transport){
-    uxrUDPSocket *customSocket = (uxrUDPSocket *)transport->args;
-
+    (void) transport;
     bool rv = false;
 
     FreeRTOS_IPInit( ucIPAddress,
@@ -44,8 +44,8 @@ bool renesas_e2_transport_open(struct uxrCustomTransport * transport){
                          ucMACAddress );
 
 
-    customSocket->xSocket = FreeRTOS_socket(FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP);
-    if (FREERTOS_INVALID_SOCKET != customSocket->xSocket)
+    xSocket = FreeRTOS_socket(FREERTOS_AF_INET, FREERTOS_SOCK_DGRAM, FREERTOS_IPPROTO_UDP);
+    if (FREERTOS_INVALID_SOCKET != xSocket)
     {
         rv = true;
     }
@@ -54,21 +54,21 @@ bool renesas_e2_transport_open(struct uxrCustomTransport * transport){
 }
 
 bool renesas_e2_transport_close(struct uxrCustomTransport * transport){
-    uxrUDPSocket *customSocket = (uxrUDPSocket *)transport->args;
-    (void) FreeRTOS_shutdown(customSocket->xSocket, FREERTOS_SHUT_RDWR);
+    (void) transport;
+    (void) FreeRTOS_shutdown(xSocket, FREERTOS_SHUT_RDWR);
 
     /* FreeRTOS_closesocket() must be called even if FreeRTOS_shutdown() returns error.
      * FreeRTOS_closesocket() always returns 0. */
-    (void) FreeRTOS_closesocket(customSocket->xSocket);
+    (void) FreeRTOS_closesocket(xSocket);
     return true;
 }
 
 size_t renesas_e2_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err){
-    uxrUDPSocket *customSocket = (uxrUDPSocket *)transport->args;
+    remote_addr = (struct freertos_sockaddr *) transport->args;
     size_t rv = 0;
 
     // TODO: set socket send timeout?
-    BaseType_t bytes_sent = FreeRTOS_sendto(customSocket->xSocket, buf, len, 0, &customSocket->remote_addr, sizeof(customSocket->remote_addr));
+    BaseType_t bytes_sent = FreeRTOS_sendto(xSocket, buf, len, 0, remote_addr, sizeof(struct freertos_sockaddr));
 
     /* FreeRTOS_send() returns the number of bytes queued for sending.
      * If an error or timeout occurred, FreeRTOS_send() returns a negative value. */
@@ -86,14 +86,14 @@ size_t renesas_e2_transport_write(struct uxrCustomTransport* transport, const ui
 }
 
 size_t renesas_e2_transport_read(struct uxrCustomTransport* transport, uint8_t* buf, size_t len, int timeout, uint8_t* err){
-    uxrUDPSocket *customSocket = (uxrUDPSocket *)transport->args;
+    (void) transport;
     size_t rv = 0;
 
     // Set read timeout
     TickType_t timeout_ticks = pdMS_TO_TICKS(timeout);
-    FreeRTOS_setsockopt(customSocket->xSocket, 0, FREERTOS_SO_RCVTIMEO, &timeout_ticks, 0);
+    FreeRTOS_setsockopt(xSocket, 0, FREERTOS_SO_RCVTIMEO, &timeout_ticks, 0);
 
-    int32_t bytes_received = FreeRTOS_recvfrom(customSocket->xSocket, (void*)buf, len, 0, NULL, NULL);
+    int32_t bytes_received = FreeRTOS_recvfrom(xSocket, (void*)buf, len, 0, NULL, NULL);
     if (0 <= bytes_received)
     {
         rv = (size_t)bytes_received;
