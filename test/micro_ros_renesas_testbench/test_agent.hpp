@@ -28,8 +28,8 @@ public:
   {
       SERIAL_TRANSPORT,
       USB_TRANSPORT,
-      UDP_IPV4_TRANSPORT,
-      UDP_IPV6_TRANSPORT,
+      UDP_THREADX_TRANSPORT,
+      UDP_FREERTOS_TRANSPORT,
   };
 
   TestAgent(Transport transport, std::string args, uint8_t verbosity);
@@ -48,11 +48,9 @@ TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 
 
   switch (transport)
   {
-      case Transport::UDP_IPV4_TRANSPORT:
+      case Transport::UDP_THREADX_TRANSPORT:
+      case Transport::UDP_FREERTOS_TRANSPORT:
           transport_type = "udp4";
-          break;
-      case Transport::UDP_IPV6_TRANSPORT:
-          transport_type = "udp6";
           break;
       case Transport::SERIAL_TRANSPORT:
       case Transport::USB_TRANSPORT:

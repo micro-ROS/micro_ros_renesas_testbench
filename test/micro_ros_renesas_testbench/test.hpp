@@ -30,6 +30,8 @@ public:
     HardwareTestBase(TestAgent::Transport transport_, size_t domain_id = 0)
         : transport(transport_)
         , options()
+        , domain_id(domain_id)
+        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(5000))
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
@@ -37,10 +39,15 @@ public:
 
         switch (transport)
         {
-            case TestAgent::Transport::UDP_IPV4_TRANSPORT:
-            case TestAgent::Transport::UDP_IPV6_TRANSPORT:
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
+                agent_args = "--port 8888";
+                break;
+
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
                 agent_args = "--port 8888";
                 break;
 
@@ -54,18 +61,6 @@ public:
             default:
                 break;
         }
-
-        if (domain_id != 0)
-        {
-            rcl_allocator_t allocator = rcl_get_default_allocator();
-            rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-
-            rcl_init_options_init(&init_options, allocator);
-            rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-            rmw_options->domain_id = domain_id;
-
-            options = rclcpp::InitOptions(init_options);
-        }
     }
 
     ~HardwareTestBase(){}
@@ -74,6 +69,18 @@ public:
         ASSERT_TRUE(checkConnection());
 
         agent.reset(new TestAgent(transport, agent_args, 5));
+
+        if (domain_id != 0)
+        {
+            rcl_allocator_t allocator = rcl_get_default_allocator();
+            rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+
+            ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
+            rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+            rmw_options->domain_id = domain_id;
+
+            options = rclcpp::InitOptions(init_options);
+        }
 
         rclcpp::init(0, NULL, options);
         node = std::make_shared<rclcpp::Node>("test_node");
@@ -125,6 +132,9 @@ protected:
     std::string build_path;
     std::string project_main;
     std::string agent_args;
+
+    size_t domain_id;
+    std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 
 class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>

@@ -274,7 +274,6 @@ TEST_P(HardwareTest, PublisherContinousFragment) {
 
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
-    int64_t timeout_ms = 300000;
     size_t payload_size = 0;
 
     auto callback = [&](std_msgs::msg::String::SharedPtr msg) 
@@ -286,7 +285,6 @@ TEST_P(HardwareTest, PublisherContinousFragment) {
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::String>(
         "test_publisher_fragment", 0, callback);
 
-    auto spin_timeout = std::chrono::duration<int64_t, std::milli>(timeout_ms);
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
     ASSERT_EQ(payload_size, 4095);
 }
@@ -531,7 +529,7 @@ INSTANTIATE_TEST_CASE_P(
     DomainTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::UDP_FREERTOS_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT),
-        ::testing::Values(10, 24)));
+        ::testing::Values(10)));
 
 TEST_P(HardwareTest, Multithread) {
   ASSERT_TRUE(1);
