@@ -33,6 +33,8 @@ public:
         : transport(transport_)
         , options()
         , domain_id(domain_id)
+        , agent_port(8888)
+        , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(5000))
     {
         char * cwd_str = get_current_dir_name();
@@ -44,36 +46,53 @@ public:
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
-                agent_args = "--port 8888";
+                agent.reset(new TestAgent(agent_port, 5));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
-                agent_args = "--port 8888";
+                agent.reset(new TestAgent(agent_port, 5));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/src/microros_app.c";
-                agent_args = "--dev /dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
+                agent.reset(new TestAgent(agent_serial_dev, 5));
                 break;
 
             default:
                 break;
         }
 
+
+        // Delete content of client config
         client_config_path = build_path + "/../src/config.h";
-        std::ofstream file(client_config_path); // Delete content
+        std::ofstream file(client_config_path, std::ios::out);
+
+        switch (transport)
+        {
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
+                {
+                    std::string ip_address = TestAgent::getIPAddress();
+                    std::replace(ip_address.begin(), ip_address.end(), '.', ',');
+                    addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
+                    addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
+                }
+
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+            case TestAgent::Transport::USB_TRANSPORT:
+            default:
+                break;
+        }
     }
 
     ~HardwareTestBase(){}
 
     void SetUp() override {
         ASSERT_TRUE(checkConnection());
-
-        agent.reset(new TestAgent(transport, agent_args, 5));
 
         if (domain_id != 0)
         {
@@ -107,7 +126,7 @@ public:
         std::cout << "Building client firmware: " << filename << std::endl;
         std::string copy_command = "cp " + cwd  + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/" + filename + ".c " + project_main;
         bool ret = 0 == system(copy_command.c_str());
-        std::string build_command = "cd " + build_path + " && make clean > /dev/null 2>&1 && make -j$(nproc)"; //> /dev/null
+        std::string build_command = "cd " + build_path + " && make -j$(nproc) pre-build && make -j$(nproc) microros_testbench.hex"; //> /dev/null
         ret &= 0 == system(build_command.c_str());
 
         return ret;
@@ -143,10 +162,11 @@ protected:
     std::string cwd;
     std::string build_path;
     std::string project_main;
-    std::string agent_args;
     std::string client_config_path;
 
     size_t domain_id;
+    uint16_t agent_port;
+    std::string agent_serial_dev;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 

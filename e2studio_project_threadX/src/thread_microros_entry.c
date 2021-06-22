@@ -1,5 +1,7 @@
 #include "thread_microros.h"
 
+#include "config.h"
+
 #include <microros_transports.h>
 #include <microros_allocators.h>
 
@@ -13,10 +15,14 @@
 /* Thread micro-ROS entry function */
 void thread_microros_entry(void)
 {
-    /* TODO: add your own code here */
+    custom_transport_args args = {
+      .agent_ip_address=AGENT_IP_ADDRESS,
+      .agent_port=AGENT_IP_PORT
+    };
+
     rmw_uros_set_custom_transport(
       false,
-      (void *) NULL,
+      (void *) &args,
       renesas_e2_transport_open,
       renesas_e2_transport_close,
       renesas_e2_transport_write,

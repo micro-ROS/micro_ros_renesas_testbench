@@ -40,6 +40,15 @@ jobs:
         cd ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests
         mv makefile.init makefile.init.old
         make clean && make -j$(nproc)
+
+        cd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests
+        mv makefile.init makefile.init.old
+        make clean && make -j$(nproc)
+
+        cd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests
+        mv makefile.init makefile.init.old
+        make clean && make -j$(nproc)
+
     - name: Build tests
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh

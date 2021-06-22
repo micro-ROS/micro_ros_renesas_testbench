@@ -15,6 +15,13 @@
 #ifndef TEST_AGENT__HPP
 #define TEST_AGENT__HPP
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <arpa/inet.h>
+
 #include <gtest/gtest.h>
 
 #include <chrono>
@@ -28,19 +35,39 @@ public:
   {
       SERIAL_TRANSPORT,
       USB_TRANSPORT,
+      UDP_TRANSPORT,
       UDP_THREADX_TRANSPORT,
       UDP_FREERTOS_TRANSPORT,
   };
 
   TestAgent(Transport transport, std::string args, uint8_t verbosity);
+  TestAgent(uint16_t port, uint8_t verbosity);
+  TestAgent(std::string dev, uint8_t verbosity);
+
   ~TestAgent(){};
 
   void start();
   void stop();
+  static std::string getIPAddress();
 
-  std::shared_ptr<std::thread> agent_thread;
-  std::string command;
+private:
+  std::shared_ptr<std::thread> agent_thread_;
+  uint16_t port_;
+  std::string dev_;
+  std::string command_;
 };
+
+TestAgent::TestAgent(uint16_t port, uint8_t verbosity = 6)
+{
+  port_ = port;
+  command_ = "ros2 run micro_ros_agent micro_ros_agent udp4 --port " + std::to_string(port_) + " -v" +  std::to_string(verbosity);
+}
+
+TestAgent::TestAgent(std::string dev, uint8_t verbosity = 6)
+{
+  dev_ = dev;
+  command_ = "ros2 run micro_ros_agent micro_ros_agent serial --dev " + dev_ + " -v" +  std::to_string(verbosity);
+}
 
 TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 6)
 {
@@ -60,15 +87,15 @@ TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 
           break;
   }
 
-  command = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + args + " -v" +  std::to_string(verbosity);
+  command_ = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + args + " -v" +  std::to_string(verbosity);
 }
 
 void TestAgent::start()
 {
   stop();
-  agent_thread.reset(new std::thread(
+  agent_thread_.reset(new std::thread(
     [&]() -> void {
-      system(command.c_str());
+      system(command_.c_str());
     }
   ));
 }
@@ -76,9 +103,31 @@ void TestAgent::start()
 void TestAgent::stop()
 {
   system("pkill micro_ros_agent");
-  if(agent_thread) {
-    agent_thread->join();
+  if(agent_thread_) {
+    agent_thread_->join();
   }
+}
+
+std::string TestAgent::getIPAddress(){
+    struct ifaddrs * addr_struct=NULL;
+    std::string ip_address;
+
+    getifaddrs(&addr_struct);
+
+    for (struct ifaddrs * ifa = addr_struct; ifa != NULL; ifa = ifa->ifa_next) {
+        if (!ifa->ifa_addr) {
+            continue;
+        }
+        if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IPv4
+            void * tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
+            char addressBuffer[INET_ADDRSTRLEN];
+            inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
+            ip_address = std::string(addressBuffer);
+        }
+    }
+    if (addr_struct!=NULL) freeifaddrs(addr_struct);
+
+    return ip_address;
 }
 
 #endif //TEST_AGENT__HPP

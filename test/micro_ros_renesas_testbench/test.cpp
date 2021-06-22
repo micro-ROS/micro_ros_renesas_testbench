@@ -278,8 +278,8 @@ TEST_P(HardwareTest, PublisherContinousFragment) {
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
     size_t payload_size = 0;
-    
-    auto callback = [&](std_msgs::msg::String::SharedPtr msg) 
+
+    auto callback = [&](std_msgs::msg::String::SharedPtr msg)
     {
         payload_size = msg->data.size();
         promise->set_value();
@@ -491,12 +491,9 @@ class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface
 public:
     DomainTest()
         : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
-        , domain_id(std::get<1>(GetParam()))
         {
           addDefineToClient("DOMAIN_ID", std::to_string(domain_id));
         }
-protected:
-    int domain_id;
 };
 
 TEST_P(DomainTest, Domain) {
@@ -519,7 +516,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::UDP_FREERTOS_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::UDP_THREADX_TRANSPORT),
         ::testing::Values(10, 24)));
 
 TEST_P(HardwareTest, Multithread) {

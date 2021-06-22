@@ -22,10 +22,6 @@ uint8_t g_ip0_arp_cache_memory[G_IP0_ARP_CACHE_SIZE] BSP_ALIGN_VARIABLE(4);
 // Stack memory for g_ip0 Packet pool.
 uint8_t g_packet_pool0_pool_memory[G_PACKET_POOL0_PACKET_NUM * (G_PACKET_POOL0_PACKET_SIZE + sizeof(NX_PACKET))] BSP_ALIGN_VARIABLE(4) ETHER_BUFFER_PLACE_IN_SECTION;
 
-// Configure micro-ROS agent IP and port
-#define UDP_SERVER_PORT          8888
-#define UDP_SERVER_ADDRESS       IP_ADDRESS(192, 168, 20, 20)
-
 #define LINK_ENABLE_WAIT_TIME (1000U)
 
 // TODO: Check conflict with g_packet_pool0 packet number
@@ -137,7 +133,7 @@ bool renesas_e2_transport_close(struct uxrCustomTransport * transport){
 }
 
 size_t renesas_e2_transport_write(struct uxrCustomTransport* transport, const uint8_t * buf, size_t len, uint8_t * err){
-    (void) transport;
+    custom_transport_args * args = (custom_transport_args*) transport->args;
 
     volatile int result = FSP_SUCCESS;
     NX_PACKET *data_packet;
@@ -159,7 +155,7 @@ size_t renesas_e2_transport_write(struct uxrCustomTransport* transport, const ui
         return 0;
     }
 
-    result = nx_udp_socket_send(&socket, data_packet, UDP_SERVER_ADDRESS, UDP_SERVER_PORT);
+    result = nx_udp_socket_send(&socket, data_packet, args->agent_ip_address, args->agent_port);
 
     if (result != NX_SUCCESS)
     {
