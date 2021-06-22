@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(micro_ros_renesas_testbench)
 
-
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 11)
 endif()
@@ -38,6 +37,8 @@ if(BUILD_TESTING)
     test/micro_ros_renesas_testbench/test.cpp
   )
 
+  string(TOUPPER $ENV{ROS_DISTRO} ROS_DISTRO)
+  target_compile_options(${PROJECT_NAME}_test PRIVATE -DROS_DISTRO_${ROS_DISTRO})
   target_include_directories(${PROJECT_NAME}_test PRIVATE include src test)
 
   target_link_libraries(${PROJECT_NAME}_test
