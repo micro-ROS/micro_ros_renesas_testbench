@@ -21,6 +21,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_msgs/msg/int64.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <example_interfaces/srv/add_two_ints.hpp>
 #include <rmw/types.h>
 
@@ -270,8 +271,25 @@ TEST_P(HardwareTest, CustomTypeIntrospection) {
 #endif  // ROS_DISTRO_GALACTIC
 
 TEST_P(HardwareTest, PublisherContinousFragment) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should wait for a topic bigger than default MTU*historic
+    // TODO: parametrize msg size
+    size_t expected_size = 4095;
+    runClientCode("PublisherContinousFragment");
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    size_t payload_size = 0;
+    
+    auto callback = [&](std_msgs::msg::String::SharedPtr msg) 
+    {
+        payload_size = msg->data.size();
+        promise->set_value();
+    };
+
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::String>(
+        "test_publisher_fragment", 0, callback);
+
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(payload_size, expected_size);
 }
 
 TEST_P(HardwareTest, TimeSync) {
@@ -501,7 +519,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::UDP_IPV4_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::UDP_FREERTOS_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT),
         ::testing::Values(10, 24)));
 
 TEST_P(HardwareTest, Multithread) {

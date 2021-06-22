@@ -41,10 +41,15 @@ public:
 
         switch (transport)
         {
-            case TestAgent::Transport::UDP_IPV4_TRANSPORT:
-            case TestAgent::Transport::UDP_IPV6_TRANSPORT:
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
+                agent_args = "--port 8888";
+                break;
+
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
                 agent_args = "--port 8888";
                 break;
 
