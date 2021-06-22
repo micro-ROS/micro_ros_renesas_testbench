@@ -10,7 +10,7 @@ on:
 
 jobs:
   micro_ros_renesas_testbench:
-    runs-on: self-hosted
+    runs-on: rpi-ros2-foxy
     strategy:
       fail-fast: false
       matrix:

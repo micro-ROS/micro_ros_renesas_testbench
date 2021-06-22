@@ -35,5 +35,6 @@ void microros_app(void)
     for(;;){
         rcl_publish(&publisher, &msg, NULL);
         msg.data++;
+        sleep_ms(100);
     }
 }
