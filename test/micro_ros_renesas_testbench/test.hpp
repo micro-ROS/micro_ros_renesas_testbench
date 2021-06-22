@@ -150,7 +150,7 @@ public:
         jlink_script << "r" << std::endl;
         jlink_script << "q" << std::endl;
 
-        std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -CommandFile /tmp/renesas_script.jlink -NoGui 1";
+        std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -NoGui 1 -CommandFile /tmp/renesas_script.jlink";
         // std::string flash_command = "rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
         bool ret = 0 == system(flash_command.c_str());
         return ret;
