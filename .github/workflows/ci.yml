@@ -27,10 +27,6 @@ jobs:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
         token: ${{ secrets.PRIVATE_KEY }}
-    - name: Install toolchain
-      run: |
-        cd ros_ws/src/micro_ros_renesas_testbench
-        ./installtoolchain.sh
     - name: Download dependencies
       run: |
         cd ros_ws
@@ -45,9 +41,13 @@ jobs:
           make clean && make -j$(nproc)
         popd
 
+        # Copying library to speed up tests
+        cp -R
+
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro_ros_renesas2estudio_component
           rm -rf libmicroros
         popd
+        cp -r ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro_ros_renesas2estudio_component/libmicroros/ ros_ws/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro_ros_renesas2estudio_component/
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests
           mv makefile.init makefile.init.old || true
           make clean && make -j$(nproc)
@@ -56,6 +56,7 @@ jobs:
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro_ros_renesas2estudio_component
           rm -rf libmicroros
         popd
+        cp -r ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro_ros_renesas2estudio_component/libmicroros/ ros_ws/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro_ros_renesas2estudio_component/
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests
           mv makefile.init makefile.init.old || true
           make clean && make -j$(nproc)
