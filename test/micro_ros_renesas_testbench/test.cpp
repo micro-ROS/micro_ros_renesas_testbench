@@ -32,6 +32,9 @@
 #include <fstream>
 #include <ctime>
 
+#ifdef ROS_DISTRO_FOXY
+#error asdas
+#endif
 
 using namespace std::chrono_literals;
 
@@ -260,6 +263,7 @@ TEST_P(HardwareTest, Subscriber) {
   ASSERT_TRUE(received);
 }
 
+#ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, CustomTypeIntrospection) {
   ASSERT_TRUE(1);
   // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
@@ -267,6 +271,7 @@ TEST_P(HardwareTest, CustomTypeIntrospection) {
   // arrays
   // sequences
 }
+#endif  // ROS_DISTRO_GALACTIC
 
 TEST_P(HardwareTest, PublisherContinousFragment) {
   ASSERT_TRUE(1);
@@ -370,7 +375,7 @@ TEST_P(HardwareTest, ServiceClient) {
     ASSERT_TRUE(received);
 }
 
-#if 0 // Only in galactic
+#ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, Parameters) {
     runClientCode("Parameters");
 
@@ -465,7 +470,7 @@ TEST_P(HardwareTest, Parameters) {
 
     ASSERT_EQ(on_parameter_calls, 1u);
 }
-#endif
+#endif  // ROS_DISTRO_GALACTIC
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
