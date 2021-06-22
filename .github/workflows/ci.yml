@@ -66,3 +66,4 @@ jobs:
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
         colcon build --cmake-clean-cache --cmake-force-configure
+        colcon test --event-handlers console_direct+ --packages-select=micro_ros_renesas_testbench --return-code-on-test-failure --ctest-args -E "(cpplint)|(lint_cmake)|(uncrustify)|(xmllint)"
