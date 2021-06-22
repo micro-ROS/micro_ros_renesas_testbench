@@ -32,10 +32,6 @@
 #include <fstream>
 #include <ctime>
 
-#ifdef ROS_DISTRO_FOXY
-#error asdas
-#endif
-
 using namespace std::chrono_literals;
 
 // TODO(pablogs): use this for client code naming: https://github.com/google/googletest/blob/master/docs/advanced.md#getting-the-current-tests-name
@@ -479,21 +475,9 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
         , domain_id(std::get<1>(GetParam()))
         {
-            std::string setDomain = "#define DOMAIN_ID " + std::to_string(domain_id);
-            std::filebuf fb;
-
-            configPath = build_path + "/../src/config.h";
-            fb.open (configPath, std::ios::out);
-            std::ostream confFile(&fb);
-            confFile << setDomain << '\n';
+          addDefineToClient("DOMAIN_ID", std::to_string(domain_id));
         }
-
-    ~DomainTest(){
-        remove(configPath.c_str());
-    }
-
 protected:
-    std::string configPath;
     int domain_id;
 };
 
@@ -533,22 +517,9 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam()))
         {
-          // TODO: set this as member function
-            std::string setFreq = "#define PUBLISH_PERIOD_MS " + std::to_string(1000/expected_freq);
-            std::filebuf fb;
-
-            configPath = build_path + "/../src/config.h";
-            fb.open (configPath, std::ios::out);
-            std::ostream confFile(&fb);
-            confFile << setFreq << '\n';
+          addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
         }
-
-    ~ExecutorRateTest(){
-        remove(configPath.c_str());
-    }
-
 protected:
-    std::string configPath;
     int expected_freq;
 };
 
