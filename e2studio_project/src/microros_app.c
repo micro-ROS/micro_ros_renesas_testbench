@@ -1,68 +1,69 @@
-#include "./utils.h"
-
-#include <time.h>
-
+#include "hal_data.h"
+#include <rcl/rcl.h>
+#include <rcl/error_handling.h>
 #include <rclc/rclc.h>
 #include <rclc/executor.h>
 
-#include "std_msgs/msg/int64.h"
-#include "example_interfaces/srv/add_two_ints.h"
+#include <rmw_microxrcedds_c/config.h>
+#include <rmw_microros/rmw_microros.h>
+
+#include <std_msgs/msg/int32.h>
+
+#include "config.h"
 
 void microros_app(void);
-void client_callback(const void * msg);
+void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
 
 rcl_publisher_t publisher;
+std_msgs__msg__Int32 msg;
+rclc_support_t support;
+rcl_allocator_t allocator;
+rcl_node_t node;
 
-void client_callback(const void * msg){
-  example_interfaces__srv__AddTwoInts_Response * msgin = (example_interfaces__srv__AddTwoInts_Response * ) msg;
-
-  std_msgs__msg__Int64 out_msg;
-  out_msg.data = msgin->sum;
-  rcl_publish(&publisher, &out_msg, NULL);
+void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
+{
+    (void) last_call_time;
+    if (timer != NULL) {
+        rcl_publish(&publisher, &msg, NULL);
+        msg.data++;
+    }
 }
 
+/* Thread micro-ROS entry function */
 void microros_app(void)
 {
-    rcl_allocator_t allocator = rcl_get_default_allocator();
+    // micro-ROS app
+    allocator = rcl_get_default_allocator();
 
-    //create init_options
-    rclc_support_t support;
+    // create init_options
     rclc_support_init(&support, 0, NULL, &allocator);
 
     // create node
-    rcl_node_t node;
     rclc_node_init_default(&node, "test_node", "", &support);
 
     // create publisher
     rclc_publisher_init_default(
         &publisher,
         &node,
-        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int64),
-        "test_aux_pub");
+        ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
+        "test_publisher"
+    );
 
-    // create client
-    rcl_client_t client;
-    rclc_client_init_default(&client, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(example_interfaces, srv, AddTwoInts), "/test_add_two_ints");
+    // create timer,
+    rcl_timer_t timer;
+    rclc_timer_init_default(
+        &timer,
+        &support,
+        RCL_MS_TO_NS(PUBLISH_PERIOD_MS),
+        timer_callback);
 
     // create executor
-    rclc_executor_t executor;
+    rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
     rclc_executor_init(&executor, &support.context, 1, &allocator);
+    rclc_executor_add_timer(&executor, &timer);
 
-    example_interfaces__srv__AddTwoInts_Response res;
-    rclc_executor_add_client(&executor, &client, &res, client_callback);
-
-    // Send request
-    int64_t seq;
-    example_interfaces__srv__AddTwoInts_Request req;
-    req.a = 24;
-    req.b = 42;
-
-    sleep_ms(5000); // Sleep a while to ensure DDS matching before sending request
-
-    rcl_send_request(&client, &req, &seq);
-
-    for(;;){
-        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-        sleep_ms(10);
+    while(1){
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1));
+        R_BSP_SoftwareDelay(1, BSP_DELAY_UNITS_MILLISECONDS);
     }
 }
