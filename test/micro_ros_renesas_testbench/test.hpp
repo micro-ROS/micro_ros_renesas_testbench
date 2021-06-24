@@ -115,6 +115,8 @@ public:
 
         rclcpp::init(0, NULL, options);
         node = std::make_shared<rclcpp::Node>("test_node");
+
+        runClientCode();
     }
 
     void TearDown() override {
@@ -129,7 +131,12 @@ public:
         return ret;
     }
 
-    bool buildClientCode(std::string filename){
+    bool buildClientCode(){
+        // Get test name
+        std::string filename;
+        std::stringstream testname(::testing::UnitTest::GetInstance()->current_test_info()->name());
+        std::getline(testname, filename, '/');
+
         std::cout << "Building client firmware: " << filename << std::endl;
         std::string copy_command = "cp " + cwd  + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/" + filename + ".c " + project_main;
         bool ret = 0 == system(copy_command.c_str());
@@ -156,8 +163,8 @@ public:
         return ret;
     }
 
-    void runClientCode(std::string filename){
-        ASSERT_TRUE(buildClientCode(filename));
+    void runClientCode(){
+        ASSERT_TRUE(buildClientCode());
         ASSERT_TRUE(flashClientCode());
         agent->start();
         std::this_thread::sleep_for(3000ms);
@@ -168,6 +175,46 @@ public:
 
         std::ofstream file(client_config_path, std::ios::app);
         file << define_string << '\n';
+    }
+
+    size_t check_nodes(std::vector<std::string> nodes, bool assert = false)
+    {
+        size_t matches = 0;
+        auto nodes_vector = node->get_node_names();
+
+        for(auto element : nodes)
+        {
+            if (std::find(nodes_vector.begin(), nodes_vector.end(), element) != nodes_vector.end())
+            {
+                matches++;
+            }
+            else if (assert)
+            {
+                EXPECT_TRUE(false) << "Node not found: " << element;
+            }
+        }
+
+        return matches;
+    }
+
+    size_t check_topics(std::vector<std::string> topics, bool assert = false)
+    {
+        size_t matches = 0;
+        auto topics_map = node->get_topic_names_and_types();
+
+        for(auto element : topics)
+        {
+            if (topics_map.find(element) != topics_map.end())
+            {
+                matches++;
+            }
+            else if (assert)
+            {
+                EXPECT_TRUE(false) << "Topic not found: " << element;
+            }
+        }
+
+        return matches;
     }
 
 protected:

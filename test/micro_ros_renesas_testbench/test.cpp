@@ -38,148 +38,138 @@ using namespace std::chrono_literals;
 // TODO(pablogs): use this for client code naming: https://github.com/google/googletest/blob/master/docs/advanced.md#getting-the-current-tests-name
 
 TEST_P(HardwareTest, EntityCreation) {
-  runClientCode("EntityCreation");
-
-  bool timeout, found;
-  std::shared_ptr<std::thread> timeout_thread;
-
-  // Utilities
-  auto timeout_function = [&](){
-    std::this_thread::sleep_for (std::chrono::seconds(5));
-    timeout = true;
+  std::vector<std::string> node_list =
+  {
+    "/test_node_0",
+    "/test_node_1",
+    "/test_node_2",
+    "/test_node_3",
+    "/test_node_4"
   };
 
-  auto check_all_found = [&](std::map<const std::string, bool> & map, bool assert = false) -> bool{
-    for(auto const& it : map){
-      if(!it.second) {
-        if(assert) {
-          EXPECT_TRUE(it.second) << "Element not found: " << it.first;
+  std::vector<std::string> topic_list =
+  {
+    "/ns_0/test_pub_0",
+    "/ns_1/test_pub_1",
+    "/ns_2/test_pub_2",
+    "/ns_3/test_pub_3",
+    "/ns_4/test_pub_4",
+    "/ns_0/test_sub_0",
+    "/ns_1/test_sub_1",
+    "/ns_2/test_sub_2",
+    "/ns_3/test_sub_3",
+    "/ns_4/test_sub_4",
+    "/ns_0/test_pub_0_extra",
+    "/ns_0/test_sub_0_extra"
+  };
+
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
+  size_t nodes_found = 0;
+  size_t topics_found = 0;
+
+  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
+        nodes_found = check_nodes(node_list);
+        topics_found = check_topics(topic_list);
+
+        if (nodes_found == node_list.size() && topics_found == topic_list.size())
+        {
+            promise->set_value();
         }
-        return false;
-      }
-    }
-    return true;
-  };
+  });
 
-  // Look for created nodes
-  std::map<const std::string, bool> node_map =
-  {
-    {"/test_node_0", false},
-    {"/test_node_1", false},
-    {"/test_node_2", false},
-    {"/test_node_3", false},
-    {"/test_node_4", false},
-  };
-
-  timeout = false;
-  found = false;
-  timeout_thread.reset(new std::thread(timeout_function));
-
-  while(!timeout && !found){
-    rclcpp::spin_some(node);
-    auto nodes = node->get_node_names();
-    for(auto node : nodes){
-      if (node_map.find(node) != node_map.end()) {
-          node_map[node] = true;
-      }
-      found = check_all_found(node_map);
-    }
-  }
-
-  ASSERT_TRUE(check_all_found(node_map, true));
-  timeout_thread->detach();
-
-  // Look for created publishers and subscribers
-  std::map<const std::string, bool> topics_map =
-  {
-    {"/ns_0/test_pub_0", false},
-    {"/ns_1/test_pub_1", false},
-    {"/ns_2/test_pub_2", false},
-    {"/ns_3/test_pub_3", false},
-    {"/ns_4/test_pub_4", false},
-    {"/ns_0/test_sub_0", false},
-    {"/ns_1/test_sub_1", false},
-    {"/ns_2/test_sub_2", false},
-    {"/ns_3/test_sub_3", false},
-    {"/ns_4/test_sub_4", false},
-    {"/ns_0/test_pub_0_extra", false},
-    {"/ns_0/test_sub_0_extra", false},
-  };
-
-  timeout = false;
-  found = false;
-  timeout_thread.reset(new std::thread(timeout_function));
-
-  while(!timeout && !found){
-    rclcpp::spin_some(node);
-    auto topics = node->get_topic_names_and_types();
-    for(auto topic : topics){
-      if (topics_map.find(topic.first) != topics_map.end()) {
-          topics_map[topic.first] = true;
-      }
-      found = check_all_found(topics_map);
-    }
-  }
-
-  ASSERT_TRUE(check_all_found(topics_map, true));
-  timeout_thread->detach();
+  rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout);
+  ASSERT_EQ(nodes_found, node_list.size()) << "Node creation failed, found " << check_nodes(node_list, true) << " nodes";
+  ASSERT_EQ(topics_found, topic_list.size()) << "Topic creation failed, found " << check_topics(topic_list, true) << " topics";
 }
 
 TEST_P(HardwareTest, EntityDestruction) {
-  // TODO(pablogs): this test should ensure that entities can be created and destroyed correctly. It can be done using a service for stoping the micro-ROS execution.
+  // Look for created nodes
+  std::vector<std::string> node_list =
+  {
+      "/test_node_0",
+      "/test_node_1",
+      "/test_node_2",
+      "/test_node_3",
+      "/test_node_4"
+  };
+
+  // Look for created publishers and subscribers
+  std::vector<std::string> topics_list =
+  {
+      "/ns_0/test_pub_0",
+      "/ns_1/test_pub_1",
+      "/ns_2/test_pub_2",
+      "/ns_3/test_pub_3",
+      "/ns_4/test_pub_4",
+      "/ns_0/test_sub_0",
+      "/ns_1/test_sub_1",
+      "/ns_2/test_sub_2",
+      "/ns_3/test_sub_3",
+      "/ns_4/test_sub_4"
+  };
+
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
+  bool created = false;
+  size_t nodes_found = 0;
+  size_t topics_found = 0;
+
+  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
+        nodes_found = check_nodes(node_list);
+        topics_found = check_topics(topics_list);
+
+        if (!created && nodes_found == node_list.size() && topics_found == topics_list.size())
+        {
+            promise->set_value();
+            created = true;
+        }
+        else if (created && nodes_found == 0 && topics_found == 0)
+        {
+            promise->set_value();
+        }
+  });
+  
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
+
+  // Trigger entity destruction
+  auto publisher = node->create_publisher<std_msgs::msg::Int32>("ns_0/test_subscriber_delete", 10);
+  auto out_msg = std::make_shared<std_msgs::msg::Int32>();
+  publisher->publish(*out_msg);
+
+  // Check destruction
+  promise = std::make_shared<std::promise<void>>();
+  future = promise->get_future();
+  rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout);
+  ASSERT_EQ(nodes_found, 0) << "Node destruction failed";
+  ASSERT_EQ(topics_found, 0)  << "Topic destruction failed";
 }
 
 TEST_P(HardwareTest, EntitiesQoS) {
-  runClientCode("EntitiesQoS");
-
-  bool timeout, found;
-  std::shared_ptr<std::thread> timeout_thread;
-
-  // Utilities
-  auto timeout_function = [&](){
-    std::this_thread::sleep_for (std::chrono::seconds(5));
-    timeout = true;
+  std::vector<std::string> topic_list =
+  {
+    "/test_pub_reliable",
+    "/test_pub_best_effort",
+    "/test_sub_reliable",
+    "/test_sub_best_effort"
   };
 
-  auto check_all_found = [&](std::map<const std::string, bool> & map, bool assert = false) -> bool{
-    for(auto const& it : map){
-      if(!it.second) {
-        if(assert) {
-          EXPECT_TRUE(it.second) << "Element not found: " << it.first;
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
+  size_t topics_found = 0;
+
+  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
+        topics_found = check_topics(topic_list);
+
+        if (topics_found == topic_list.size())
+        {
+            promise->set_value();
         }
-        return false;
-      }
-    }
-    return true;
-  };
+  });
 
   // Wait for topics
-  std::map<const std::string, bool> topics_map =
-  {
-    {"/test_pub_reliable", false},
-    {"/test_pub_best_effort", false},
-    {"/test_sub_reliable", false},
-    {"/test_sub_best_effort", false},
-  };
-
-  timeout = false;
-  found = false;
-  timeout_thread.reset(new std::thread(timeout_function));
-
-  while(!timeout && !found){
-    rclcpp::spin_some(node);
-    auto topics = node->get_topic_names_and_types();
-    for(auto topic : topics){
-      if (topics_map.find(topic.first) != topics_map.end()) {
-          topics_map[topic.first] = true;
-      }
-      found = check_all_found(topics_map);
-    }
-  }
-
-  ASSERT_TRUE(check_all_found(topics_map, true));
-  timeout_thread->detach();
-
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS)
+  << "Topic creation failed, missing " << check_topics(topic_list, true) << " topics";
   std::this_thread::sleep_for(500ms);
 
   // Check topics QoS
@@ -213,7 +203,6 @@ TEST_P(HardwareTest, EntitiesQoS) {
 }
 
 TEST_P(HardwareTest, Publisher) {
-  runClientCode("Publisher");
 
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
@@ -229,8 +218,6 @@ TEST_P(HardwareTest, Publisher) {
 }
 
 TEST_P(HardwareTest, Subscriber) {
-  runClientCode("Subscriber");
-
   bool received = false;
 
   auto out_msg = std::make_shared<std_msgs::msg::Int32>();
@@ -270,14 +257,26 @@ TEST_P(HardwareTest, CustomTypeIntrospection) {
 }
 #endif  // ROS_DISTRO_GALACTIC
 
-TEST_P(HardwareTest, PublisherContinousFragment) {
-    // TODO: parametrize msg size
-    size_t expected_size = 4095;
-    runClientCode("PublisherContinousFragment");
+class ContinousFragment: public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+{
+public:
+    ContinousFragment()
+        : HardwareTestBase(std::get<0>(GetParam()))
+        , msg_size(std::get<1>(GetParam()))
+        {
+          addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
+        }
 
+protected:
+  size_t msg_size;
+};
+
+TEST_P(ContinousFragment, PublisherContinousFragment) {
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
     size_t payload_size = 0;
+
+    std::chrono::duration<int64_t, std::milli> timeout = std::chrono::duration<int64_t, std::milli>(msg_size/2);
 
     auto callback = [&](std_msgs::msg::String::SharedPtr msg)
     {
@@ -288,13 +287,19 @@ TEST_P(HardwareTest, PublisherContinousFragment) {
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::String>(
         "test_publisher_fragment", 0, callback);
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_EQ(payload_size, expected_size);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), timeout), rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(payload_size, msg_size-1);
 }
 
-TEST_P(HardwareTest, TimeSync) {
-  runClientCode("TimeSync");
+INSTANTIATE_TEST_CASE_P(
+    RenesasTest,
+    ContinousFragment,
+        ::testing::Combine(
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(4095, 30000, 100000)));
 
+
+TEST_P(HardwareTest, TimeSync) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
@@ -318,8 +323,6 @@ TEST_P(HardwareTest, TimeSync) {
 }
 
 TEST_P(HardwareTest, Ping) {
-    runClientCode("Ping");
-
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future().share();
 
@@ -335,8 +338,6 @@ TEST_P(HardwareTest, Ping) {
 }
 
 TEST_P(HardwareTest, ServiceServer) {
-    runClientCode("ServiceServer");
-
     auto client = node->create_client<example_interfaces::srv::AddTwoInts>("test_add_two_ints");
 
     auto request = std::make_shared<example_interfaces::srv::AddTwoInts::Request>();
@@ -358,8 +359,6 @@ TEST_P(HardwareTest, ServiceServer) {
 }
 
 TEST_P(HardwareTest, ServiceClient) {
-    runClientCode("ServiceClient");
-
     bool received = false;
     int64_t answer = 0;
 
@@ -391,8 +390,6 @@ TEST_P(HardwareTest, ServiceClient) {
 
 #ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, Parameters) {
-    runClientCode("Parameters");
-
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
         param_client_node,
@@ -497,7 +494,6 @@ public:
 };
 
 TEST_P(DomainTest, Domain) {
-    runClientCode("Domain");
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future().share();
 
@@ -519,11 +515,13 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 24)));
 
+#ifdef MULTITHREAD
 TEST_P(HardwareTest, Multithread) {
   ASSERT_TRUE(1);
   // TODO(pablogs): this test should check if pub/sub/services works from different threads
   // Rensas hardware have no threads at this moment
 }
+#endif  // MULTITHREAD
 
 class ExecutorRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
@@ -540,7 +538,6 @@ protected:
 
 TEST_P(ExecutorRateTest, ExecutorRate)
 {
-    runClientCode("ExecutorRate");
     auto promise = std::make_shared<std::promise<float>>();
     auto future = promise->get_future().share();
     auto clock = node->get_clock();
