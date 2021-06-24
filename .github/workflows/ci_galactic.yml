@@ -1,4 +1,4 @@
-name: CI micro_ros_renesas_testbench galactic
+name: CI galactic
 
 on:
   workflow_dispatch:
