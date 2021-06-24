@@ -10,11 +10,11 @@ on:
 
 jobs:
   micro_ros_renesas_testbench:
-    runs-on: rpi-ros2-foxy
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [ foxy ]
+        ros_distribution: [ foxy, galactic ]
+    runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
@@ -26,6 +26,7 @@ jobs:
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
+        ref: ${{ matrix.ros_distribution }}
         token: ${{ secrets.PRIVATE_KEY }}
     - name: Download dependencies
       run: |
@@ -64,9 +65,15 @@ jobs:
           mv makefile.init makefile.init.old || true
           make clean && make -j$(nproc)
         popd
-    - name: Build tests
+    - name: Build micro-ROS agent
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
-        colcon build --cmake-clean-cache --cmake-force-configure
-        colcon test --event-handlers console_direct+ --packages-select=micro_ros_renesas_testbench --return-code-on-test-failure --ctest-args -E "(cpplint)|(lint_cmake)|(uncrustify)|(xmllint)"
+        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to micro_ros_agent
+    - name: Build and run tests
+      run: |
+        source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
+        cd ros_ws
+        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to micro_ros_renesas_testbench
+        # colcon test --event-handlers console_direct+ --packages-select=micro_ros_renesas_testbench --return-code-on-test-failure --ctest-args -E "(cpplint)|(lint_cmake)|(uncrustify)|(xmllint)"
+        ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test
