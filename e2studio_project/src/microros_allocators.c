@@ -1,6 +1,7 @@
 #include "hal_data.h"
 #include <stdlib.h>
 #include <string.h>
+#include "microros_allocators.h"
 
 void * microros_allocate(size_t size, void * state){
   (void) state;

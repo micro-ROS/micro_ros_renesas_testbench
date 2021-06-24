@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(micro_ros_renesas_testbench)
 
-
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 11)
 endif()
@@ -21,7 +20,6 @@ find_package(ament_cmake REQUIRED)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
-  find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE) # No copyright header check since link to NOTICE file is not recognized properly.
 
   find_package(fastcdr REQUIRED)
@@ -29,7 +27,9 @@ if(BUILD_TESTING)
   find_package(fastrtps_cmake_module REQUIRED)
   find_package(microxrcedds_agent REQUIRED)
   find_package(rclcpp REQUIRED)
+  find_package(rmw REQUIRED)
   find_package(std_msgs REQUIRED)
+  find_package(example_interfaces REQUIRED)
 
   ament_lint_auto_find_test_dependencies()
 
@@ -37,6 +37,8 @@ if(BUILD_TESTING)
     test/micro_ros_renesas_testbench/test.cpp
   )
 
+  string(TOUPPER $ENV{ROS_DISTRO} ROS_DISTRO)
+  target_compile_options(${PROJECT_NAME}_test PRIVATE -DROS_DISTRO_${ROS_DISTRO})
   target_include_directories(${PROJECT_NAME}_test PRIVATE include src test)
 
   target_link_libraries(${PROJECT_NAME}_test
@@ -49,7 +51,9 @@ if(BUILD_TESTING)
     fastrtps
     microxrcedds_agent
     rclcpp
+    rmw
     std_msgs
+    example_interfaces
   )
 endif()
 

@@ -1,5 +1,5 @@
 #include "hal_data.h"
-#include <leds.h>
+#include "./utils.h"
 #include <microros_transports.h>
 #include <microros_allocators.h>
 
@@ -50,17 +50,6 @@ void hal_entry(void)
     set_led_status(LED_BLUE, true);
 
     microros_app();
-
-    // while (1)
-    // {
-    //     set_led_status(LED_GREEN, true);
-    //     set_led_status(LED_RED, true);
-    //     sleep_ms(100);
-    //     set_led_status(LED_BLUE, false);
-    //     set_led_status(LED_GREEN, false);
-    //     set_led_status(LED_RED, false);
-    //     sleep_ms(100);
-    // }
 }
 
 /*******************************************************************************************************************//**

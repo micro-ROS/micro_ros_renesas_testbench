@@ -20,106 +20,228 @@
 #include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
 
+ #include <fstream>
+
 using namespace std::chrono_literals;
 
-class HardwareTest : public ::testing::TestWithParam<Transport>
+// TODO(pablogs): All the system calls should be done using a bash script in order to increase flexibility when using with other platforms.
+
+class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTest()
-        : transport(GetParam())
-        , cwd("")
-        , build_path("")
-        , project_main("")
-    {        
-    }
-
-    ~HardwareTest()
-    {}
-
-    void SetUp() override 
+    HardwareTestBase(TestAgent::Transport transport_, size_t domain_id = 0)
+        : transport(transport_)
+        , options()
+        , domain_id(domain_id)
+        , agent_port(8888)
+        , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
+        , agent_serial_verbosity(5)
+        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(5000))
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
-        std::cout << cwd << std::endl;
         free(cwd_str);
 
         switch (transport)
         {
-            case Transport::UDP_IPV4_TRANSPORT:
-            case Transport::UDP_IPV6_TRANSPORT:
-                build_path = cwd + "/e2studio_project_threadX/micro-ROS_tests";
-                project_main = cwd + "/e2studio_project_threadX/src/thread_microros_entry.c";
-                agent_args = "--port 8888";
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
                 break;
 
-            case Transport::SERIAL_TRANSPORT:
-            case Transport::USB_TRANSPORT:
-                build_path = cwd + "/e2studio_project/micro-ROS_tests";
-                project_main = cwd + "/e2studio_project/src/hal_entry.c";
-                agent_args = "--dev /dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                break;
+
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+            case TestAgent::Transport::USB_TRANSPORT:
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/src/microros_app.c";
+                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
                 break;
 
             default:
-                FAIL() << "Transport type not supported";
                 break;
         }
 
+        // Delete content of client config
+        client_config_path = build_path + "/../src/config.h";
+        std::ofstream file(client_config_path, std::ios::out);
+
+        switch (transport)
+        {
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
+            {
+                std::string ip_address = TestAgent::getIPAddress();
+                std::replace(ip_address.begin(), ip_address.end(), '.', ',');
+                addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
+                addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
+                break;
+            }
+
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+            {
+                std::string ip_address = TestAgent::getIPAddress();
+                addDefineToClient("AGENT_IP_ADDRESS", "\"" + ip_address + "\"");
+                addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
+                break;
+            }
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+            case TestAgent::Transport::USB_TRANSPORT:
+            default:
+                break;
+        }
+    }
+
+    ~HardwareTestBase(){}
+
+    void SetUp() override {
         ASSERT_TRUE(checkConnection());
-        agent.reset(new TestAgent(transport, agent_args, 0));
 
-        rclcpp::init(0, NULL);
+        if (domain_id != 0)
+        {
+            rcl_allocator_t allocator = rcl_get_default_allocator();
+            rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+
+            ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
+            rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+            rmw_options->domain_id = domain_id;
+
+            options = rclcpp::InitOptions(init_options);
+        }
+
+        rclcpp::init(0, NULL, options);
         node = std::make_shared<rclcpp::Node>("test_node");
+
+        runClientCode();
     }
 
-    void TearDown() override 
-    {
+    void TearDown() override {
+        agent->stop();
+        rclcpp::shutdown();
     }
 
-    bool checkConnection()
-    {
-      std::cout << "Checking device connection ";
-      bool ret = 0 == system("/home/username/Downloads/renesas/linux-x64/rfp-cli -device RA -tool jlink -reset > /dev/null 2>&1");
-      std::cout << ((ret) ? "OK" : "ERROR") << std::endl;
-      return ret;
+    bool checkConnection(){
+        std::cout << "Checking device connection ";
+        bool ret = 0 == system("rfp-cli -device RA -tool jlink -reset > /dev/null 2>&1");
+        std::cout << ((ret) ? "OK" : "ERROR") << std::endl;
+        return ret;
     }
 
-    bool buildClientCode(std::string filename)
-    {
-        std::cout << "Building " << filename << std::endl;
-        std::string copy_command = "cp " + cwd  + "/test/micro_ros_renesas_testbench/src/" + filename + ".c " + project_main;
-        //bool ret = 0 == system("cd e2studio_project/micro-ROS_tests && mv makefile.init makefile.init.backup");
+    bool buildClientCode(){
+        // Get test name
+        std::string filename;
+        std::stringstream testname(::testing::UnitTest::GetInstance()->current_test_info()->name());
+        std::getline(testname, filename, '/');
+
+        std::cout << "Building client firmware: " << filename << std::endl;
+        std::string copy_command = "cp " + cwd  + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/" + filename + ".c " + project_main;
         bool ret = 0 == system(copy_command.c_str());
-        std::string build_command = "cd " + build_path + " && make clean > /dev/null 2>&1 && make -j$(nproc)";
-        ret = 0 == system(build_command.c_str());
-        //ret &= 0 == system("cd e2studio_project/micro-ROS_tests && mv makefile.init.backup makefile.init");
+        std::string build_command = "cd " + build_path + " && make -j$(nproc) pre-build && make -j$(nproc) microros_testbench.hex"; //> /dev/null
+        ret &= 0 == system(build_command.c_str());
+
         return ret;
     }
 
     bool flashClientCode(){
-      std::cout << "Flashing code" << std::endl;
-      //bool ret = 0 == system("/home/username/Downloads/renesas/linux-x64/rfp-cli -device RA -tool jlink -reset > /dev/null 2>&1");
-      std::string flash_command = "/home/username/Downloads/renesas/linux-x64/rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
-      bool ret = 0 == system(flash_command.c_str());
-      return ret;
+        std::cout << "Flashing code" << std::endl;
+        std::ofstream jlink_script("/tmp/renesas_script.jlink");
+        // jlink_script << "erase 00000000 001FFFFF" << std::endl;
+        // jlink_script << "erase 08000000 08001FFF" << std::endl;
+        jlink_script << "r" << std::endl;
+        jlink_script << "h" << std::endl;
+        jlink_script << "loadfile " + build_path + "/microros_testbench.hex" << std::endl;
+        jlink_script << "r" << std::endl;
+        jlink_script << "q" << std::endl;
+
+        std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -NoGui 1 -CommandFile /tmp/renesas_script.jlink";
+        // std::string flash_command = "rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
+        bool ret = 0 == system(flash_command.c_str());
+        return ret;
     }
 
-    void runClientCode(std::string filename){
-      ASSERT_TRUE(buildClientCode(filename));
-      ASSERT_TRUE(flashClientCode());
-      std::this_thread::sleep_for(500ms);
-      agent->start();
-      std::this_thread::sleep_for(1000ms);
+    void runClientCode(){
+        ASSERT_TRUE(buildClientCode());
+        ASSERT_TRUE(flashClientCode());
+        agent->start();
+        std::this_thread::sleep_for(3000ms);
+    }
+
+    void addDefineToClient(std::string name, std::string value){
+        std::string define_string = "#define " + name + " " + value;
+
+        std::ofstream file(client_config_path, std::ios::app);
+        file << define_string << '\n';
+    }
+
+    size_t check_nodes(std::vector<std::string> nodes, bool assert = false)
+    {
+        size_t matches = 0;
+        auto nodes_vector = node->get_node_names();
+
+        for(auto element : nodes)
+        {
+            if (std::find(nodes_vector.begin(), nodes_vector.end(), element) != nodes_vector.end())
+            {
+                matches++;
+            }
+            else if (assert)
+            {
+                EXPECT_TRUE(false) << "Node not found: " << element;
+            }
+        }
+
+        return matches;
+    }
+
+    size_t check_topics(std::vector<std::string> topics, bool assert = false)
+    {
+        size_t matches = 0;
+        auto topics_map = node->get_topic_names_and_types();
+
+        for(auto element : topics)
+        {
+            if (topics_map.find(element) != topics_map.end())
+            {
+                matches++;
+            }
+            else if (assert)
+            {
+                EXPECT_TRUE(false) << "Topic not found: " << element;
+            }
+        }
+
+        return matches;
     }
 
 protected:
-    std::unique_ptr<TestAgent> agent;
+    TestAgent::Transport transport;
+    std::shared_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
-    std::string agent_args;
-    Transport transport;
+    rclcpp::InitOptions options;
 
     std::string cwd;
     std::string build_path;
-    std::string project_main;    
+    std::string project_main;
+    std::string client_config_path;
+
+    size_t domain_id;
+    uint16_t agent_port;
+    std::string agent_serial_dev;
+    uint8_t agent_serial_verbosity;
+    std::chrono::duration<int64_t, std::milli> default_spin_timeout;
+};
+
+class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
+{
+public:
+    HardwareTest()
+        : HardwareTestBase(GetParam()){}
+
+    ~HardwareTest(){}
 };
 
 #endif //IN_TEST_HPP

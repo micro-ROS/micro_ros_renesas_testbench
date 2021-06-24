@@ -11,6 +11,11 @@
   <depend>rosidl_runtime_c</depend>
   <depend>rcutils</depend>
   <depend>rclcpp</depend>
+  <depend>rmw</depend>
+
+
+  <depend>std_msgs</depend>
+  <depend>example_interfaces</depend>
 
   <depend>microxrcedds_agent</depend>
 
