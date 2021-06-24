@@ -169,7 +169,7 @@ TEST_P(HardwareTest, EntitiesQoS) {
   });
 
   // Wait for topics
-  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS)
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS)
   << "Topic creation failed, missing " << check_topics(topic_list, true) << " topics";
   std::this_thread::sleep_for(500ms);
 
@@ -335,7 +335,7 @@ TEST_P(HardwareTest, Ping) {
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
       "test_publisher_ping", 0, callback);
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
 TEST_P(HardwareTest, ServiceServer) {
@@ -477,7 +477,11 @@ TEST_P(HardwareTest, Parameters) {
             promise->set_value();
         });
 
-    rclc_parameter_set_bool(&param_server, "param2", 49);
+    // External set double
+    new_params.clear();
+    new_params.push_back(rclcpp::Parameter("param2", 49);
+    result = parameters_client->set_parameters(new_params);
+    ASSERT_TRUE(result[0].successful);
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 
@@ -507,7 +511,7 @@ TEST_P(DomainTest, Domain) {
         }
     );
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -569,7 +573,7 @@ TEST_P(ExecutorRateTest, ExecutorRate)
 
     auto timeout = std::chrono::duration<int64_t, std::milli>(1000U*10U*msg_count/expected_freq);
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, timeout), rclcpp::executor::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, timeout), rclcpp::FutureReturnCode::SUCCESS);
     ASSERT_NEAR(future.get(), expected_freq, 1.0);
 }
 
