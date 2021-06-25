@@ -77,4 +77,4 @@ jobs:
         source install/local_setup.bash
         colcon build --cmake-clean-cache --cmake-force-configure --packages-select micro_ros_renesas_testbench
         # colcon test --event-handlers console_direct+ --packages-select=micro_ros_renesas_testbench --return-code-on-test-failure --ctest-args -E "(cpplint)|(lint_cmake)|(uncrustify)|(xmllint)"
-        ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test
+        RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test
