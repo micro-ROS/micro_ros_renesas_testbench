@@ -1,4 +1,6 @@
 #include "hal_data.h"
+#include "config.h"
+
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
@@ -9,14 +11,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "config.h"
-
 static char msg_payload[ARRAY_LEN];
 
 void microros_app(void);
-
-rcl_publisher_t publisher;
-std_msgs__msg__String msg;
 
 void microros_app(void)
 {
@@ -27,9 +24,12 @@ void microros_app(void)
 
     // create node
     rcl_node_t node;
-    rclc_node_init_default(&node, "char_long_sequence_publisher_rcl", "", &support);
+	rcl_node_options_t node_ops = rcl_node_get_default_options();
+	node_ops.domain_id = (size_t)(DOMAIN_ID);
+	rclc_node_init_with_options(&node, "char_long_sequence_publisher_rcl", "", &support, &node_ops);
 
     // create publisher
+    rcl_publisher_t publisher;
     rclc_publisher_init_default(
         &publisher,
         &node,
@@ -37,6 +37,8 @@ void microros_app(void)
         "test_publisher_fragment");
 
     // Fill the array with a known sequence
+    std_msgs__msg__String msg;
+
     msg.data.data = msg_payload;
     msg.data.size = 0;
     msg.data.capacity = ARRAY_LEN;
@@ -47,6 +49,6 @@ void microros_app(void)
 
     for(;;){
         rcl_publish(&publisher, &msg, NULL);
-        R_BSP_SoftwareDelay(100, BSP_DELAY_UNITS_MILLISECONDS);
+        sleep_ms(100);
     }
 }

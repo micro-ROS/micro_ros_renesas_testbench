@@ -1,4 +1,6 @@
 #include "hal_data.h"
+#include "config.h"
+
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
 #include <rclc/rclc.h>
@@ -9,16 +11,10 @@
 
 #include <std_msgs/msg/int32.h>
 
-#include "config.h"
-
 void microros_app(void);
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
 
-rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
-rclc_support_t support;
-rcl_allocator_t allocator;
-rcl_node_t node;
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 {
@@ -33,15 +29,20 @@ void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
 void microros_app(void)
 {
     // micro-ROS app
-    allocator = rcl_get_default_allocator();
+    rcl_allocator_t allocator = rcl_get_default_allocator();
 
     // create init_options
+    rclc_support_t support;
     rclc_support_init(&support, 0, NULL, &allocator);
 
     // create node
-    rclc_node_init_default(&node, "test_node", "", &support);
+	rcl_node_t node;
+	rcl_node_options_t node_ops = rcl_node_get_default_options();
+	node_ops.domain_id = (size_t)(DOMAIN_ID);
+	rclc_node_init_with_options(&node, "test_node", "", &support, &node_ops);
 
     // create publisher
+    rcl_publisher_t publisher;
     rclc_publisher_init_default(
         &publisher,
         &node,
@@ -64,6 +65,6 @@ void microros_app(void)
 
     while(1){
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1));
-        R_BSP_SoftwareDelay(1, BSP_DELAY_UNITS_MILLISECONDS);
+        sleep_ms(1);
     }
 }

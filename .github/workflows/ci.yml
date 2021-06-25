@@ -31,7 +31,7 @@ jobs:
     - name: Download dependencies
       run: |
         cd ros_ws
-        vcs import --input src/micro_ros_renesas_testbench/requirements.repos src
+        vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS library
       run: |
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project/micro_ros_renesas2estudio_component

@@ -1,4 +1,6 @@
 #include "hal_data.h"
+#include "config.h"
+
 #include <time.h>
 
 #include "utils.h"
@@ -38,7 +40,11 @@ void microros_app(void)
         char buf_namespace[100];
         snprintf(buf_name, 100, "test_node_%d", i);
         snprintf(buf_namespace, 100, "ns_%d", i);
-        rclc_node_init_default(&nodes[i], buf_name, buf_namespace, &support);
+
+        // create node
+        rcl_node_options_t node_ops = rcl_node_get_default_options();
+        node_ops.domain_id = (size_t)(DOMAIN_ID);
+        rclc_node_init_with_options(&nodes[i], buf_name, buf_namespace, &support, &node_ops);
     }
 
     // create publishers
