@@ -15,6 +15,7 @@
 void microros_app(void);
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
 
+rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
@@ -43,7 +44,6 @@ void microros_app(void)
 	rclc_node_init_with_options(&node, "test_node", "", &support, &node_ops);
 
     // create publisher
-    rcl_publisher_t publisher;
     rclc_publisher_init_default(
         &publisher,
         &node,
