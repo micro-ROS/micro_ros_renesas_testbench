@@ -479,7 +479,7 @@ TEST_P(HardwareTest, Parameters) {
 
     // External set double
     new_params.clear();
-    new_params.push_back(rclcpp::Parameter("param2", 49);
+    new_params.push_back(rclcpp::Parameter("param2", 49));
     result = parameters_client->set_parameters(new_params);
     ASSERT_TRUE(result[0].successful);
 
