@@ -31,8 +31,8 @@ using namespace std::chrono_literals;
 class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTestBase(TestAgent::Transport transport_, size_t domain_id = 0)
-        : transport(transport_)
+    HardwareTestBase(TestAgent::Transport transport, size_t domain_id = 0)
+        : transport_(transport)
         , agent_port(8888)
         , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
         , agent_serial_verbosity(5)
@@ -42,7 +42,7 @@ public:
         cwd = std::string(cwd_str);
         free(cwd_str);
 
-        switch (transport)
+        switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
@@ -71,7 +71,7 @@ public:
         client_config_path = build_path + "/../src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
 
-        switch (transport)
+        switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             {
@@ -221,7 +221,7 @@ public:
     }
 
 protected:
-    TestAgent::Transport transport;
+    TestAgent::Transport transport_;
     std::shared_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
     rclcpp::InitOptions options;
