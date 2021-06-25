@@ -33,8 +33,6 @@ class HardwareTestBase : public ::testing::Test
 public:
     HardwareTestBase(TestAgent::Transport transport_, size_t domain_id = 0)
         : transport(transport_)
-        , options()
-        , domain_id(domain_id)
         , agent_port(8888)
         , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
         , agent_serial_verbosity(5)
@@ -99,8 +97,8 @@ public:
 
         std::srand(std::time(nullptr));
         size_t isolation_domain_id = (size_t)(ROS_MAX_DOMAIN_ID * ((float) std::rand()) / ((float) RAND_MAX));
-        domain_id = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
-        addDefineToClient("DOMAIN_ID", std::to_string(domain_id));
+        domain_id_ = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
+        addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 
     ~HardwareTestBase(){}
@@ -114,7 +112,7 @@ public:
 
         ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
         rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-        rmw_options->domain_id = domain_id;
+        rmw_options->domain_id = domain_id_;
 
         options = rclcpp::InitOptions(init_options);
 
@@ -233,8 +231,7 @@ protected:
     std::string project_main;
     std::string client_config_path;
 
-    size_t domain_id;
-    size_t isolation_domain_id
+    size_t domain_id_;
     uint16_t agent_port;
     std::string agent_serial_dev;
     uint8_t agent_serial_verbosity;
