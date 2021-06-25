@@ -1,4 +1,5 @@
 #include "./utils.h"
+#include "config.h"
 
 #include <time.h>
 
@@ -30,8 +31,10 @@ void microros_app(void)
     rclc_support_init(&support, 0, NULL, &allocator);
 
     // create nodes
-    rcl_node_t node;
-    rclc_node_init_default(&node, "test_node", "", &support);
+	rcl_node_t node;
+	rcl_node_options_t node_ops = rcl_node_get_default_options();
+	node_ops.domain_id = (size_t)(DOMAIN_ID);
+	rclc_node_init_with_options(&node, "test_node", "", &support, &node_ops);
 
   	// Create parameter service
     rclc_parameter_server_t param_server;

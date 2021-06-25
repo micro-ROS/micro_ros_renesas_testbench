@@ -493,10 +493,7 @@ class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface
 {
 public:
     DomainTest()
-        : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam()))
-        {
-          addDefineToClient("DOMAIN_ID", std::to_string(domain_id));
-        }
+        : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam())) {}
 };
 
 TEST_P(DomainTest, Domain) {

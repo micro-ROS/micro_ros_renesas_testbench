@@ -20,7 +20,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
 
- #include <fstream>
+#include <fstream>
+
+#define ROS_MAX_DOMAIN_ID 101
 
 using namespace std::chrono_literals;
 
@@ -94,6 +96,11 @@ public:
             default:
                 break;
         }
+
+        std::srand(std::time(nullptr));
+        size_t isolation_domain_id = (size_t)(ROS_MAX_DOMAIN_ID * ((float) std::rand()) / ((float) RAND_MAX));
+        domain_id = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
+        addDefineToClient("DOMAIN_ID", std::to_string(domain_id));
     }
 
     ~HardwareTestBase(){}
@@ -101,17 +108,15 @@ public:
     void SetUp() override {
         ASSERT_TRUE(checkConnection());
 
-        if (domain_id != 0)
-        {
-            rcl_allocator_t allocator = rcl_get_default_allocator();
-            rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+        // Set domain id
+        rcl_allocator_t allocator = rcl_get_default_allocator();
+        rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
 
-            ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
-            rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-            rmw_options->domain_id = domain_id;
+        ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
+        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+        rmw_options->domain_id = domain_id;
 
-            options = rclcpp::InitOptions(init_options);
-        }
+        options = rclcpp::InitOptions(init_options);
 
         rclcpp::init(0, NULL, options);
         node = std::make_shared<rclcpp::Node>("test_node");
@@ -229,6 +234,7 @@ protected:
     std::string client_config_path;
 
     size_t domain_id;
+    size_t isolation_domain_id
     uint16_t agent_port;
     std::string agent_serial_dev;
     uint8_t agent_serial_verbosity;

@@ -1,4 +1,5 @@
 #include "hal_data.h"
+#include "config.h"
 
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -12,7 +13,6 @@
 #include <rmw_microros/rmw_microros.h>
 
 #include <time.h>
-#include "config.h"
 
 void microros_app(void);
 void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
@@ -41,8 +41,7 @@ void microros_app(void)
 	rcl_node_t node;
 	rcl_node_options_t node_ops = rcl_node_get_default_options();
 	node_ops.domain_id = (size_t)(DOMAIN_ID);
-	const char * node_name = "test_node_domain";
-	rclc_node_init_with_options(&node, node_name, "", &support, &node_ops);
+	rclc_node_init_with_options(&node, "test_node", "", &support, &node_ops);
 
 	// create publisher
 	rclc_publisher_init_default(
@@ -69,6 +68,6 @@ void microros_app(void)
 
   	for(;;){
         rclc_executor_spin_some(&executor, RCL_MS_TO_NS(100));
-        R_BSP_SoftwareDelay(10, BSP_DELAY_UNITS_MILLISECONDS);
+        sleep_ms(10);
     }
 }
