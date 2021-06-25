@@ -36,7 +36,7 @@ public:
         , agent_port(8888)
         , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
         , agent_serial_verbosity(5)
-        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(5000))
+        , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
