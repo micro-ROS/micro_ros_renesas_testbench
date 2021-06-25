@@ -1,9 +1,8 @@
 #include "hal_data.h"
 #include "config.h"
+#include "./utils.h"
 
 #include <time.h>
-
-#include "utils.h"
 
 #include <rclc/rclc.h>
 #include <rclc/executor.h>

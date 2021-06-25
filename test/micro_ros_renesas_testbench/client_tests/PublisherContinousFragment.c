@@ -1,5 +1,6 @@
 #include "hal_data.h"
 #include "config.h"
+#include "./utils.h"
 
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>

@@ -117,7 +117,7 @@ TEST_P(HardwareTest, EntityDestruction) {
 
   auto publisher = node->create_publisher<std_msgs::msg::Int32>("ns_0/test_subscriber_delete", 10);
 
-  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
+  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(10), [&]() {
         nodes_found = check_nodes(node_list);
         topics_found = check_topics(topics_list);
 
@@ -141,7 +141,7 @@ TEST_P(HardwareTest, EntityDestruction) {
   // Check destruction
   promise = std::make_shared<std::promise<void>>();
   future = promise->get_future();
-  rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
   ASSERT_EQ(nodes_found, 0U) << "Node destruction failed";
   ASSERT_EQ(topics_found, 0U)  << "Topic destruction failed";
 }
@@ -571,7 +571,7 @@ TEST_P(ExecutorRateTest, ExecutorRate)
     auto timeout = std::chrono::duration<int64_t, std::milli>(1000U*10U*msg_count/expected_freq);
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, timeout), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_NEAR(future.get(), expected_freq, 1.0);
+    ASSERT_NEAR(future.get(), expected_freq, 3.0);
 }
 
 INSTANTIATE_TEST_CASE_P(

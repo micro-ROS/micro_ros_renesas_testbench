@@ -1,5 +1,6 @@
 #include "hal_data.h"
 #include "config.h"
+#include "./utils.h"
 
 #include <rcl/rcl.h>
 #include <rcl/error_handling.h>
@@ -10,7 +11,6 @@
 #include <std_msgs/msg/int32.h>
 
 void microros_app(void);
-
 
 void microros_app(void)
 {
