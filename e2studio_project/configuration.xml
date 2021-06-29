@@ -75,7 +75,7 @@
     </config>
     <config id="config.bsp.ra">
       <property id="config.bsp.common.main" value="5000"/>
-      <property id="config.bsp.common.heap" value="5000"/>
+      <property id="config.bsp.common.heap" value="15000"/>
       <property id="config.bsp.common.vcc" value="3300"/>
       <property id="config.bsp.common.checking" value="config.bsp.common.checking.disabled"/>
       <property id="config.bsp.common.assert" value="config.bsp.common.assert.none"/>
