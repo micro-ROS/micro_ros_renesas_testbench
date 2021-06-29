@@ -18,7 +18,7 @@ find_package(ament_cmake REQUIRED)
 # testing
 #################################################
 if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
+  # find_package(ament_lint_auto REQUIRED)
   find_package(ament_cmake_gtest REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE) # No copyright header check since link to NOTICE file is not recognized properly.
 
@@ -31,7 +31,7 @@ if(BUILD_TESTING)
   find_package(std_msgs REQUIRED)
   find_package(example_interfaces REQUIRED)
 
-  ament_lint_auto_find_test_dependencies()
+  # ament_lint_auto_find_test_dependencies()
 
   ament_add_gtest(${PROJECT_NAME}_test
     test/micro_ros_renesas_testbench/test.cpp
