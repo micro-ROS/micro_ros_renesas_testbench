@@ -75,7 +75,7 @@
     </config>
     <config id="config.bsp.ra">
       <property id="config.bsp.common.main" value="0x400"/>
-      <property id="config.bsp.common.heap" value="5000"/>
+      <property id="config.bsp.common.heap" value="15000"/>
       <property id="config.bsp.common.vcc" value="3300"/>
       <property id="config.bsp.common.checking" value="config.bsp.common.checking.disabled"/>
       <property id="config.bsp.common.assert" value="config.bsp.common.assert.none"/>
@@ -661,16 +661,6 @@
       <property id="config.azure.nxd_web_http_server.retry_max" value="10"/>
       <property id="config.azure.nxd_web_http_server.retry_shift" value="1"/>
     </config>
-    <config id="config.driver.agt">
-      <property id="config.driver.agt.param_checking_enable" value="config.driver.agt.param_checking_enable.bsp"/>
-      <property id="config.driver.agt.output_support_enable" value="config.driver.agt.output_support_enable.disabled"/>
-      <property id="config.driver.agt.input_support_enable" value="config.driver.agt.input_support_enable.disabled"/>
-    </config>
-    <config id="config.driver.ether">
-      <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
-      <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
-      <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
-    </config>
     <config id="config.threadx.thread">
       <property id="config.azure.tx.custom_tx_user" value=""/>
       <property id="config.azure.tx.error_checking" value="config.azure.tx.error_checking.enabled"/>
@@ -706,6 +696,16 @@
       <property id="config.azure.tx.iar_library_support" value="config.azure.tx.iar_library_support.disabled"/>
       <property id="config.azure.tx.bsd_support" value="config.azure.tx.bsd_support.disabled"/>
       <property id="config.azure.tx.filex_pointer" value="config.azure.tx.filex_pointer.enabled"/>
+    </config>
+    <config id="config.driver.agt">
+      <property id="config.driver.agt.param_checking_enable" value="config.driver.agt.param_checking_enable.bsp"/>
+      <property id="config.driver.agt.output_support_enable" value="config.driver.agt.output_support_enable.disabled"/>
+      <property id="config.driver.agt.input_support_enable" value="config.driver.agt.input_support_enable.disabled"/>
+    </config>
+    <config id="config.driver.ether">
+      <property id="config.driver.ether.param_checking_enable" value="config.driver.ether.param_checking_enable.bsp"/>
+      <property id="config.driver.ether.link_present" value="config.driver.ether.link_present.0"/>
+      <property id="config.driver.ether.use_linksta" value="config.driver.ether.use_linksta.0"/>
     </config>
   </raModuleConfiguration>
   <raPinConfiguration>
