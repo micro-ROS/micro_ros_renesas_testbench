@@ -86,12 +86,6 @@ TEST_P(HardwareTest, EntityCreation) {
 
 TEST_P(HardwareTest, EntityDestruction) {
 
-  // TODO
-  if(transport_ == TestAgent::Transport::UDP_FREERTOS_TRANSPORT)
-  {
-    GTEST_SKIP() << "Skipping FreeRTOS destruction test until time issue is solved";
-  }
-
   // Look for created nodes
   std::vector<std::string> node_list =
   {
