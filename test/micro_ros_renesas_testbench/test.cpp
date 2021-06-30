@@ -283,7 +283,7 @@ class ContinousFragment: public HardwareTestBase, public ::testing::WithParamInt
 {
 public:
     ContinousFragment()
-        : HardwareTestBase(std::get<0>(GetParam()))
+        : HardwareTestBase(std::get<0>(GetParam()), 4)
         , msg_size(std::get<1>(GetParam()))
         {
           addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
@@ -422,6 +422,8 @@ TEST_P(HardwareTest, Parameters) {
     param_names.push_back("param1");
     param_names.push_back("param2");
     param_names.push_back("param3");
+
+    std::this_thread::sleep_for(500ms);
 
     auto list_params = parameters_client->list_parameters({}, 10);
     check_string_vector(list_params.names, param_names);

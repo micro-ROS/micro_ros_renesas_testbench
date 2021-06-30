@@ -31,11 +31,11 @@ using namespace std::chrono_literals;
 class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTestBase(TestAgent::Transport transport, size_t domain_id = 0)
+    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_serial_verbosity = 5, size_t domain_id = 0)
         : transport_(transport)
         , agent_port(8888)
         , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
-        , agent_serial_verbosity(5)
+        , agent_serial_verbosity_(agent_serial_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
     {
         char * cwd_str = get_current_dir_name();
@@ -47,20 +47,20 @@ public:
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity_));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity_));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
                 build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests";
                 project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/src/microros_app.c";
-                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity_));
                 break;
 
             default:
@@ -232,7 +232,7 @@ protected:
     size_t domain_id_;
     uint16_t agent_port;
     std::string agent_serial_dev;
-    uint8_t agent_serial_verbosity;
+    uint8_t agent_serial_verbosity_;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 
