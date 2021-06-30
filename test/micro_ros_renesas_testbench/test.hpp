@@ -185,44 +185,37 @@ public:
         file << define_string << '\n';
     }
 
-    size_t check_nodes(std::vector<std::string> nodes, bool assert = false)
+    size_t check_string_vector(std::vector<std::string> sample, std::vector<std::string> required, bool assert = false)
     {
         size_t matches = 0;
-        auto nodes_vector = node->get_node_names();
 
-        for(auto element : nodes)
+        for(auto element : required)
         {
-            if (std::find(nodes_vector.begin(), nodes_vector.end(), element) != nodes_vector.end())
+            if (std::find(sample.begin(), sample.end(), element) != sample.end())
             {
                 matches++;
             }
             else if (assert)
             {
-                EXPECT_TRUE(false) << "Node not found: " << element;
+                EXPECT_TRUE(false) << "Element not found: " << element;
             }
         }
 
         return matches;
     }
 
-    size_t check_topics(std::vector<std::string> topics, bool assert = false)
+    template<typename T>
+    size_t check_string_vector(std::map<std::string, T> sample, std::vector<std::string> required, bool assert = false)
     {
-        size_t matches = 0;
-        auto topics_map = node->get_topic_names_and_types();
-
-        for(auto element : topics)
-        {
-            if (topics_map.find(element) != topics_map.end())
-            {
-                matches++;
+        std::vector<std::string> result;
+        result.reserve(sample.size());
+        std::transform(sample.cbegin(), sample.cend(), std::back_inserter(result),
+            [](typename std::map<std::string, T>::const_reference kvpair) {
+                return kvpair.first;
             }
-            else if (assert)
-            {
-                EXPECT_TRUE(false) << "Topic not found: " << element;
-            }
-        }
+        );
 
-        return matches;
+        return check_string_vector(result, required, assert);
     }
 
 protected:

@@ -70,8 +70,8 @@ TEST_P(HardwareTest, EntityCreation) {
   size_t topics_found = 0;
 
   auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
-        nodes_found = check_nodes(node_list);
-        topics_found = check_topics(topic_list);
+        nodes_found = check_string_vector(node->get_node_names(), node_list);
+        topics_found = check_string_vector(node->get_topic_names_and_types(), topic_list);
 
         if (nodes_found == node_list.size() && topics_found == topic_list.size())
         {
@@ -80,8 +80,8 @@ TEST_P(HardwareTest, EntityCreation) {
   });
 
   rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout);
-  ASSERT_EQ(nodes_found, node_list.size()) << "Node creation failed, found " << check_nodes(node_list, true) << " nodes";
-  ASSERT_EQ(topics_found, topic_list.size()) << "Topic creation failed, found " << check_topics(topic_list, true) << " topics";
+  ASSERT_EQ(nodes_found, node_list.size()) << "Node creation failed, found " << check_string_vector(node->get_node_names(), node_list, true) << " nodes";
+  ASSERT_EQ(topics_found, topic_list.size()) << "Topic creation failed, found " << check_string_vector(node->get_topic_names_and_types(), topic_list, true) << " topics";
 }
 
 TEST_P(HardwareTest, EntityDestruction) {
@@ -97,7 +97,7 @@ TEST_P(HardwareTest, EntityDestruction) {
   };
 
   // Look for created publishers and subscribers
-  std::vector<std::string> topics_list =
+  std::vector<std::string> topic_list =
   {
       "/ns_0/test_pub_0",
       "/ns_1/test_pub_1",
@@ -120,10 +120,10 @@ TEST_P(HardwareTest, EntityDestruction) {
   auto publisher = node->create_publisher<std_msgs::msg::Int32>("ns_0/test_subscriber_delete", 10);
 
   auto timer_found = node->create_wall_timer(std::chrono::milliseconds(10), [&]() {
-        nodes_found = check_nodes(node_list);
-        topics_found = check_topics(topics_list);
+        nodes_found = check_string_vector(node->get_node_names(), node_list);
+        topics_found = check_string_vector(node->get_topic_names_and_types(), topic_list);
 
-        if (!created && nodes_found == node_list.size() && topics_found == topics_list.size())
+        if (!created && nodes_found == node_list.size() && topics_found == topic_list.size())
         {
             promise->set_value();
             created = true;
@@ -169,7 +169,7 @@ TEST_P(HardwareTest, EntitiesQoS) {
   size_t topics_found = 0;
 
   auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
-        topics_found = check_topics(topic_list);
+        topics_found = check_string_vector(node->get_topic_names_and_types(), topic_list);
 
         if (topics_found == topic_list.size())
         {
@@ -179,7 +179,7 @@ TEST_P(HardwareTest, EntitiesQoS) {
 
   // Wait for topics
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS)
-  << "Topic creation failed, missing " << check_topics(topic_list, true) << " topics";
+  << "Topic creation failed, missing " << check_string_vector(node->get_topic_names_and_types(), topic_list, true) << " topics";
   std::this_thread::sleep_for(500ms);
 
   // Check topics QoS
@@ -423,14 +423,8 @@ TEST_P(HardwareTest, Parameters) {
     param_names.push_back("param2");
     param_names.push_back("param3");
 
-    // TODO use this as previous check
     auto list_params = parameters_client->list_parameters({}, 10);
-    ASSERT_EQ(list_params.names.size(), 4u);
-    for (auto & name : list_params.names) {
-        std::vector<std::string>::iterator it;
-        it = std::find(param_names.begin(), param_names.end(), name);
-        ASSERT_NE(it, param_names.end());
-    }
+    check_string_vector(list_params.names, param_names);
 
     bool param_bool_value = parameters_client->get_parameter("param1", false);
     ASSERT_EQ(param_bool_value, true);
@@ -491,7 +485,7 @@ TEST_P(HardwareTest, Parameters) {
         {
             ASSERT_EQ(event->changed_parameters.size(), 1u);
             ASSERT_EQ(event->changed_parameters[0].name, "param2");
-            ASSERT_EQ(event->changed_parameters[0].value.type, 0);
+            ASSERT_EQ(event->changed_parameters[0].value.type, rclcpp::ParameterType::PARAMETER_INTEGER);
             ASSERT_EQ(event->changed_parameters[0].value.integer_value, 49);
 
             on_parameter_calls++;

@@ -9,18 +9,6 @@
 #include <rclc_parameter/rclc_parameter.h>
 
 void microros_app(void);
-void subscription_callback(const void * msgin);
-
-rcl_publisher_t publisher;
-
-void subscription_callback(const void * msgin)
-{
-    const std_msgs__msg__Int32 * msg = (const std_msgs__msg__Int32 *)msgin;
-
-    std_msgs__msg__Int32 out_msg;
-    out_msg.data = msg->data * 10;
-    rcl_publish(&publisher, &out_msg, NULL);
-}
 
 void microros_app(void)
 {
@@ -43,8 +31,6 @@ void microros_app(void)
     // create executor
     rclc_executor_t executor;
     rclc_executor_init(&executor, &support.context, RCLC_PARAMETER_EXECUTOR_HANDLES_NUMBER, &allocator);
-
-    rclc_executor_add_subscription(&executor, &subscriber, &msg, &subscription_callback, ON_NEW_DATA);
     rclc_executor_add_parameter_server(&executor, &param_server, NULL);
 
     // Add parameters
