@@ -19,10 +19,13 @@
 #include <unistd.h>
 
 #include <rclcpp/rclcpp.hpp>
+
 #include <std_msgs/msg/int32.hpp>
 #include <std_msgs/msg/int64.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <example_interfaces/srv/add_two_ints.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+
 #include <rmw/types.h>
 
 #include <string>
@@ -262,11 +265,23 @@ TEST_P(HardwareTest, Subscriber) {
 
 #ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, CustomTypeIntrospection) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should wait for a custom nested type initted with micro-ROS utilities library
-  // strings
-  // arrays
-  // sequences
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
+
+  auto subscription = node->create_subscription<sensor_msgs::msg::CameraInfo>(
+    "test_pub", 10,
+    [&](sensor_msgs::msg::CameraInfo msg) {
+      ASSERT_EQ(msg.distortion_model, "string_1");
+      ASSERT_EQ(msg.header.frame_id, "string_2");
+      ASSERT_EQ(msg.d.size(), 5U);
+      for(size_t i = 0; i < msg.d.size(); i++){
+        ASSERT_EQ(msg.d[i], static_cast<double>(i));
+      }
+      promise->set_value();
+    }
+  );
+
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 #endif  // ROS_DISTRO_GALACTIC
 
