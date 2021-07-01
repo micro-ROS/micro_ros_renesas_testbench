@@ -18,6 +18,7 @@ extern const timer_cfg_t g_timer0_cfg;
 #define MICRO_ROS_TIMER_CTRL MICRO_ROS_ADD_SUFFIX(MICRO_ROS_TIMER,ctrl)
 
 int clock_gettime( int clock_id, struct timespec * tp );
+void micro_ros_timer_cb(timer_callback_args_t * p_args);
 
 static bool timer_init = false;
 static uint64_t rollover_count = 0;

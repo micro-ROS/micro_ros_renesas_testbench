@@ -317,7 +317,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     ContinousFragment,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(4095, 30000, 100000)));
 
 
@@ -542,16 +542,8 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 24)));
-
-#ifdef MULTITHREAD
-TEST_P(HardwareTest, Multithread) {
-  ASSERT_TRUE(1);
-  // TODO(pablogs): this test should check if pub/sub/services works from different threads
-  // Rensas hardware have no threads at this moment
-}
-#endif  // MULTITHREAD
 
 class ExecutorRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
@@ -605,13 +597,13 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     ExecutorRateTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTest,
-    ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
+    ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
 int main(int args, char** argv)
 {
