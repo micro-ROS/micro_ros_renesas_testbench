@@ -520,7 +520,7 @@ class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface
 {
 public:
     DomainTest()
-        : HardwareTestBase(std::get<0>(GetParam()), 5, std::get<1>(GetParam())) {}
+        : HardwareTestBase(std::get<0>(GetParam()), 4, std::get<1>(GetParam())) {}
 };
 
 TEST_P(DomainTest, Domain) {
