@@ -4,7 +4,7 @@
 
 #include "hal_data.h"
 
-#define sleep_ms(X) tx_thread_sleep(((X / 1000.0) * TX_TIMER_TICKS_PER_SECOND))
+#define sleep_ms(X) tx_thread_sleep(((ULONG) ((X / 1000.0) * TX_TIMER_TICKS_PER_SECOND)))
 
 extern bsp_leds_t g_bsp_leds;
 

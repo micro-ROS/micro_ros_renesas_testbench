@@ -34,7 +34,7 @@ public:
     HardwareTestBase(TestAgent::Transport transport, uint8_t agent_serial_verbosity = 4, size_t domain_id = 0)
         : transport_(transport)
         , agent_port(8888)
-        , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
+        , agent_serial_dev("")
         , agent_serial_verbosity_(agent_serial_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
     {
@@ -56,11 +56,18 @@ public:
                 agent.reset(new TestAgent(agent_port, agent_serial_verbosity_));
                 break;
 
-            case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
-                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/micro-ROS_tests";
-                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project/src/microros_app.c";
-                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity_));
+                agent_serial_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_USB/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_USB/src/microros_app.c";
+                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
+                break;
+
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+                agent_serial_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
+                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_serial/micro-ROS_tests";
+                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_serial/src/microros_app.c";
+                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
                 break;
 
             default:

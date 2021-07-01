@@ -15,6 +15,8 @@
 #include <rcutils/allocator.h>
 #include <rmw_microros/rmw_microros.h>
 
+void microros_app(void);
+
 void net_thread_entry(void *pvParameters)
 {
     (void) pvParameters;

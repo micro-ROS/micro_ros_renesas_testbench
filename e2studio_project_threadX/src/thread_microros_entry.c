@@ -12,6 +12,8 @@
 #include <rcutils/allocator.h>
 #include <rmw_microros/rmw_microros.h>
 
+void microros_app(void);
+
 /* Thread micro-ROS entry function */
 void thread_microros_entry(void)
 {
