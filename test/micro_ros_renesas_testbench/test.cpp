@@ -542,7 +542,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
         ::testing::Values(10, 24)));
 
 class ExecutorRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
