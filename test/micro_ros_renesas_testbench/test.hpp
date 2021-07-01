@@ -26,8 +26,6 @@
 
 using namespace std::chrono_literals;
 
-// TODO(pablogs): All the system calls should be done using a bash script in order to increase flexibility when using with other platforms.
-
 class HardwareTestBase : public ::testing::Test
 {
 public:
@@ -45,28 +43,24 @@ public:
         switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
-                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/micro-ROS_tests";
-                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_threadX/src/microros_app.c";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity_));
+                project_name = "e2studio_project_threadX";
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
-                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/micro-ROS_tests";
-                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_freeRTOS/src/microros_app.c";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity_));
+                project_name = "e2studio_project_freeRTOS";
+                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
                 agent_serial_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
-                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_USB/micro-ROS_tests";
-                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_USB/src/microros_app.c";
+                project_name = "e2studio_project_USB";
                 agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
                 agent_serial_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
-                build_path = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_serial/micro-ROS_tests";
-                project_main = cwd + "/src/micro_ros_renesas_testbench/e2studio_project_serial/src/microros_app.c";
+                project_name = "e2studio_project_serial";
                 agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
                 break;
 
@@ -75,7 +69,7 @@ public:
         }
 
         // Delete content of client config
-        client_config_path = build_path + "/../src/config.h";
+        client_config_path = cwd + "/src/micro_ros_renesas_testbench/" + project_name + "/src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
 
         switch (transport_)
@@ -141,8 +135,8 @@ public:
 
     bool checkConnection(){
         std::cout << "Checking device connection ";
-        // bool ret = 0 == system("rfp-cli -device RA -tool jlink -reset > /dev/null 2>&1");
-        bool ret = 0 == system("rfp-cli -device RA -tool e2 -reset > /dev/null 2>&1");
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/scripts/check.sh";
+        bool ret = 0 == system(command.c_str());
         std::cout << ((ret) ? "OK" : "ERROR") << std::endl;
         return ret;
     }
@@ -154,30 +148,13 @@ public:
         std::getline(testname, filename, '/');
 
         std::cout << "Building client firmware: " << filename << std::endl;
-        std::string copy_command = "cp " + cwd  + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/" + filename + ".c " + project_main;
-        bool ret = 0 == system(copy_command.c_str());
-        std::string build_command = "cd " + build_path + " && make -j$(nproc) pre-build && make -j$(nproc) microros_testbench.hex"; //> /dev/null
-        ret &= 0 == system(build_command.c_str());
-
-        return ret;
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/scripts/build.sh " + filename + " " + project_name;
+        return 0 == system(command.c_str());
     }
 
     bool flashClientCode(){
-        std::cout << "Flashing code" << std::endl;
-        // std::ofstream jlink_script("/tmp/renesas_script.jlink");
-        // jlink_script << "erase 00000000 001FFFFF" << std::endl;
-        // jlink_script << "erase 08000000 08001FFF" << std::endl;
-        // jlink_script << "r" << std::endl;
-        // jlink_script << "h" << std::endl;
-        // jlink_script << "loadfile " + build_path + "/microros_testbench.hex" << std::endl;
-        // jlink_script << "r" << std::endl;
-        // jlink_script << "q" << std::endl;
-
-        // std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -NoGui 1 -CommandFile /tmp/renesas_script.jlink";
-        // std::string flash_command = "rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
-        std::string flash_command = "rfp-cli -device RA -tool e2 -s 6000000 -noprogress -run -p '" + build_path + "/microros_testbench.hex'";
-        bool ret = 0 == system(flash_command.c_str());
-        return ret;
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/scripts/flash.sh " + project_name;
+        return 0 == system(command.c_str());
     }
 
     void runClientCode(){
@@ -234,8 +211,7 @@ protected:
     rclcpp::InitOptions options;
 
     std::string cwd;
-    std::string build_path;
-    std::string project_main;
+    std::string project_name;
     std::string client_config_path;
 
     size_t domain_id_;
