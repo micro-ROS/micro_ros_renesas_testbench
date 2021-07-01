@@ -31,7 +31,7 @@ using namespace std::chrono_literals;
 class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_serial_verbosity = 5, size_t domain_id = 0)
+    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_serial_verbosity = 4, size_t domain_id = 0)
         : transport_(transport)
         , agent_port(8888)
         , agent_serial_dev("/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00")
@@ -134,7 +134,8 @@ public:
 
     bool checkConnection(){
         std::cout << "Checking device connection ";
-        bool ret = 0 == system("rfp-cli -device RA -tool jlink -reset > /dev/null 2>&1");
+        // bool ret = 0 == system("rfp-cli -device RA -tool jlink -reset > /dev/null 2>&1");
+        bool ret = 0 == system("rfp-cli -device RA -tool e2 -reset > /dev/null 2>&1");
         std::cout << ((ret) ? "OK" : "ERROR") << std::endl;
         return ret;
     }
@@ -156,17 +157,18 @@ public:
 
     bool flashClientCode(){
         std::cout << "Flashing code" << std::endl;
-        std::ofstream jlink_script("/tmp/renesas_script.jlink");
+        // std::ofstream jlink_script("/tmp/renesas_script.jlink");
         // jlink_script << "erase 00000000 001FFFFF" << std::endl;
         // jlink_script << "erase 08000000 08001FFF" << std::endl;
-        jlink_script << "r" << std::endl;
-        jlink_script << "h" << std::endl;
-        jlink_script << "loadfile " + build_path + "/microros_testbench.hex" << std::endl;
-        jlink_script << "r" << std::endl;
-        jlink_script << "q" << std::endl;
+        // jlink_script << "r" << std::endl;
+        // jlink_script << "h" << std::endl;
+        // jlink_script << "loadfile " + build_path + "/microros_testbench.hex" << std::endl;
+        // jlink_script << "r" << std::endl;
+        // jlink_script << "q" << std::endl;
 
-        std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -NoGui 1 -CommandFile /tmp/renesas_script.jlink";
+        // std::string flash_command = "JLinkExe -device R7FA6M5BH -if SWD -speed 5000 -autoconnect 1 -NoGui 1 -CommandFile /tmp/renesas_script.jlink";
         // std::string flash_command = "rfp-cli -device RA -tool jlink -reset -e -p '" + build_path + "/microros_testbench.hex'";
+        std::string flash_command = "rfp-cli -device RA -tool e2 -s 6000000 -noprogress -run -p '" + build_path + "/microros_testbench.hex'";
         bool ret = 0 == system(flash_command.c_str());
         return ret;
     }
