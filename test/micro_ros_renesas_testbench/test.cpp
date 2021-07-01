@@ -423,10 +423,20 @@ TEST_P(HardwareTest, Parameters) {
     param_names.push_back("param2");
     param_names.push_back("param3");
 
-    std::this_thread::sleep_for(500ms);
 
-    auto list_params = parameters_client->list_parameters({}, 10);
-    check_string_vector(list_params.names, param_names);
+    // List parameters multiple times until parameter server is available
+    for(size_t i = 0; i < 10; i++)
+    {
+      rcl_interfaces::msg::ListParametersResult list_params;
+      try {
+        std::cout << "Listing parameters" << std::endl;
+        list_params = parameters_client->list_parameters({}, 10, std::chrono::duration<int64_t, std::milli>(2000));
+      } catch(...) {
+        continue;
+      }
+      check_string_vector(list_params.names, param_names, true);
+      break;
+    }
 
     bool param_bool_value = parameters_client->get_parameter("param1", false);
     ASSERT_EQ(param_bool_value, true);
@@ -510,7 +520,7 @@ class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface
 {
 public:
     DomainTest()
-        : HardwareTestBase(std::get<0>(GetParam()), std::get<1>(GetParam())) {}
+        : HardwareTestBase(std::get<0>(GetParam()), 5, std::get<1>(GetParam())) {}
 };
 
 TEST_P(DomainTest, Domain) {
