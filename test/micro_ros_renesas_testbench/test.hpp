@@ -135,7 +135,7 @@ public:
 
     bool checkConnection(){
         std::cout << "Checking device connection ";
-        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/scripts/check.sh";
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/check.sh";
         bool ret = 0 == system(command.c_str());
         std::cout << ((ret) ? "OK" : "ERROR") << std::endl;
         return ret;
@@ -148,12 +148,12 @@ public:
         std::getline(testname, filename, '/');
 
         std::cout << "Building client firmware: " << filename << std::endl;
-        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/scripts/build.sh " + filename + " " + project_name;
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/build.sh " + filename + " " + project_name;
         return 0 == system(command.c_str());
     }
 
     bool flashClientCode(){
-        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/scripts/flash.sh " + project_name;
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/flash.sh " + project_name;
         return 0 == system(command.c_str());
     }
 

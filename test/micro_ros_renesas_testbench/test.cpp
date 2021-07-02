@@ -41,11 +41,11 @@ using namespace std::chrono_literals;
 TEST_P(HardwareTest, EntityCreation) {
   std::vector<std::string> node_list =
   {
-    "/test_node_0",
-    "/test_node_1",
-    "/test_node_2",
-    "/test_node_3",
-    "/test_node_4"
+    "/ns_0/test_node_0",
+    "/ns_1/test_node_1",
+    "/ns_2/test_node_2",
+    "/ns_3/test_node_3",
+    "/ns_4/test_node_4"
   };
 
   std::vector<std::string> topic_list =
@@ -89,11 +89,11 @@ TEST_P(HardwareTest, EntityDestruction) {
   // Look for created nodes
   std::vector<std::string> node_list =
   {
-      "/test_node_0",
-      "/test_node_1",
-      "/test_node_2",
-      "/test_node_3",
-      "/test_node_4"
+      "/ns_0/test_node_0",
+      "/ns_1/test_node_1",
+      "/ns_2/test_node_2",
+      "/ns_3/test_node_3",
+      "/ns_4/test_node_4"
   };
 
   // Look for created publishers and subscribers
