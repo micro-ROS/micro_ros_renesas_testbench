@@ -99,11 +99,6 @@ public:
         std::srand(std::time(nullptr));
         size_t isolation_domain_id = (size_t)(ROS_MAX_DOMAIN_ID * ((float) std::rand()) / ((float) RAND_MAX));
         domain_id_ = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
-
-// TODO: Check why in galactic is not possible to use other domain ids
-#ifdef ROS_DISTRO_GALACTIC
-        domain_id_ = 0;
-#endif  // ROS_DISTRO_GALACTIC
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 

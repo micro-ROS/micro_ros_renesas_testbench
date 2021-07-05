@@ -313,7 +313,7 @@ TEST_P(ContinousFragment, PublisherContinousFragment) {
     ASSERT_EQ(payload_size, msg_size-1);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     ContinousFragment,
         ::testing::Combine(
@@ -538,7 +538,7 @@ TEST_P(DomainTest, Domain) {
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
@@ -593,14 +593,14 @@ TEST_P(ExecutorRateTest, ExecutorRate)
     ASSERT_NEAR(future.get(), expected_freq, 3.0);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     ExecutorRateTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     HardwareTest,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
