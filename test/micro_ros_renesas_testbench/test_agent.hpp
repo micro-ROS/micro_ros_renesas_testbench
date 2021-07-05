@@ -39,6 +39,29 @@ public:
       UDP_FREERTOS_TRANSPORT,
   };
 
+  friend std::ostream& operator<<(std::ostream& os, const Transport& transport) {
+    std::string text;
+    switch (transport)
+    {
+        case Transport::UDP_THREADX_TRANSPORT:
+          text = "UDP_THREADX_TRANSPORT";
+          break;
+        case Transport::UDP_FREERTOS_TRANSPORT:
+          text = "UDP_FREERTOS_TRANSPORT";
+          break;
+        case Transport::SERIAL_TRANSPORT:
+          text = "SERIAL_TRANSPORT";
+          break;
+        case Transport::USB_TRANSPORT:
+          text = "USB_TRANSPORT";
+          break;
+        default:
+          text = "Unknown transport";
+          break;
+    }
+    return os << text;
+  }
+
   TestAgent(Transport transport, std::string args, uint8_t verbosity);
   TestAgent(uint16_t port, uint8_t verbosity);
   TestAgent(std::string dev, uint8_t verbosity);
