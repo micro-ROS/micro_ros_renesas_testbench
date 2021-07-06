@@ -1,6 +1,6 @@
 
-#ifndef MICROROS_LED__H
-#define MICROROS_LED__H
+#ifndef MICROROS_UTILS__H
+#define MICROROS_UTILS__H
 
 #include "hal_data.h"
 
@@ -24,4 +24,4 @@ static inline void set_led_status(led_color_t led, bool status)
         (status) ? BSP_IO_LEVEL_HIGH : BSP_IO_LEVEL_LOW);
 }
 
-#endif  // MICROROS_LED__H
+#endif  // MICROROS_UTILS__H
