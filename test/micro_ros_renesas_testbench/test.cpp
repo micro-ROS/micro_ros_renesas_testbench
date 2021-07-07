@@ -21,6 +21,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/float64.hpp>
 #include <std_msgs/msg/int64.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <example_interfaces/srv/add_two_ints.hpp>
@@ -228,8 +229,6 @@ TEST_P(HardwareTest, Publisher) {
 }
 
 TEST_P(HardwareTest, Subscriber) {
-  bool received = false;
-
   auto out_msg = std::make_shared<std_msgs::msg::Int32>();
   out_msg->data = 10;
 
@@ -241,7 +240,6 @@ TEST_P(HardwareTest, Subscriber) {
     "test_aux_pub", 10,
     [&](std_msgs::msg::Int32::UniquePtr msg) {
       ASSERT_EQ(msg->data, out_msg->data * 10);
-      received = true;
       promise->set_value();
     }
   );
@@ -253,9 +251,42 @@ TEST_P(HardwareTest, Subscriber) {
 
   auto timer = node->create_wall_timer(1s, publish_message);
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
-
-  ASSERT_TRUE(received);
 }
+
+#ifdef ROS_DISTRO_GALACTIC
+TEST_P(HardwareTest, ComplexSubscriber) {
+  auto out_msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
+  out_msg->distortion_model = "string_1";
+  out_msg->header.frame_id = "string_2";
+
+  float out_sum = 0;
+  for(size_t i = 0; i < 200; i++){
+    float data = (float) std::rand() / (float) RAND_MAX;
+    out_msg->d.push_back(data);
+    out_sum += data;
+  }
+
+  auto promise = std::make_shared<std::promise<void>>();
+  auto future = promise->get_future();
+
+  auto publisher = node->create_publisher<sensor_msgs::msg::CameraInfo>("test_sub", 10);
+  auto subscription = node->create_subscription<std_msgs::msg::Float64>(
+    "test_aux_pub", 10,
+    [&](std_msgs::msg::Float64::UniquePtr msg) {
+      ASSERT_NEAR(msg->data, out_sum, 0.01);
+      promise->set_value();
+    }
+  );
+
+  auto publish_message = [&](){
+    std::cout << "Publishing topic" << std::endl;
+    publisher->publish(*out_msg);
+  };
+
+  auto timer = node->create_wall_timer(1s, publish_message);
+  ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
+}
+#endif  // ROS_DISTRO_GALACTIC
 
 #ifdef ROS_DISTRO_GALACTIC
 TEST_P(HardwareTest, CustomTypeIntrospection) {

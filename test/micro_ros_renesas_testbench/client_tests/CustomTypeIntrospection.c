@@ -13,8 +13,6 @@
 
 void microros_app(void);
 
-uint8_t static_buffer[2000];
-
 void microros_app(void)
 {
     rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -50,6 +48,7 @@ void microros_app(void)
     // conf.rules = rules;
     // conf.n_rules = sizeof(rules) / sizeof(rules[0]);
 
+    static uint8_t static_buffer[2000];
     micro_ros_utilities_create_static_message_memory(
         ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, CameraInfo),
         &msg,
