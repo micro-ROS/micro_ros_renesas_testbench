@@ -38,15 +38,13 @@ void microros_app(void)
 
     sensor_msgs__msg__CameraInfo msg;
 
-    // TODO: There is an issue if rules are added
     micro_ros_utilities_memory_conf_t conf = {0};
-    // conf.allocator = &allocator;
-    // micro_ros_utilities_memory_rule_t rules[] = {
-    //     {"d", 30},
-    // };
+    micro_ros_utilities_memory_rule_t rules[] = {
+        {"d", 30},
+    };
 
-    // conf.rules = rules;
-    // conf.n_rules = sizeof(rules) / sizeof(rules[0]);
+    conf.rules = rules;
+    conf.n_rules = sizeof(rules) / sizeof(rules[0]);
 
     static uint8_t static_buffer[2000];
     micro_ros_utilities_create_static_message_memory(

@@ -298,7 +298,7 @@ TEST_P(HardwareTest, CustomTypeIntrospection) {
     [&](sensor_msgs::msg::CameraInfo msg) {
       ASSERT_EQ(msg.distortion_model, "string_1");
       ASSERT_EQ(msg.header.frame_id, "string_2");
-      ASSERT_EQ(msg.d.size(), 5U);
+      ASSERT_EQ(msg.d.size(), 30U);
       for(size_t i = 0; i < msg.d.size(); i++){
         ASSERT_EQ(msg.d[i], static_cast<double>(i));
       }
