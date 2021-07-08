@@ -21,7 +21,7 @@ jobs:
     #     required-ros-distributions: ${{ matrix.ros_distribution }}
     - name: Create ROS 2 workspace
       run: |
-        rm -rf ros_ws/*
+        rm -rf ros_ws/src
         mkdir -p ros_ws/src
     - uses: actions/checkout@v2
       with:
