@@ -156,7 +156,7 @@ TEST_P(HardwareTest, EntityDestruction) {
   ASSERT_EQ(topics_found, 0U)  << "Topic destruction failed";
 }
 
-TEST_P(HardwareTest, EntitiesQoS) {
+TEST_P(HardwareTestOneTransport, EntitiesQoS) {
   std::vector<std::string> topic_list =
   {
     "/test_pub_reliable",
@@ -547,7 +547,7 @@ TEST_P(HardwareTest, Parameters) {
 }
 #endif  // ROS_DISTRO_GALACTIC
 
-class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+class DomainTest : public HardwareTestOneTransport, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
 public:
     DomainTest()
@@ -568,14 +568,6 @@ TEST_P(DomainTest, Domain) {
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
-
-INSTANTIATE_TEST_CASE_P(
-    RenesasTest,
-    DomainTest,
-        ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
-        ::testing::Values(10, 24)));
-
 class ExecutorRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
 public:
@@ -639,6 +631,20 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTest,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
+
+
+INSTANTIATE_TEST_CASE_P(
+    RenesasTest,
+    DomainTest,
+        ::testing::Combine(
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
+        ::testing::Values(10, 24)));
+
+INSTANTIATE_TEST_CASE_P(
+    RenesasTest,
+    HardwareTestOneTransport,
+    ::testing::Values(TestAgent::Transport::USB_TRANSPORT);
+
 
 int main(int args, char** argv)
 {

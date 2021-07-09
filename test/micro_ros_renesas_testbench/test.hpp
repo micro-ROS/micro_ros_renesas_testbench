@@ -225,4 +225,6 @@ public:
     ~HardwareTest(){}
 };
 
+class HardwareTestOneTransport: public HardwareTestBase;
+
 #endif //IN_TEST_HPP
