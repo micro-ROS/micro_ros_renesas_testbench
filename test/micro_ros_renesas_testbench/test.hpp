@@ -219,10 +219,10 @@ protected:
 class HardwareTestAllTransports : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
 {
 public:
-    HardwareTest()
+    HardwareTestAllTransports()
         : HardwareTestBase(GetParam()){}
 
-    ~HardwareTest(){}
+    ~HardwareTestAllTransports(){}
 };
 
 class HardwareTestOneTransport : public HardwareTestBase
