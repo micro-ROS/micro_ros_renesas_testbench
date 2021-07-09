@@ -120,7 +120,7 @@ TEST_P(HardwareTest, EntityDestruction) {
 
   auto publisher = node->create_publisher<std_msgs::msg::Int32>("ns_0/test_subscriber_delete", 10);
 
-  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(10), [&]() {
+  auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
         nodes_found = check_string_vector(node->get_node_names(), node_list);
         topics_found = check_string_vector(node->get_topic_names_and_types(), topic_list);
 

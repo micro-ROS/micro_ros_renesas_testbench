@@ -44,7 +44,7 @@ void microros_app(void)
 	rclc_node_init_with_options(&node, "test_node", "", &support, &node_ops);
 
     // create publisher
-    rclc_publisher_init_default(
+    rclc_publisher_init_best_effort(
         &publisher,
         &node,
         ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, Int32),
