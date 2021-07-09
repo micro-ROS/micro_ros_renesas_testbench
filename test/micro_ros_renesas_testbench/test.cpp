@@ -39,7 +39,7 @@
 
 using namespace std::chrono_literals;
 
-TEST_P(HardwareTest, EntityCreation) {
+TEST_P(HardwareTestAllTransports, EntityCreation) {
   std::vector<std::string> node_list =
   {
     "/ns_0/test_node_0",
@@ -85,7 +85,7 @@ TEST_P(HardwareTest, EntityCreation) {
   ASSERT_EQ(topics_found, topic_list.size()) << "Topic creation failed, found " << check_string_vector(node->get_topic_names_and_types(), topic_list, true) << " topics";
 }
 
-TEST_P(HardwareTest, EntityDestruction) {
+TEST_P(HardwareTestAllTransports, EntityDestruction) {
 
   // Look for created nodes
   std::vector<std::string> node_list =
@@ -156,7 +156,7 @@ TEST_P(HardwareTest, EntityDestruction) {
   ASSERT_EQ(topics_found, 0U)  << "Topic destruction failed";
 }
 
-TEST_P(HardwareTestOneTransport, EntitiesQoS) {
+TEST_F(HardwareTestOneTransport, EntitiesQoS) {
   std::vector<std::string> topic_list =
   {
     "/test_pub_reliable",
@@ -213,7 +213,7 @@ TEST_P(HardwareTestOneTransport, EntitiesQoS) {
   ASSERT_EQ(sub_best_effort[0].qos_profile().get_rmw_qos_profile().durability, RMW_QOS_POLICY_DURABILITY_VOLATILE);
 }
 
-TEST_P(HardwareTest, Publisher) {
+TEST_P(HardwareTestAllTransports, Publisher) {
 
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
@@ -228,7 +228,7 @@ TEST_P(HardwareTest, Publisher) {
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
-TEST_P(HardwareTest, Subscriber) {
+TEST_P(HardwareTestAllTransports, Subscriber) {
   auto out_msg = std::make_shared<std_msgs::msg::Int32>();
   out_msg->data = 10;
 
@@ -254,7 +254,7 @@ TEST_P(HardwareTest, Subscriber) {
 }
 
 #ifdef ROS_DISTRO_GALACTIC
-TEST_P(HardwareTest, ComplexSubscriber) {
+TEST_P(HardwareTestAllTransports, ComplexSubscriber) {
   auto out_msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
   out_msg->distortion_model = "string_1";
   out_msg->header.frame_id = "string_2";
@@ -289,7 +289,7 @@ TEST_P(HardwareTest, ComplexSubscriber) {
 #endif  // ROS_DISTRO_GALACTIC
 
 #ifdef ROS_DISTRO_GALACTIC
-TEST_P(HardwareTest, CustomTypeIntrospection) {
+TEST_P(HardwareTestAllTransports, CustomTypeIntrospection) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
@@ -344,15 +344,7 @@ TEST_P(ContinousFragment, PublisherContinousFragment) {
     ASSERT_EQ(payload_size, msg_size-1);
 }
 
-INSTANTIATE_TEST_CASE_P(
-    RenesasTest,
-    ContinousFragment,
-        ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
-        ::testing::Values(4095, 30000, 100000)));
-
-
-TEST_P(HardwareTest, TimeSync) {
+TEST_P(HardwareTestAllTransports, TimeSync) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
@@ -375,7 +367,7 @@ TEST_P(HardwareTest, TimeSync) {
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
-TEST_P(HardwareTest, Ping) {
+TEST_P(HardwareTestAllTransports, Ping) {
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future().share();
 
@@ -390,7 +382,7 @@ TEST_P(HardwareTest, Ping) {
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
-TEST_P(HardwareTest, ServiceServer) {
+TEST_P(HardwareTestAllTransports, ServiceServer) {
     auto client = node->create_client<example_interfaces::srv::AddTwoInts>("test_add_two_ints");
 
     auto request = std::make_shared<example_interfaces::srv::AddTwoInts::Request>();
@@ -411,7 +403,7 @@ TEST_P(HardwareTest, ServiceServer) {
     }
 }
 
-TEST_P(HardwareTest, ServiceClient) {
+TEST_P(HardwareTestAllTransports, ServiceClient) {
     bool received = false;
     int64_t answer = 0;
 
@@ -443,7 +435,7 @@ TEST_P(HardwareTest, ServiceClient) {
 }
 
 #ifdef ROS_DISTRO_GALACTIC
-TEST_P(HardwareTest, Parameters) {
+TEST_P(HardwareTestAllTransports, Parameters) {
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
         param_client_node,
@@ -547,7 +539,7 @@ TEST_P(HardwareTest, Parameters) {
 }
 #endif  // ROS_DISTRO_GALACTIC
 
-class DomainTest : public HardwareTestOneTransport, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
 public:
     DomainTest()
@@ -629,7 +621,7 @@ INSTANTIATE_TEST_CASE_P(
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
-    HardwareTest,
+    HardwareTestAllTransports,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
 
@@ -642,9 +634,10 @@ INSTANTIATE_TEST_CASE_P(
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
-    HardwareTestOneTransport,
-    ::testing::Values(TestAgent::Transport::USB_TRANSPORT);
-
+    ContinousFragment,
+        ::testing::Combine(
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(4095, 30000, 100000)));
 
 int main(int args, char** argv)
 {

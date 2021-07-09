@@ -216,7 +216,7 @@ protected:
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 
-class HardwareTest : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
+class HardwareTestAllTransports : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
 {
 public:
     HardwareTest()
@@ -225,6 +225,14 @@ public:
     ~HardwareTest(){}
 };
 
-class HardwareTestOneTransport: public HardwareTestBase;
+class HardwareTestOneTransport : public HardwareTestBase
+{
+public:
+    HardwareTestOneTransport()
+        : HardwareTestBase(TestAgent::Transport::USB_TRANSPORT){}
+
+    ~HardwareTestOneTransport(){}
+};
+
 
 #endif //IN_TEST_HPP
