@@ -17,13 +17,13 @@
    /* DHCP populates these IP address, Sub net mask and Gateway Address. So start with this is zeroed out values
     * The MAC address is Test MAC address.
     */
-    static  uint8_t ucMACAddress[ 6 ]       = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+    static  uint8_t ucMACAddress[ 6 ]       = {0x00};
     static  uint8_t ucIPAddress[ 4 ]        = {0x00};
     static  uint8_t ucNetMask[ 4 ]          = {0x00};
     static  uint8_t ucGatewayAddress[ 4 ]   = {0x00};
     static  uint8_t ucDNSServerAddress[ 4 ] = {0x00};
 #else
-    static  uint8_t ucMACAddress[ 6 ]       = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55};
+    static  uint8_t ucMACAddress[ 6 ]       = {0x00};
     static  uint8_t ucIPAddress[ 4 ]        = {192, 168, 1, 180};
     static  uint8_t ucNetMask[ 4 ]          = {255, 255, 255, 0};
     static  uint8_t ucGatewayAddress[ 4 ]   = {0, 0, 0, 0};
@@ -36,6 +36,14 @@ Socket_t xSocket;
 bool renesas_e2_transport_open(struct uxrCustomTransport * transport){
     (void) transport;
     bool rv = false;
+
+    // Unique MAC address for device
+    const bsp_unique_id_t * unique_id = R_BSP_UniqueIdGet();
+    for(size_t i = 2; i < 6; i++){
+        g_ether0_cfg.p_mac_address[i] = unique_id->unique_id_bytes[i];
+    }
+
+    memcpy(ucMACAddress, g_ether0_cfg.p_mac_address, sizeof(ucMACAddress));
 
     FreeRTOS_IPInit(ucIPAddress,
                     ucNetMask,
