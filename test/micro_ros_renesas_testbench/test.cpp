@@ -560,10 +560,10 @@ TEST_P(DomainTest, Domain) {
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
-class ExecutorRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+class PublisherRateTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
 public:
-    ExecutorRateTest()
+    PublisherRateTest()
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam()))
         {
@@ -573,7 +573,7 @@ protected:
     int expected_freq;
 };
 
-TEST_P(ExecutorRateTest, ExecutorRate)
+TEST_P(PublisherRateTest, PublisherRate)
 {
     if (transport_ == TestAgent::Transport::SERIAL_TRANSPORT && expected_freq == 100)
     {
@@ -584,18 +584,20 @@ TEST_P(ExecutorRateTest, ExecutorRate)
     auto future = promise->get_future().share();
     auto clock = node->get_clock();
     size_t msg_count = 100;
+    size_t skip_initial_messages = 50;
     size_t count = 0;
 
     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
     {
         static rclcpp::Time begin;
 
-        if (count == 0)
+        if (count == skip_initial_messages)
         {
             begin = clock->now();
         }
-        else if(count == msg_count)
+        else if(count == msg_count + skip_initial_messages)
         {
+            count -= skip_initial_messages;
             auto duration = (clock->now() - begin).nanoseconds();
             float freq = (count*1e9)/duration;
             promise->set_value(freq);
@@ -604,8 +606,11 @@ TEST_P(ExecutorRateTest, ExecutorRate)
         count++;
     };
 
+    auto qos = rclcpp::SensorDataQoS();
+    qos.keep_last(0);
+
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-      "test_publisher", rclcpp::SensorDataQoS(), callback);
+      "test_publisher", qos, callback);
 
     auto timeout = std::chrono::duration<int64_t, std::milli>(1000U*10U*msg_count/expected_freq);
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, timeout), rclcpp::FutureReturnCode::SUCCESS);
@@ -614,7 +619,7 @@ TEST_P(ExecutorRateTest, ExecutorRate)
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
-    ExecutorRateTest,
+    PublisherRateTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
