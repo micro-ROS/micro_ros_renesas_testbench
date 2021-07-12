@@ -265,6 +265,9 @@
       <property id="module.driver.ether_phy.flow_control" value="module.driver.ether_phy.flow_control.0"/>
     </module>
     <module id="module.azure.nxd.common.1447741910"/>
+    <module id="module.azure.nxd_dhcp_client.297726111">
+      <property id="module.azure.nxd_dhcp_client.name" value="g_dhcp_client0"/>
+    </module>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
     </context>
@@ -276,14 +279,17 @@
       <property id="rtos.threadx.thread.autostart" value="rtos.threadx.thread.autostart.enabled"/>
       <property id="rtos.threadx.thread.timeslice" value="1"/>
       <stack module="module.driver.timer_on_agt.2120718410"/>
-      <stack module="module.azure.nxd.ip.596417486">
-        <stack module="module.azure.nxd.packet_pool.39699715" requires="module.azure.nxd.ip.requires.nxd.packet_pool"/>
-        <stack module="module.middleware.rm_netxduo_ether.1218426412" requires="module.azure.nxd.ip.requires.nxd.driver">
-          <stack module="module.driver.ether_on_ether.346038555" requires="module.middleware.rm_netxduo_ether.requires.ether">
-            <stack module="module.driver.ether_phy_on_ether_phy.878367452" requires="module.driver.ether.requires.ether_phy"/>
+      <stack module="module.azure.nxd_dhcp_client.297726111">
+        <stack module="module.azure.nxd.ip.596417486" requires="module.azure.nxd_dhcp_client.requires.nxd.ip">
+          <stack module="module.azure.nxd.packet_pool.39699715" requires="module.azure.nxd.ip.requires.nxd.packet_pool"/>
+          <stack module="module.middleware.rm_netxduo_ether.1218426412" requires="module.azure.nxd.ip.requires.nxd.driver">
+            <stack module="module.driver.ether_on_ether.346038555" requires="module.middleware.rm_netxduo_ether.requires.ether">
+              <stack module="module.driver.ether_phy_on_ether_phy.878367452" requires="module.driver.ether.requires.ether_phy"/>
+            </stack>
+            <stack module="module.azure.nxd.common.1447741910" requires="module.middleware.rm_netxduo_ether.requires.nxd.common"/>
           </stack>
-          <stack module="module.azure.nxd.common.1447741910" requires="module.middleware.rm_netxduo_ether.requires.nxd.common"/>
         </stack>
+        <stack module="module.azure.nxd.packet_pool.39699715" requires="module.azure.nxd_dhcp_client.requires.nxd.packet_pool"/>
       </stack>
     </context>
     <config id="config.middleware.rm_netxduo_ether"/>

@@ -9,9 +9,11 @@
                 #else
 extern void thread_microros_entry(void);
 #endif
+#include "nxd_dhcp_client.h"
 #include "r_agt.h"
 #include "r_timer_api.h"
 FSP_HEADER
+void g_dhcp_client0_quick_setup();
 /** AGT Timer Instance */
 extern const timer_instance_t g_timer0;
 
