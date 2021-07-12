@@ -1,4 +1,4 @@
-name: CI foxy, galactic
+name: micro-ROS HIL tests
 
 on:
   workflow_dispatch:
