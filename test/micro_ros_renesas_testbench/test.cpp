@@ -617,27 +617,27 @@ TEST_P(PublisherRateTest, PublisherRate)
     ASSERT_NEAR(future.get(), expected_freq, expected_freq*0.05);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     PublisherRateTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     HardwareTestAllTransports,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
         ::testing::Values(10, 24)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     ContinousFragment,
         ::testing::Combine(
