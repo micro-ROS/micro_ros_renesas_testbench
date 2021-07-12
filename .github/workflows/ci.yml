@@ -6,7 +6,7 @@ on:
       name:
         description: "Manual trigger"
   schedule:
-    - cron: '33 6 * * *'
+    - cron: '00 6 * * *'
 
 jobs:
   micro_ros_renesas_testbench:
@@ -78,11 +78,6 @@ jobs:
           mv makefile.init makefile.init.old || true
           make clean && make -j$(nproc)
         popd
-    - name: Build micro-ROS agent
-      run: |
-        source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
-        cd ros_ws
-        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to micro_ros_agent
     - name: Build and run tests
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh

@@ -1,0 +1,36 @@
+name: micro-ROS HIL agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: "Manual trigger"
+  schedule:
+    - cron: '00 4 * * *'
+
+jobs:
+  micro_ros_renesas_testbench:
+    strategy:
+      fail-fast: false
+      matrix:
+        ros_distribution: [ foxy, galactic ]
+    runs-on: rpi-ros2-${{ matrix.ros_distribution }}
+    steps:
+    # - uses: ros-tooling/setup-ros@0.2.1
+    #   with:
+    #     required-ros-distributions: ${{ matrix.ros_distribution }}
+    - uses: actions/checkout@v2
+      with:
+        path: ros_ws/src/micro_ros_renesas_testbench
+        submodules: recursive
+        ref: ${{ matrix.ros_distribution }}
+        token: ${{ secrets.PRIVATE_KEY }}
+    - name: Download dependencies
+      run: |
+        cd ros_ws
+        vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
+    - name: Build micro-ROS agent
+      run: |
+        source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
+        cd ros_ws
+        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to micro_ros_agent
