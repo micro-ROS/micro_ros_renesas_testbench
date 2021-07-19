@@ -575,40 +575,32 @@ protected:
 
 TEST_P(PublisherRateTest, PublisherRate)
 {
+    if (transport_ == TestAgent::Transport::SERIAL_TRANSPORT && expected_freq == 100)
+    {
+        GTEST_SKIP();
+    }
+
     auto promise = std::make_shared<std::promise<float>>();
     auto future = promise->get_future().share();
     auto clock = node->get_clock();
-    std::vector<int64_t> msg_delay;
     size_t msg_count = 100;
-    size_t discard_msgs = 10;
-
+    size_t skip_initial_messages = 50;
     size_t count = 0;
 
     auto callback = [&](std_msgs::msg::Int32::SharedPtr /* msg */)
     {
-        static rclcpp::Time previous;
+        static rclcpp::Time begin;
 
-        if (count == 0)
+        if (count == skip_initial_messages)
         {
-            previous = clock->now();
+            begin = clock->now();
         }
-        else if(count == msg_count)
+        else if(count == msg_count + skip_initial_messages)
         {
-            std::sort (msg_delay.begin(), msg_delay.end());
-            int64_t sum_of_elems = 0;
-
-            std::for_each(msg_delay.begin()+discard_msgs, msg_delay.end()-discard_msgs, [&] (int64_t n) {
-                sum_of_elems += n;
-            });
-
-            count -= discard_msgs*2;
-            float period = sum_of_elems/(count*1e9);
-            promise->set_value(1/period);
-        }
-        else
-        {
-            msg_delay.push_back((clock->now() - previous).nanoseconds());
-            previous = clock->now();
+            count -= skip_initial_messages;
+            auto duration = (clock->now() - begin).nanoseconds();
+            float freq = (count*1e9)/duration;
+            promise->set_value(freq);
         }
 
         count++;
