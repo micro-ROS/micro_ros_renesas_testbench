@@ -72,11 +72,18 @@ public:
         client_config_path = cwd + "/src/micro_ros_renesas_testbench/" + project_name + "/src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
 
+        std::string ip_address = TestAgent::getIPAddress();
+
+        size_t sum = 0;
+        for(size_t i = 0; i < ip_address.length(); i++){
+            sum += ip_address.c_str()[i];
+        }
+
         switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             {
-                std::string ip_address = TestAgent::getIPAddress();
+
                 std::replace(ip_address.begin(), ip_address.end(), '.', ',');
                 addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
                 addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
@@ -85,7 +92,6 @@ public:
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
             {
-                std::string ip_address = TestAgent::getIPAddress();
                 addDefineToClient("AGENT_IP_ADDRESS", "\"" + ip_address + "\"");
                 addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
                 break;
@@ -96,8 +102,7 @@ public:
                 break;
         }
 
-        std::srand(std::time(nullptr));
-        size_t isolation_domain_id = (size_t)(ROS_MAX_DOMAIN_ID * ((float) std::rand()) / ((float) RAND_MAX));
+        size_t isolation_domain_id = (size_t)(sum % ROS_MAX_DOMAIN_ID);
         domain_id_ = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
