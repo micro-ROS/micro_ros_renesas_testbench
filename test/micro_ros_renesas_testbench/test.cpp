@@ -614,7 +614,7 @@ TEST_P(PublisherRateTest, PublisherRate)
 
     auto timeout = std::chrono::duration<int64_t, std::milli>(1000U*10U*msg_count/expected_freq);
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, timeout), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_NEAR(future.get(), expected_freq, expected_freq*0.05);
+    ASSERT_NEAR(future.get(), expected_freq, expected_freq*0.10);
 }
 
 INSTANTIATE_TEST_CASE_P(
