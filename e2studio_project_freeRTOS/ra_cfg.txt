@@ -542,7 +542,7 @@ FSP Configuration
     General: Max Priorities: 5
     General: Minimal Stack Size: 128
     General: Max Task Name Len: 16
-    Stats: Use Trace Facility: Disabled
+    Stats: Use Trace Facility: Enabled
     Stats: Use Stats Formatting Functions: Disabled
     General: Use 16-bit Ticks: Disabled
     General: Idle Should Yield: Enabled
@@ -580,7 +580,7 @@ FSP Configuration
     Optional Functions: vTaskDelay() Function: Enabled
     Optional Functions: xTaskGetSchedulerState() Function: Enabled
     Optional Functions: xTaskGetCurrentTaskHandle() Function: Enabled
-    Optional Functions: uxTaskGetStackHighWaterMark() Function: Disabled
+    Optional Functions: uxTaskGetStackHighWaterMark() Function: Enabled
     Optional Functions: xTaskGetIdleTaskHandle() Function: Disabled
     Optional Functions: eTaskGetState() Function: Disabled
     Optional Functions: xEventGroupSetBitFromISR() Function: Enabled

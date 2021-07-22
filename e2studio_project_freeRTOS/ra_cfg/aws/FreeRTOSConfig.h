@@ -54,7 +54,7 @@
 #define configMAX_TASK_NAME_LEN (16)
 #endif
 #ifndef configUSE_TRACE_FACILITY
-#define configUSE_TRACE_FACILITY (0)
+#define configUSE_TRACE_FACILITY (1)
 #endif
 #ifndef configUSE_STATS_FORMATTING_FUNCTIONS
 #define configUSE_STATS_FORMATTING_FUNCTIONS (0)
@@ -183,7 +183,7 @@
 #define INCLUDE_xTaskGetCurrentTaskHandle (1)
 #endif
 #ifndef INCLUDE_uxTaskGetStackHighWaterMark
-#define INCLUDE_uxTaskGetStackHighWaterMark (0)
+#define INCLUDE_uxTaskGetStackHighWaterMark (1)
 #endif
 #ifndef INCLUDE_xTaskGetIdleTaskHandle
 #define INCLUDE_xTaskGetIdleTaskHandle (0)
