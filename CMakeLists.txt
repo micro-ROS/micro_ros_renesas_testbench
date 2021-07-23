@@ -26,11 +26,19 @@ if(BUILD_TESTING)
   find_package(fastrtps REQUIRED)
   find_package(fastrtps_cmake_module REQUIRED)
   find_package(microxrcedds_agent REQUIRED)
+  find_package(micro_ros_agent REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(rmw REQUIRED)
   find_package(std_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
   find_package(example_interfaces REQUIRED)
+
+  find_package(rosidl_typesupport_fastrtps_cpp REQUIRED)
+  find_package(rosidl_runtime_cpp REQUIRED)
+  find_package(rosidl_typesupport_cpp REQUIRED)
+  find_package(rmw_dds_common REQUIRED)
+  find_package(rmw_fastrtps_shared_cpp REQUIRED)
+  find_package(micro_ros_msgs REQUIRED)
 
   # ament_lint_auto_find_test_dependencies()
 
@@ -40,17 +48,20 @@ if(BUILD_TESTING)
 
   string(TOUPPER $ENV{ROS_DISTRO} ROS_DISTRO)
   target_compile_options(${PROJECT_NAME}_test PRIVATE -DROS_DISTRO_${ROS_DISTRO})
-  target_include_directories(${PROJECT_NAME}_test PRIVATE include src test)
+  target_include_directories(${PROJECT_NAME}_test PRIVATE include src test micro_ros_agent_INCLUDE_DIR)
 
   target_link_libraries(${PROJECT_NAME}_test
     fastcdr
     fastrtps
-    microxrcedds_agent)
+    microxrcedds_agent
+    micro_ros_agent
+  )
 
   ament_target_dependencies(${PROJECT_NAME}_test
     fastcdr
     fastrtps
     microxrcedds_agent
+    micro_ros_agent
     rclcpp
     rmw
     std_msgs

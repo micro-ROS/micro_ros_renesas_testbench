@@ -19,6 +19,7 @@
   <depend>example_interfaces</depend>
 
   <depend>microxrcedds_agent</depend>
+  <depend>micro_ros_agent</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 

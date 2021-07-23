@@ -27,6 +27,8 @@
 #include <chrono>
 #include <thread>
 
+#include <agent/Agent.hpp>
+
 class TestAgent
 {
 public:
@@ -73,61 +75,77 @@ public:
   static std::string getIPAddress();
 
 private:
-  std::shared_ptr<std::thread> agent_thread_;
-  uint16_t port_;
+  std::unique_ptr<uros::agent::Agent> micro_ros_agent;
+  std::vector<const char*> agent_args;
+  std::string port_;
   std::string dev_;
-  std::string command_;
+  std::string verbosity_;
 };
 
 TestAgent::TestAgent(uint16_t port, uint8_t verbosity = 6)
 {
-  port_ = port;
-  command_ = "ros2 run micro_ros_agent micro_ros_agent udp4 --port " + std::to_string(port_) + " -v" +  std::to_string(verbosity);
+  verbosity_ = "-v" + std::to_string(verbosity);
+  port_ = std::to_string(port);
+
+  agent_args.push_back("");
+  agent_args.push_back("udp4");
+  agent_args.push_back("--port");
+  agent_args.push_back(port_.c_str());
+  agent_args.push_back(verbosity_.c_str());
+  micro_ros_agent.reset(new uros::agent::Agent);
 }
 
 TestAgent::TestAgent(std::string dev, uint8_t verbosity = 6)
 {
+  verbosity_ = "-v" + std::to_string(verbosity);
   dev_ = dev;
-  command_ = "ros2 run micro_ros_agent micro_ros_agent serial --dev " + dev_ + " -v" +  std::to_string(verbosity);
+
+  agent_args.push_back("");
+  agent_args.push_back("serial");
+  agent_args.push_back("--dev");
+  agent_args.push_back(dev_.c_str());
+  agent_args.push_back(verbosity_.c_str());
+  micro_ros_agent.reset(new uros::agent::Agent);
 }
 
 TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 6)
 {
-  std::string transport_type;
-
+  verbosity_ = "-v" + std::to_string(verbosity);
+  agent_args.push_back("");
+  
   switch (transport)
   {
       case Transport::UDP_THREADX_TRANSPORT:
       case Transport::UDP_FREERTOS_TRANSPORT:
-          transport_type = "udp4";
+          port_ = args;
+          agent_args.push_back("udp4");
+          agent_args.push_back("--port");
+          agent_args.push_back(port_.c_str());
           break;
       case Transport::SERIAL_TRANSPORT:
       case Transport::USB_TRANSPORT:
-          transport_type = "serial";
+          dev_ = args;
+          agent_args.push_back("serial");
+          agent_args.push_back("--dev");
+          agent_args.push_back(dev_.c_str());
           break;
       default:
           break;
   }
 
-  command_ = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + args + " -v" +  std::to_string(verbosity);
+  agent_args.push_back(verbosity_.c_str());
+  micro_ros_agent.reset(new uros::agent::Agent);
 }
 
 void TestAgent::start()
 {
-  stop();
-  agent_thread_.reset(new std::thread(
-    [&]() -> void {
-      system(command_.c_str());
-    }
-  ));
+  micro_ros_agent->create(agent_args.size(), const_cast<char**> (agent_args.data()));
+  agent_args.clear();
 }
 
 void TestAgent::stop()
 {
-  system("pkill micro_ros_agent");
-  if(agent_thread_) {
-    agent_thread_->join();
-  }
+  micro_ros_agent->stop();
 }
 
 std::string TestAgent::getIPAddress(){
