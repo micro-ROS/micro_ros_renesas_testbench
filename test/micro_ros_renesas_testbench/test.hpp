@@ -109,7 +109,7 @@ public:
 
         // Set domain id
         rcl_allocator_t allocator = rcl_get_default_allocator();
-        rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+        init_options = rcl_get_zero_initialized_init_options();
 
         ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
         rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
@@ -126,6 +126,7 @@ public:
     void TearDown() override {
         agent->stop();
         rclcpp::shutdown();
+        (void) rcl_init_options_fini(&init_options);
     }
 
     bool checkConnection(){
@@ -204,6 +205,7 @@ protected:
     std::shared_ptr<TestAgent> agent;
     std::shared_ptr<rclcpp::Node> node;
     rclcpp::InitOptions options;
+    rcl_init_options_t init_options;
 
     std::string cwd;
     std::string project_name;
