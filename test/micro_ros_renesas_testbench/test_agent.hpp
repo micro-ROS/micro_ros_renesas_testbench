@@ -75,7 +75,7 @@ public:
   static std::string getIPAddress();
 
 private:
-  std::unique_ptr<uros::agent::Agent> micro_ros_agent;
+  uros::agent::Agent& micro_ros_agent;
   std::vector<const char*> agent_args;
   std::string port_;
   std::string dev_;
@@ -83,6 +83,7 @@ private:
 };
 
 TestAgent::TestAgent(uint16_t port, uint8_t verbosity = 6)
+: micro_ros_agent(micro_ros_agent.getInstance())
 {
   verbosity_ = "-v" + std::to_string(verbosity);
   port_ = std::to_string(port);
@@ -92,10 +93,10 @@ TestAgent::TestAgent(uint16_t port, uint8_t verbosity = 6)
   agent_args.push_back("--port");
   agent_args.push_back(port_.c_str());
   agent_args.push_back(verbosity_.c_str());
-  micro_ros_agent.reset(new uros::agent::Agent);
 }
 
 TestAgent::TestAgent(std::string dev, uint8_t verbosity = 6)
+: micro_ros_agent(micro_ros_agent.getInstance())
 {
   verbosity_ = "-v" + std::to_string(verbosity);
   dev_ = dev;
@@ -105,10 +106,10 @@ TestAgent::TestAgent(std::string dev, uint8_t verbosity = 6)
   agent_args.push_back("--dev");
   agent_args.push_back(dev_.c_str());
   agent_args.push_back(verbosity_.c_str());
-  micro_ros_agent.reset(new uros::agent::Agent);
 }
 
 TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 6)
+: micro_ros_agent(micro_ros_agent.getInstance())
 {
   verbosity_ = "-v" + std::to_string(verbosity);
   agent_args.push_back("");
@@ -134,18 +135,17 @@ TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 
   }
 
   agent_args.push_back(verbosity_.c_str());
-  micro_ros_agent.reset(new uros::agent::Agent);
 }
 
 void TestAgent::start()
 {
-  micro_ros_agent->create(agent_args.size(), const_cast<char**> (agent_args.data()));
+  micro_ros_agent.create(agent_args.size(), const_cast<char**> (agent_args.data()));
   agent_args.clear();
 }
 
 void TestAgent::stop()
 {
-  micro_ros_agent->stop();
+  micro_ros_agent.stop();
 }
 
 std::string TestAgent::getIPAddress(){
