@@ -15,6 +15,9 @@ jobs:
       matrix:
         ros_distribution: [foxy, galactic]
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
+    variables:
+      AGENT_BRANCH: (if [ "${{ matrix.agent_branch }}" == "foxy" ]; then "backport/stop_agent"; else "feature/stop_agent"; fi);
+
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
@@ -23,7 +26,7 @@ jobs:
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
-        ref: (if [ "${{ matrix.agent_branch }}" == "foxy" ]; then "backport/stop_agent"; else "feature/stop_agent"; fi);
+        ref: ${AGENT_BRANCH}
         token: ${{ secrets.PRIVATE_KEY }}
     - name: Download dependencies
       run: |
