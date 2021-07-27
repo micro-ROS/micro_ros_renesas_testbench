@@ -13,11 +13,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        - ros_distribution: galactic
-          agent_branch: feature/stop_agent
-        - ros_distribution: foxy
-          agent_branch: backport/stop_agent
+        ros_distribution: [foxy, galactic]
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
+    variables:
+      AGENT_BRANCH: "feature/stop_agent"
+    rules:
+    - if: ${{ matrix.ros_distribution }} == foxy
+      variables:                              
+        AGENT_BRANCH: "backport/stop_agent"  # at the job level.
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
