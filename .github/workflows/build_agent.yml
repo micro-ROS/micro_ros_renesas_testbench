@@ -13,7 +13,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [ galactic ]
+        - ros_distribution: galactic
+          agent_branch: feature/stop_agent
+        - ros_distribution: foxy
+          agent_branch: backport/stop_agent
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
@@ -23,7 +26,7 @@ jobs:
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
-        ref: feature/agent_API
+        ref: ${{ matrix.agent_branch }}
         token: ${{ secrets.PRIVATE_KEY }}
     - name: Download dependencies
       run: |
