@@ -17,12 +17,23 @@
 
 #include <gtest/gtest.h>
 
+#include <unistd.h>
+
 #include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
 
+#include <std_msgs/msg/u_int32_multi_array.hpp>
+
+#include <string>
+#include <memory>
+#include <vector>
+#include <chrono>
+#include <thread>
 #include <fstream>
+#include <ctime>
 
 #define ROS_MAX_DOMAIN_ID 101
+#define PROFILING_FILE_NAME "profiling_out.txt"
 
 using namespace std::chrono_literals;
 
@@ -237,6 +248,96 @@ public:
         : HardwareTestBase(TestAgent::Transport::USB_TRANSPORT){}
 
     ~HardwareTestOneTransport(){}
+};
+
+class HardwareTestMemoryProfiling : public HardwareTestBase
+{
+public:
+    std::ofstream log_file;
+
+    HardwareTestMemoryProfiling()
+        : HardwareTestBase(TestAgent::Transport::UDP_FREERTOS_TRANSPORT)
+        {
+            addDefineToClient("MICROROS_PROFILING", "1");
+
+            log_file.open(PROFILING_FILE_NAME, std::ios_base::app);
+        }
+
+    ~HardwareTestMemoryProfiling(){
+        log_file.close();
+    }
+
+    void SetUp() override {
+        HardwareTestBase::SetUp();
+
+        log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << std::endl;
+
+        auto sizes = get_library_size();
+        log_file << "\tused static: " << std::to_string(sizes[0]) << " B" << std::endl;
+        log_file << "\t.text: " << std::to_string(sizes[1]) << " B" << std::endl;
+        log_file << "\t.data: " << std::to_string(sizes[2]) << " B" << std::endl;
+        log_file << "\t.bss:  " << std::to_string(sizes[3]) << " B" << std::endl;
+
+        auto board_sizes = get_board_size();
+        log_file << "\tmax stack: "    << std::to_string(board_sizes[0]) << " B" << std::endl;
+        log_file << "\tabsolute dyn: " << std::to_string(board_sizes[1]) << " B" << std::endl;
+        log_file << "\tdyn: "          << std::to_string(board_sizes[2]) << " B" << std::endl;
+
+        log_file << std::endl;
+
+        // Dynamic memory usage should be zero when micro-ROS app ends.
+        ASSERT_EQ(board_sizes[2], 0U);
+    }
+
+    std::vector<size_t> get_library_size(){
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/size.sh " + project_name;
+
+        std::shared_ptr<FILE> pipe(popen(command.c_str(), "r"), pclose);
+        char buffer[128];
+        std::string result = "";
+        while (!feof(pipe.get())) {
+            if (fgets(buffer, 128, pipe.get()) != NULL)
+                result += buffer;
+        }
+
+        // Vector of string to save tokens
+        std::vector<std::string> tokens;
+        std::stringstream result_stream(result);
+        std::string aux;
+        while(getline(result_stream, aux, ' ')){
+            tokens.push_back(aux);
+        }
+
+        std::vector<size_t> sizes;
+        sizes.push_back(std::stoi(tokens[0])); // used RAM
+        sizes.push_back(std::stoi(tokens[1])); // .text
+        sizes.push_back(std::stoi(tokens[2])); // .data
+        sizes.push_back(std::stoi(tokens[3])); // .bss
+
+        return sizes;
+    }
+
+    std::vector<size_t> get_board_size(){
+        auto promise = std::make_shared<std::promise<void>>();
+        auto future = promise->get_future().share();
+
+        std::vector<size_t> out;
+        auto subscription = node->create_subscription<std_msgs::msg::UInt32MultiArray>(
+            "/profiling_output", 1,
+            [&](std_msgs::msg::UInt32MultiArray::UniquePtr msg) {
+                ASSERT_EQ(msg->data.size(), 3U);
+                out.push_back(msg->data[0]);
+                out.push_back(msg->data[1]);
+                out.push_back(msg->data[2]);
+                promise->set_value();
+            }
+        );
+
+        std::chrono::duration<int64_t, std::milli> timeout = std::chrono::duration<int64_t, std::milli>(20000);
+        rclcpp::spin_until_future_complete(node, future, timeout);
+
+        return(out);
+    }
 };
 
 

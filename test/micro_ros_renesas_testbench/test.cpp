@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <gtest/gtest.h>
-
 #include "./test.hpp"
-
-#include <unistd.h>
-
-#include <rclcpp/rclcpp.hpp>
 
 #include <std_msgs/msg/int32.hpp>
 #include <std_msgs/msg/float64.hpp>
@@ -28,14 +22,6 @@
 #include <sensor_msgs/msg/camera_info.hpp>
 
 #include <rmw/types.h>
-
-#include <string>
-#include <memory>
-#include <vector>
-#include <chrono>
-#include <thread>
-#include <fstream>
-#include <ctime>
 
 using namespace std::chrono_literals;
 
@@ -644,8 +630,17 @@ INSTANTIATE_TEST_CASE_P(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(4095, 30000, 100000)));
 
+// Profiling tests
+TEST_F(HardwareTestMemoryProfiling, SinglePublisherProfiling) {}
+TEST_F(HardwareTestMemoryProfiling, MultiplePublisherProfiling) {}
+
 int main(int args, char** argv)
 {
+    // Clean file
+    std::ofstream log_file;
+    log_file.open(PROFILING_FILE_NAME);
+    log_file.close();
+
     ::testing::InitGoogleTest(&args, argv);
     return RUN_ALL_TESTS();
 }
