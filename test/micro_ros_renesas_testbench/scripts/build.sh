@@ -8,5 +8,5 @@ project_main=$PWD/src/micro_ros_renesas_testbench/$PROJECT_NAME/src/microros_app
 build_path=$PWD/src/micro_ros_renesas_testbench/$PROJECT_NAME/micro-ROS_tests
 
 cp $source_code $project_main > /dev/null 2>&1
-USER_COLCON_META=$PWD/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/$FILENAME.meta make -C $build_path -j$(nproc) pre-build
-make -C $build_path -j$(nproc) microros_testbench.hex
+USER_COLCON_META=$PWD/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/client_tests/$FILENAME.meta make -C $build_path -j$(nproc) pre-build > /dev/null 2>&1
+make -C $build_path -j$(nproc) microros_testbench.hex > /dev/null 2>&1
