@@ -631,8 +631,8 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::Values(4095, 30000, 100000)));
 
 // Profiling tests
-TEST_F(HardwareTestMemoryProfiling, SinglePublisherProfiling) {}
-TEST_F(HardwareTestMemoryProfiling, MultiplePublisherProfiling) {}
+// TEST_F(HardwareTestMemoryProfiling, SinglePublisherProfiling) {}
+// TEST_F(HardwareTestMemoryProfiling, MultiplePublisherProfiling) {}
 
 int main(int args, char** argv)
 {
