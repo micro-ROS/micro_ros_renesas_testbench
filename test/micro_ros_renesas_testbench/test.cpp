@@ -603,6 +603,63 @@ TEST_P(PublisherRateTest, PublisherRate)
     ASSERT_NEAR(future.get(), expected_freq, expected_freq*0.10);
 }
 
+class ThroughputTest: public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
+{
+public:
+    ThroughputTest()
+        : HardwareTestBase(std::get<0>(GetParam()))
+        , msg_size(std::get<1>(GetParam()))
+        {
+            addDefineToClient("TOPIC_LEN", std::to_string(msg_size));
+            log_file.open(THROUGHPUT_FILE_NAME, std::ios_base::app);
+        }
+
+    ~ThroughputTest()
+        {
+            log_file.close();
+        }
+
+protected:
+  std::ofstream log_file;
+  size_t msg_size;
+};
+
+TEST_P(ThroughputTest, Throughput)
+{
+    auto promise = std::make_shared<std::promise<float>>();
+    auto future = promise->get_future().share();
+    auto read_time = std::chrono::duration<int64_t, std::milli>(5000);
+    size_t skip_initial_messages = 50;
+    size_t count = 0;
+
+    std::chrono::steady_clock::time_point begin;
+
+    auto callback = [&](std_msgs::msg::String::SharedPtr /* msg */)
+    {
+        if (count == skip_initial_messages)
+        {
+            begin = std::chrono::steady_clock::now();
+        }
+
+        count++;
+    };
+
+    auto qos = rclcpp::SensorDataQoS();
+    qos.keep_last(0);
+
+    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::String>(
+      "test_throughput", qos, callback);
+
+    rclcpp::spin_until_future_complete(node, future, read_time);
+    ASSERT_NE(count, (size_t) 0);
+
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - begin).count();
+    count -= skip_initial_messages;
+    float freq = (count*1e9)/duration;
+
+    log_file << "Transport: " << transport_ << ", Topic size: " << msg_size << ", Result: " << (int) freq << " hz. " << std::endl;
+}
+
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     PublisherRateTest,
@@ -615,13 +672,19 @@ INSTANTIATE_TEST_CASE_P(
     HardwareTestAllTransports,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
-
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
         ::testing::Values(10, 24)));
+
+INSTANTIATE_TEST_CASE_P(
+    RenesasTest,
+    ThroughputTest,
+        ::testing::Combine(
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(10, 100, 200, 400)));
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
@@ -636,9 +699,12 @@ INSTANTIATE_TEST_CASE_P(
 
 int main(int args, char** argv)
 {
-    // Clean file
+    // Clean files
     std::ofstream log_file;
     log_file.open(PROFILING_FILE_NAME);
+    log_file.close();
+
+    log_file.open(THROUGHPUT_FILE_NAME);
     log_file.close();
 
     ::testing::InitGoogleTest(&args, argv);
