@@ -34,7 +34,7 @@
 
 #define ROS_MAX_DOMAIN_ID 101
 #define PROFILING_FILE_NAME "profiling_out.txt"
-#define THROUGHPUT_FILE_NAME "throughput_out.txt"
+#define BENCHMARK_FILE_NAME "benchmark_out.txt"
 
 using namespace std::chrono_literals;
 
