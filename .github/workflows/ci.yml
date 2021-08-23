@@ -89,5 +89,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: memory_profiling
-        path: ros_ws/profiling_out.txt
+        name: benchmark_results
+        path: ros_ws/*.txt

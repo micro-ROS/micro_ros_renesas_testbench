@@ -615,7 +615,6 @@ INSTANTIATE_TEST_CASE_P(
     HardwareTestAllTransports,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
-
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
@@ -636,10 +635,9 @@ INSTANTIATE_TEST_CASE_P(
 
 int main(int args, char** argv)
 {
-    // Clean file
-    std::ofstream log_file;
-    log_file.open(PROFILING_FILE_NAME);
-    log_file.close();
+    // Clean files
+    remove(PROFILING_FILE_NAME);
+    remove(BENCHMARK_FILE_NAME);
 
     ::testing::InitGoogleTest(&args, argv);
     return RUN_ALL_TESTS();

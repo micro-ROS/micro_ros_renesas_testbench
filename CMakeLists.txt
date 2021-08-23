@@ -9,6 +9,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+option(UBUILD_TEST_BENCHMARK "Build benchmark tests cases." ON)
+
 #################################################
 # package dependencies
 #################################################
@@ -36,6 +38,8 @@ if(BUILD_TESTING)
 
   ament_add_gtest(${PROJECT_NAME}_test
     test/micro_ros_renesas_testbench/test.cpp
+    test/micro_ros_renesas_testbench/test_agent.cpp
+    $<$<BOOL:${UBUILD_TEST_BENCHMARK}>:test/micro_ros_renesas_testbench/test_benchmark.cpp>
   )
 
   string(TOUPPER $ENV{ROS_DISTRO} ROS_DISTRO)
