@@ -136,12 +136,12 @@ TEST_P(BenchmarkTestAllTransports, RTT)
     log_file << std::fixed << std::setprecision(2) << "Client publish time: " << client_time/1e6 << "ms, agent publish time: " << agent_time/1e6 << " ms, Total RTT time: " << total_time/1e6 << " ms." << std::endl;
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     BenchmarkTestAllTransports,
     ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     BenchmarkTest,
     ThroughputTest,
         ::testing::Combine(
