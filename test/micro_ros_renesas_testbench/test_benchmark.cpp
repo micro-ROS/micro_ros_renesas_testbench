@@ -131,7 +131,7 @@ TEST_P(BenchmarkTestAllTransports, RTT)
       "test_RTT_pub", qos, callback);
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_NE(agent_time, (size_t) 0);
+    ASSERT_NE(agent_time, 0L);
 
     log_file << std::fixed << std::setprecision(2) << "Client publish time: " << client_time/1e6 << "ms, agent publish time: " << agent_time/1e6 << " ms, Total RTT time: " << total_time/1e6 << " ms." << std::endl;
 }

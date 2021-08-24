@@ -280,6 +280,7 @@ public:
         log_file << "\t.bss:  " << std::to_string(sizes[3]) << " B" << std::endl;
 
         auto board_sizes = get_board_size();
+        ASSERT_EQ(board_sizes.size(), 3U);
         log_file << "\tmax stack: "    << std::to_string(board_sizes[0]) << " B" << std::endl;
         log_file << "\tabsolute dyn: " << std::to_string(board_sizes[1]) << " B" << std::endl;
         log_file << "\tdyn: "          << std::to_string(board_sizes[2]) << " B" << std::endl;
