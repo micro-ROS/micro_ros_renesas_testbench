@@ -89,5 +89,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: benchmark_results
+        name: benchmark-results-${{ matrix.ros_distribution }}
         path: ros_ws/*.txt
