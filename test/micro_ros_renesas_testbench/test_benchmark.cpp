@@ -26,7 +26,7 @@ public:
         : HardwareTestBase(transport)
         {
             log_file.open(BENCHMARK_FILE_NAME, std::ios_base::app);
-            log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << ", transport: " << transport_ << std::endl;
+            log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << ": " << transport_ << std::endl;
         }
 
     ~BenchmarkHardwareTest(){
@@ -80,7 +80,7 @@ TEST_P(ThroughputTest, Throughput)
             float freq = (count*1e9)/duration;
             promise->set_value(freq);
         }
-        
+
         count++;
     };
 
@@ -92,7 +92,10 @@ TEST_P(ThroughputTest, Throughput)
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 
-    log_file << "Topic size: " << msg_size << ", Result: " << (int) future.get() << " hz. " << std::endl;
+    int rate = (int) future.get();
+    log_file << "\tTopic size: " << msg_size << " B" << std::endl;
+    log_file << "\tRate: " << rate << " Hz" << std::endl;
+    log_file << std::fixed << std::setprecision(2) << "\tThroughput: " << rate * msg_size << " Bps" << std::endl;
 }
 
 TEST_P(BenchmarkTestAllTransports, RTT)
@@ -133,7 +136,9 @@ TEST_P(BenchmarkTestAllTransports, RTT)
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
     ASSERT_NE(agent_time, 0L);
 
-    log_file << std::fixed << std::setprecision(2) << "Client publish time: " << client_time/1e6 << "ms, agent publish time: " << agent_time/1e6 << " ms, Total RTT time: " << total_time/1e6 << " ms." << std::endl;
+    log_file << std::fixed << std::setprecision(2) << "\tClient publish time: " << client_time/1e6 << " ms" << std::endl;
+    log_file << std::fixed << std::setprecision(2) << "\tAgent publish time: " << agent_time/1e6 << " ms" << std::endl;
+    log_file << std::fixed << std::setprecision(2) << "\tRTT: " << total_time/1e6 << " ms" << std::endl;
 }
 
 INSTANTIATE_TEST_CASE_P(

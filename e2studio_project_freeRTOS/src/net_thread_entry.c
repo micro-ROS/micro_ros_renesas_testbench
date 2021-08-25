@@ -42,6 +42,9 @@ size_t usedMemory = 0;
 
 size_t get_block_data_size(void * pointer){
     // Assuming size_t length at the end of the header struct
+    if(NULL == pointer){
+        return 0;
+    }
     size_t *puc = (size_t *) pointer;
     puc--;
     return *puc;
