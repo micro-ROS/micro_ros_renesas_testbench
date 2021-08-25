@@ -303,18 +303,12 @@ public:
         }
 
         // Vector of string to save tokens
-        std::vector<std::string> tokens;
+        std::vector<size_t> sizes;
         std::stringstream result_stream(result);
         std::string aux;
         while(getline(result_stream, aux, ' ')){
-            tokens.push_back(aux);
+            sizes.push_back(std::stoi(aux)); // Order: used RAM, .text, .data, .bss
         }
-
-        std::vector<size_t> sizes;
-        sizes.push_back(std::stoi(tokens[0])); // used RAM
-        sizes.push_back(std::stoi(tokens[1])); // .text
-        sizes.push_back(std::stoi(tokens[2])); // .data
-        sizes.push_back(std::stoi(tokens[3])); // .bss
 
         return sizes;
     }
