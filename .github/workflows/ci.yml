@@ -85,7 +85,10 @@ jobs:
         source install/local_setup.bash
         colcon build --cmake-clean-cache --cmake-force-configure --packages-select micro_ros_renesas_testbench
         # colcon test --event-handlers console_direct+ --packages-select=micro_ros_renesas_testbench --return-code-on-test-failure --ctest-args -E "(cpplint)|(lint_cmake)|(uncrustify)|(xmllint)"
-        RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test
+        # First run the common test set (uses the default micro-ROS library)
+        RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=-HardwareTestMemoryProfiling*
+        # Then run the profiling test set (modifies the micro-ROS library)
+        RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=-HardwareTestMemoryProfiling*
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:

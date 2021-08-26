@@ -308,6 +308,9 @@ public:
         std::string aux;
         while(getline(result_stream, aux, ' ')){
             sizes.push_back(std::stoi(aux)); // Order: used RAM, .text, .data, .bss
+            if (sizes.size() >= 4){
+                break;
+            }
         }
 
         return sizes;
