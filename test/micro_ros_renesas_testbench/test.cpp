@@ -635,10 +635,6 @@ TEST_F(HardwareTestMemoryProfiling, MultiplePublisherProfiling) {}
 
 int main(int args, char** argv)
 {
-    // Clean files
-    remove(PROFILING_FILE_NAME);
-    remove(BENCHMARK_FILE_NAME);
-
     ::testing::InitGoogleTest(&args, argv);
     return RUN_ALL_TESTS();
 }
