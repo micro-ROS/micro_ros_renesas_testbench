@@ -88,7 +88,7 @@ jobs:
         # First run the common test set (uses the default micro-ROS library)
         RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=-HardwareTestMemoryProfiling*
         # Then run the profiling test set (modifies the micro-ROS library)
-        RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=-HardwareTestMemoryProfiling*
+        RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=HardwareTestMemoryProfiling*
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
