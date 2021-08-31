@@ -40,6 +40,9 @@ void send_micro_ros_profiling_data(void);
 size_t absoluteUsedMemory = 0;
 size_t usedMemory = 0;
 
+#define heapBITS_PER_BYTE         ( ( size_t ) 8 )
+size_t xBlockAllocatedBit = ( ( size_t ) 1 ) << ( ( sizeof( size_t ) * heapBITS_PER_BYTE ) - 1 );
+
 size_t get_block_data_size(void * pointer){
     // Assuming size_t length at the end of the header struct
     if(NULL == pointer){
@@ -47,7 +50,8 @@ size_t get_block_data_size(void * pointer){
     }
     size_t *puc = (size_t *) pointer;
     puc--;
-    return *puc;
+
+    return (*puc) & ~xBlockAllocatedBit;
 }
 
 void * microros_allocate_stub(size_t size, void * state){
