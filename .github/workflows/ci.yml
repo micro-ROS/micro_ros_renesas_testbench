@@ -28,7 +28,6 @@ jobs:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
         ref: ${{ matrix.ros_distribution }}
-        token: ${{ secrets.PRIVATE_KEY }}
     - name: Download dependencies
       run: |
         cd ros_ws
