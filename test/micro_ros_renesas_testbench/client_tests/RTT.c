@@ -19,7 +19,7 @@ void subscription_callback(const void * msgin);
 rcl_publisher_t publisher;
 std_msgs__msg__Int64 out_msg;
 
-int64_t time_start;
+int64_t time_start = 0;
 
 void subscription_callback(const void * msgin)
 {
@@ -70,14 +70,14 @@ void microros_app(void)
 
     for(;;)
     {
-        if (RMW_RET_OK == rmw_uros_sync_session(1000))
-        {
+        rmw_uros_sync_session(1000);
+        if (0 == time_start){
             time_start = rmw_uros_epoch_nanos();
             out_msg.data = time_start;
             rcl_publish(&publisher, &out_msg, NULL);
-
-            rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1000));
         }
+
+        rclc_executor_spin_some(&executor, RCL_MS_TO_NS(1000));
 
         sleep_ms(10);
     }
