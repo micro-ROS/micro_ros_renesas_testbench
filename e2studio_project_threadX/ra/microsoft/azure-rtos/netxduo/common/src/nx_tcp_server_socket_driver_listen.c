@@ -15,7 +15,7 @@
 /**                                                                       */
 /** NetX Component                                                        */
 /**                                                                       */
-/**   Internet Protocol (IP)                                              */
+/**   Transmission Control Protocol (TCP)                                 */
 /**                                                                       */
 /**************************************************************************/
 /**************************************************************************/
@@ -26,14 +26,14 @@
 /* Include necessary system files.  */
 
 #include "nx_api.h"
-#include "nx_ip.h"
+#include "nx_tcp.h"
 
-
+#ifdef NX_ENABLE_TCPIP_OFFLOAD
 /**************************************************************************/
 /*                                                                        */
 /*  FUNCTION                                               RELEASE        */
 /*                                                                        */
-/*    _nx_ip_address_set                                  PORTABLE C      */
+/*    _nx_tcp_server_socket_driver_listen                 PORTABLE C      */
 /*                                                           6.1.8        */
 /*  AUTHOR                                                                */
 /*                                                                        */
@@ -41,14 +41,14 @@
 /*                                                                        */
 /*  DESCRIPTION                                                           */
 /*                                                                        */
-/*    This function sets the IP address and the network mask for the      */
-/*    supplied IP instance.                                               */
+/*    This function registers a listen request to all TCP/IP offload      */
+/*    interfaces.                                                         */
 /*                                                                        */
 /*  INPUT                                                                 */
 /*                                                                        */
-/*    ip_ptr                                IP control block pointer      */
-/*    ip_address                            IP address                    */
-/*    network_mask                          Network mask                  */
+/*    ip_ptr                                Pointer to IP instance        */
+/*    port                                  TCP port number               */
+/*    socket_ptr                            Server socket pointer         */
 /*                                                                        */
 /*  OUTPUT                                                                */
 /*                                                                        */
@@ -56,27 +56,64 @@
 /*                                                                        */
 /*  CALLS                                                                 */
 /*                                                                        */
-/*    tx_mutex_get                          Get protection mutex          */
-/*    tx_mutex_put                          Put protection mutex          */
+/*    None                                                                */
 /*                                                                        */
 /*  CALLED BY                                                             */
 /*                                                                        */
-/*    Application Code                                                    */
+/*    _nx_tcp_server_socket_listen          Register a listen request     */
+/*    _nx_tcp_server_socket_relisten        Register a listen request     */
 /*                                                                        */
 /*  RELEASE HISTORY                                                       */
 /*                                                                        */
 /*    DATE              NAME                      DESCRIPTION             */
 /*                                                                        */
-/*  05-19-2020     Yuxin Zhou               Initial Version 6.0           */
-/*  09-30-2020     Yuxin Zhou               Modified comment(s),          */
-/*                                            resulting in version 6.1    */
-/*  08-02-2021     Yuxin Zhou               Modified comment(s),          */
-/*                                            merged duplicated functions,*/
-/*                                            resulting in version 6.1.8  */
+/*  08-02-2021     Yuxin Zhou               Initial Version 6.1.8         */
 /*                                                                        */
 /**************************************************************************/
-UINT  _nx_ip_address_set(NX_IP *ip_ptr, ULONG ip_address, ULONG network_mask)
+UINT _nx_tcp_server_socket_driver_listen(NX_IP *ip_ptr, UINT port, NX_TCP_SOCKET *socket_ptr)
 {
-    return(_nx_ip_interface_address_set(ip_ptr, 0, ip_address, network_mask));
-}
+UINT          status;
+UINT          i;
+NX_INTERFACE *interface_ptr;
+    
+    /* Loop all interfaces to listen to ones support TCP/IP offload.  */
+    for (i = 0; i < NX_MAX_IP_INTERFACES; i++)
+    {
 
+        /* Use a local variable for convenience.  */
+        interface_ptr = &(ip_ptr -> nx_ip_interface[i]);
+
+        /* Check for valid interfaces.  */
+        if ((interface_ptr -> nx_interface_valid == NX_FALSE) ||
+            (interface_ptr -> nx_interface_link_up == NX_FALSE))
+        {
+
+            /* Skip interface not valid.  */
+            continue;
+        }
+
+        /* Check for TCP/IP offload feature.  */
+        if (((interface_ptr -> nx_interface_capability_flag & NX_INTERFACE_CAPABILITY_TCPIP_OFFLOAD) == 0) ||
+            (interface_ptr -> nx_interface_tcpip_offload_handler == NX_NULL))
+        {
+
+            /* Skip interface not support TCP/IP offload.  */
+            continue;
+        }
+
+        /* Let TCP/IP offload interface listen to port.  */
+        status = interface_ptr -> nx_interface_tcpip_offload_handler(ip_ptr, interface_ptr, socket_ptr,
+                                                                     NX_TCPIP_OFFLOAD_TCP_SERVER_SOCKET_LISTEN,
+                                                                     NX_NULL, NX_NULL, NX_NULL,
+                                                                     port, NX_NULL, NX_NO_WAIT);
+        if (status)
+        {
+
+            /* Return an already bound error code.  */
+            return(NX_TCPIP_OFFLOAD_ERROR);
+        }
+    }
+
+    return(NX_SUCCESS);
+}
+#endif /* NX_ENABLE_TCPIP_OFFLOAD */

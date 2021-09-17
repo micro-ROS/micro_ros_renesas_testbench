@@ -24,6 +24,7 @@
 /* TX_DISABLE_REDUNDANT_CLEARING is not configurable because FSP projects zero the .bss section during startup. */
 #define TX_DISABLE_REDUNDANT_CLEARING
 #endif
+#define TX_TIMER_PROCESS_IN_ISR
 
 #ifdef TX_NO_TIMER
 /* If TX_NO_TIMER is used, the define TX_TIMER_PROCESS_IN_ISR must also be used. */
