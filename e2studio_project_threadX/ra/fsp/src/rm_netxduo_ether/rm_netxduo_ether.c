@@ -176,6 +176,14 @@ void rm_netxduo_ether (NX_IP_DRIVER * driver_req_ptr, rm_netxduo_ether_instance_
                 /* THe link has not been established yet. */
                 driver_req_ptr->nx_ip_driver_status = NX_INVALID_INTERFACE;
 
+                FSP_LOG_PRINT("Cannot transmit Ethernet packets because the link is down.");
+
+                /* Release the NetX packet because it cannot be sent. */
+                if (NX_SUCCESS != nx_packet_transmit_release(driver_req_ptr->nx_ip_driver_packet))
+                {
+                    FSP_LOG_PRINT("Failed to release transmit packet.");
+                }
+
                 return;
             }
 
@@ -239,6 +247,8 @@ void rm_netxduo_ether (NX_IP_DRIVER * driver_req_ptr, rm_netxduo_ether_instance_
                 /* Set driver status to indicate that the packet was not transmitted. */
                 driver_req_ptr->nx_ip_driver_status = NX_TX_QUEUE_DEPTH;
 
+                FSP_LOG_PRINT("No space in the Ethernet transmit queue.");
+
                 return;
             }
 
@@ -253,6 +263,8 @@ void rm_netxduo_ether (NX_IP_DRIVER * driver_req_ptr, rm_netxduo_ether_instance_
             {
                 /* Set driver status to indicate that the packet was not transmitted. */
                 driver_req_ptr->nx_ip_driver_status = NX_TX_QUEUE_DEPTH;
+
+                FSP_LOG_PRINT("Failed to transmit the Ethernet packet.");
 
                 return;
             }
@@ -391,167 +403,190 @@ void rm_netxduo_ether_receive_packet (rm_netxduo_ether_instance_t * p_netxduo_et
     NX_PACKET * p_nx_packet = NULL;
     do
     {
-        /* Allocate NetX packet to copy data into. */
-        if (NX_SUCCESS !=
-            nx_packet_allocate(p_netxduo_ether_instance->p_ctrl->p_ip->nx_ip_default_packet_pool, &p_nx_packet,
-                               NX_RECEIVE_PACKET, NX_NO_WAIT))
-        {
-            /*
-             * Buffer overflow.
-             * Wait until more packets are available.
-             */
-            FSP_LOG_PRINT("Failed to allocate NetX Packet.");
-            break;
-        }
-
-        /*
-         * Make sure that the buffer is 32 byte aligned (See section 31.3.1.2 "Receive descriptor" in the RA6M3 User Manual R01UH0886EJ0100)
-         */
-        p_nx_packet->nx_packet_prepend_ptr =
-            (UCHAR *) (((uint32_t) p_nx_packet->nx_packet_prepend_ptr + 31U) & ~(31U));
-
         /* Get a pointer to the packet received. */
         uint8_t * p_buffer_out;
         uint32_t  length;
         err = p_ether_instance->p_api->read(p_ether_instance->p_ctrl, &p_buffer_out, &length);
         if (FSP_SUCCESS != err)
         {
-            /* No data to read. */
-            if (NX_SUCCESS != nx_packet_release(p_nx_packet))
-            {
-                FSP_LOG_PRINT("Failed to release NetX Packet.");
-            }
-
             break;
         }
 
-        /* Update the buffer pointer in the buffer descriptor. */
-        if (FSP_SUCCESS !=
-            p_ether_instance->p_api->rxBufferUpdate(p_ether_instance->p_ctrl, p_nx_packet->nx_packet_prepend_ptr))
+        /* Allocate NetX packet to copy data into. */
+        if (NX_SUCCESS !=
+            nx_packet_allocate(p_netxduo_ether_instance->p_ctrl->p_ip->nx_ip_default_packet_pool, &p_nx_packet,
+                               NX_RECEIVE_PACKET, NX_NO_WAIT))
         {
-            FSP_LOG_PRINT("Failed to update buffer in r_ether driver.");
-            break;
-        }
+            /* If a NetX packet could not be allocated, then the received packet must be dropped in order to receive the next packet. */
+            FSP_LOG_PRINT("Failed to allocate NetX Packet.");
 
-        uint32_t index = p_netxduo_ether_instance->p_ctrl->rx_packet_index;
-
-        /* Pick up the destination MAC address from the packet.  */
-        ULONG destination_address_msw = (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr);
-        destination_address_msw = (destination_address_msw << 8) |
-                                  (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 1);
-        ULONG destination_address_lsw = (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 2);
-        destination_address_lsw = (destination_address_lsw << 8) |
-                                  (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 3);
-        destination_address_lsw = (destination_address_lsw << 8) |
-                                  (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 4);
-        destination_address_lsw = (destination_address_lsw << 8) |
-                                  (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 5);
-
-        bool multicast_group = false;
-
-        /* Check if the packet is an IPv4 Multicast packet. */
-        if ((destination_address_msw == 0x00000100U) && ((destination_address_lsw >> 24U) == 0x5EU)) // NOLINT(readability-magic-numbers)
-        {
-            /* Check if the IP instance is a member of the group. */
-            for (uint32_t i = 0; i < NX_MAX_MULTICAST_GROUPS; i++)
+            /* Update the buffer pointer in the buffer descriptor. */
+            if (FSP_SUCCESS != p_ether_instance->p_api->rxBufferUpdate(p_ether_instance->p_ctrl, p_buffer_out))
             {
-                /* IPv4 multicast MAC addreses always begin with 0x0100 so only destination_address_lsw needs to be checked. */
-                if (destination_address_lsw ==
-                    p_netxduo_ether_instance->p_ctrl->multicast_mac_addresses[i].mac_address_lsw)
-                {
-                    multicast_group = true;
-                    break;
-                }
-            }
-        }
-
-        /* Only process packets that are meant for this mac address (dest=Broadcast/mac_address). */
-        if (((destination_address_msw == ((ULONG) 0x0000FFFF)) &&  // NOLINT(readability-magic-numbers)
-             (destination_address_lsw == ((ULONG) 0xFFFFFFFF))) || // NOLINT(readability-magic-numbers)
-            ((destination_address_msw == mac_msw) &&               // NOLINT(readability-magic-numbers)
-             (destination_address_lsw == mac_lsw)) ||              // NOLINT(readability-magic-numbers)
-            (destination_address_msw == ((ULONG) 0x00003333)) ||   // NOLINT(readability-magic-numbers)
-            ((destination_address_msw == 0) && (destination_address_lsw == 0)) ||
-            multicast_group)
-        {
-            /* Get the Ethernet packet id. */
-            UINT packet_type = (((UINT) (*(p_nx_buffers[index]->nx_packet_prepend_ptr + 12))) << 8) |
-                               ((UINT) (*(p_nx_buffers[index]->nx_packet_prepend_ptr + 13)));
-
-            if ((packet_type == NX_ETHERNET_IP) ||
-                (packet_type == NX_ETHERNET_IPV6) ||
-                (packet_type == NX_ETHERNET_ARP)
-#if RM_NETXDUO_ETHER_RARP_SUPPORT
-                || (packet_type == NX_ETHERNET_RARP)
-#endif
-                )
-            {
-                /* Move the append ptr to the new end of data. */
-                p_nx_buffers[index]->nx_packet_append_ptr = p_nx_buffers[index]->nx_packet_prepend_ptr +
-                                                            p_nx_buffers[index]->nx_packet_length;
-
-                /* Remove the Ethernet packet header. */
-                uint32_t padding = p_ether_instance->p_cfg->padding;
-                p_nx_buffers[index]->nx_packet_prepend_ptr += (NX_ETHERNET_SIZE + padding);
-                p_nx_buffers[index]->nx_packet_length      -= (NX_ETHERNET_SIZE + padding);
-
-                switch (packet_type)
-                {
-                    case NX_ETHERNET_IP:
-#ifndef NX_DISABLE_IPV6
-                    case NX_ETHERNET_IPV6:
-#endif
-                        {
-                            /* Process the IP packet. */
-                            _nx_ip_packet_deferred_receive(p_netxduo_ether_instance->p_ctrl->p_ip, p_nx_buffers[index]);
-                            break;
-                        }
-
-                    case NX_ETHERNET_ARP:
-                    {
-                        /* Process the ARP packet. */
-                        _nx_arp_packet_deferred_receive(p_netxduo_ether_instance->p_ctrl->p_ip, p_nx_buffers[index]);
-                        break;
-                    }
-
-#if RM_NETXDUO_ETHER_RARP_SUPPORT
-                    case NX_ETHERNET_RARP:
-                    {
-                        /* Process the RARP packet. */
-                        _nx_rarp_packet_deferred_receive(p_netxduo_ether_instance->p_ctrl->p_ip, p_nx_buffers[index]);
-                        break;
-                    }
-#endif
-
-                    default:
-                    {
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                if (NX_SUCCESS != nx_packet_release(p_nx_buffers[index]))
-                {
-                    FSP_LOG_PRINT("Failed to release NetX Packet.");
-                }
+                FSP_LOG_PRINT("Failed to update buffer in r_ether driver.");
             }
         }
         else
         {
-            if (NX_SUCCESS != nx_packet_release(p_nx_buffers[index]))
+            /*
+             * Make sure that the buffer is 32 byte aligned (See section 31.3.1.2 "Receive descriptor" in the RA6M3 User Manual R01UH0886EJ0100)
+             */
+            p_nx_packet->nx_packet_prepend_ptr =
+                (UCHAR *) (((uint32_t) p_nx_packet->nx_packet_prepend_ptr + 31U) & ~(31U));
+
+            /* Update the buffer pointer in the buffer descriptor. */
+            if (FSP_SUCCESS !=
+                p_ether_instance->p_api->rxBufferUpdate(p_ether_instance->p_ctrl, p_nx_packet->nx_packet_prepend_ptr))
             {
-                FSP_LOG_PRINT("Failed to release NetX Packet.");
+                FSP_LOG_PRINT("Failed to update buffer in r_ether driver.");
+                break;
             }
-        }
 
-        /* Store pointer to the newly allocated NetX Packet at the index where it was written into the r_ether buffer descriptor. */
-        p_nx_buffers[index] = p_nx_packet;
+            /* Get the index of the NetX packet that was received. */
+            uint32_t index = p_netxduo_ether_instance->p_ctrl->rx_packet_index;
 
-        p_netxduo_ether_instance->p_ctrl->rx_packet_index++;
-        if (p_netxduo_ether_instance->p_ctrl->rx_packet_index == p_ether_instance->p_cfg->num_rx_descriptors)
-        {
-            p_netxduo_ether_instance->p_ctrl->rx_packet_index = 0;
+            /*
+             * If invalid Ethernet frames were received or if the driver previously failed to allocate a NetX packet, the index will need to be
+             * incremented in order to get the NetX packet associated with the current buffer that has been received.
+             */
+            for (uint32_t i = 0;
+                 p_nx_buffers[index]->nx_packet_prepend_ptr != p_buffer_out &&
+                 i < p_ether_instance->p_cfg->num_rx_descriptors;
+                 i++)
+            {
+                index = (index + 1) % p_ether_instance->p_cfg->num_rx_descriptors; // NOLINT(clang-analyzer-core.DivideZero)
+                FSP_LOG_PRINT("Skipping to the next NetX packet.");
+            }
+
+            /* Save the expected index of the next NetX packet index. */
+            p_netxduo_ether_instance->p_ctrl->rx_packet_index = (index + 1) % // NOLINT(clang-analyzer-core.DivideZero)
+                                                                p_ether_instance->p_cfg->num_rx_descriptors;
+
+            /* Verify that the NetX packet was found. */
+            if (p_nx_buffers[index]->nx_packet_prepend_ptr != p_buffer_out)
+            {
+                FSP_LOG_PRINT("Could not find the NetX packet associated with the received buffer.");
+            }
+            else
+            {
+                /* Pick up the destination MAC address from the packet.  */
+                ULONG destination_address_msw = (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr);
+                destination_address_msw = (destination_address_msw << 8) |
+                                          (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 1);
+                ULONG destination_address_lsw = (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 2);
+                destination_address_lsw = (destination_address_lsw << 8) |
+                                          (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 3);
+                destination_address_lsw = (destination_address_lsw << 8) |
+                                          (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 4);
+                destination_address_lsw = (destination_address_lsw << 8) |
+                                          (ULONG) *(p_nx_buffers[index]->nx_packet_prepend_ptr + 5);
+
+                bool multicast_group = false;
+
+                /* Check if the packet is an IPv4 Multicast packet. */
+                if ((destination_address_msw == 0x00000100U) && ((destination_address_lsw >> 24U) == 0x5EU)) // NOLINT(readability-magic-numbers)
+                {
+                    /* Check if the IP instance is a member of the group. */
+                    for (uint32_t i = 0; i < NX_MAX_MULTICAST_GROUPS; i++)
+                    {
+                        /* IPv4 multicast MAC addreses always begin with 0x0100 so only destination_address_lsw needs to be checked. */
+                        if (destination_address_lsw ==
+                            p_netxduo_ether_instance->p_ctrl->multicast_mac_addresses[i].mac_address_lsw)
+                        {
+                            multicast_group = true;
+                            break;
+                        }
+                    }
+                }
+
+                /* Only process packets that are meant for this mac address (dest=Broadcast/mac_address). */
+                if (((destination_address_msw == ((ULONG) 0x0000FFFF)) &&  // NOLINT(readability-magic-numbers)
+                     (destination_address_lsw == ((ULONG) 0xFFFFFFFF))) || // NOLINT(readability-magic-numbers)
+                    ((destination_address_msw == mac_msw) &&               // NOLINT(readability-magic-numbers)
+                     (destination_address_lsw == mac_lsw)) ||              // NOLINT(readability-magic-numbers)
+                    (destination_address_msw == ((ULONG) 0x00003333)) ||   // NOLINT(readability-magic-numbers)
+                    ((destination_address_msw == 0) && (destination_address_lsw == 0)) ||
+                    multicast_group)
+                {
+                    /* Get the Ethernet packet id. */
+                    UINT packet_type = (((UINT) (*(p_nx_buffers[index]->nx_packet_prepend_ptr + 12))) << 8) |
+                                       ((UINT) (*(p_nx_buffers[index]->nx_packet_prepend_ptr + 13)));
+
+                    if ((packet_type == NX_ETHERNET_IP) ||
+#ifndef NX_DISABLE_IPV6
+                        (packet_type == NX_ETHERNET_IPV6) ||
+#endif
+                        (packet_type == NX_ETHERNET_ARP)
+#if RM_NETXDUO_ETHER_RARP_SUPPORT
+                        || (packet_type == NX_ETHERNET_RARP)
+#endif
+                        )
+                    {
+                        /* Move the append ptr to the new end of data. */
+                        p_nx_buffers[index]->nx_packet_append_ptr = p_nx_buffers[index]->nx_packet_prepend_ptr +
+                                                                    p_nx_buffers[index]->nx_packet_length;
+
+                        /* Remove the Ethernet packet header. */
+                        uint32_t padding = p_ether_instance->p_cfg->padding;
+                        p_nx_buffers[index]->nx_packet_prepend_ptr += (NX_ETHERNET_SIZE + padding);
+                        p_nx_buffers[index]->nx_packet_length      -= (NX_ETHERNET_SIZE + padding);
+
+                        switch (packet_type)
+                        {
+                            case NX_ETHERNET_IP:
+#ifndef NX_DISABLE_IPV6
+                            case NX_ETHERNET_IPV6:
+#endif
+                                {
+                                    /* Process the IP packet. */
+                                    _nx_ip_packet_deferred_receive(p_netxduo_ether_instance->p_ctrl->p_ip,
+                                                                   p_nx_buffers[index]);
+                                    break;
+                                }
+
+                            case NX_ETHERNET_ARP:
+                            {
+                                /* Process the ARP packet. */
+                                _nx_arp_packet_deferred_receive(p_netxduo_ether_instance->p_ctrl->p_ip,
+                                                                p_nx_buffers[index]);
+                                break;
+                            }
+
+#if RM_NETXDUO_ETHER_RARP_SUPPORT
+                            case NX_ETHERNET_RARP:
+                            {
+                                /* Process the RARP packet. */
+                                _nx_rarp_packet_deferred_receive(p_netxduo_ether_instance->p_ctrl->p_ip,
+                                                                 p_nx_buffers[index]);
+                                break;
+                            }
+#endif
+
+                            default:
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (NX_SUCCESS != nx_packet_release(p_nx_buffers[index]))
+                        {
+                            FSP_LOG_PRINT("Failed to release NetX Packet.");
+                        }
+                    }
+                }
+                else
+                {
+                    if (NX_SUCCESS != nx_packet_release(p_nx_buffers[index]))
+                    {
+                        FSP_LOG_PRINT("Failed to release NetX Packet.");
+                    }
+                }
+            }
+
+            /* Store pointer to the newly allocated NetX Packet at the index where it was written into the r_ether buffer descriptor. */
+            p_nx_buffers[index] = p_nx_packet;
         }
     } while (FSP_SUCCESS == err);
 }
@@ -585,12 +620,12 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
         case ETHER_EVENT_INTERRUPT:
         {
             /* Packet Transmitted. */
-            if (ETHER_ISR_EE_TC_MASK == (p_args->status_eesr & ETHER_ISR_EE_TC_MASK))
+            uint32_t tx_packet_transmitted_index = p_netxduo_ether_instance->p_ctrl->tx_packet_transmitted_index;
+            if ((ETHER_ISR_EE_TC_MASK == (p_args->status_eesr & ETHER_ISR_EE_TC_MASK)) &&
+                (NULL != p_netxduo_ether_instance->p_cfg->p_tx_packets[tx_packet_transmitted_index]))
             {
                 uint8_t * p_buffer_current = NULL;
                 uint8_t * p_buffer_last    = NULL;
-
-                uint32_t tx_packet_transmitted_index = p_netxduo_ether_instance->p_ctrl->tx_packet_transmitted_index;
 
                 /* Get the pointer to the last buffer that was transmitted. */
                 if (FSP_SUCCESS != p_ether_instance->p_api->txStatusGet(p_ether_instance->p_ctrl, &p_buffer_last))
@@ -653,8 +688,8 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
 
         case ETHER_EVENT_LINK_ON:
         {
-            FSP_CRITICAL_SECTION_DEFINE;
-            FSP_CRITICAL_SECTION_ENTER;
+            /* Disable Ethernet IRQs so that the receive buffer descriptor can be initialized without being interrupted. */
+            R_BSP_IrqDisable(p_ether_instance->p_cfg->irq);
 
             /* Allocate NetX Packets required for receiving data. */
             NX_PACKET ** p_rx_buffers = p_netxduo_ether_instance->p_cfg->p_rx_packets;
@@ -662,7 +697,7 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
             {
                 if (NX_SUCCESS !=
                     nx_packet_allocate(p_netxduo_ether_instance->p_ctrl->p_ip->nx_ip_default_packet_pool,
-                                       &p_rx_buffers[i], NX_RECEIVE_PACKET, TX_WAIT_FOREVER))
+                                       &p_rx_buffers[i], NX_RECEIVE_PACKET, TX_NO_WAIT))
                 {
                     FSP_LOG_PRINT("Failed to allocate NetX Packet.");
                 }
@@ -682,7 +717,7 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
                 }
             }
 
-            FSP_CRITICAL_SECTION_EXIT;
+            R_BSP_IrqEnable(p_ether_instance->p_cfg->irq);
 
             /* Notify NetX that the link is up. */
             p_netxduo_ether_instance->p_ctrl->p_interface->nx_interface_link_up = NX_TRUE;
@@ -692,11 +727,10 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
 
         case ETHER_EVENT_LINK_OFF:
         {
-            /* Release NetX Packets (New packets will be allocated when the link is up). */
-
-            FSP_CRITICAL_SECTION_DEFINE;
-            FSP_CRITICAL_SECTION_ENTER;
-
+            /*
+             * When the link is re-established, the Ethernet driver will reset all of the buffer descriptors.
+             * Release NetX Packets (New packets will be allocated when the link is up).
+             */
             p_netxduo_ether_instance->p_ctrl->tx_packet_index             = 0;
             p_netxduo_ether_instance->p_ctrl->tx_packet_transmitted_index = 0;
             NX_PACKET ** p_tx_buffers = p_netxduo_ether_instance->p_cfg->p_tx_packets;
@@ -729,8 +763,6 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
                     FSP_LOG_PRINT("Failed to release NetX Packet.");
                 }
             }
-
-            FSP_CRITICAL_SECTION_EXIT;
 
             /* Notify NetX that the link is down. */
             p_netxduo_ether_instance->p_ctrl->p_interface->nx_interface_link_up = NX_FALSE;

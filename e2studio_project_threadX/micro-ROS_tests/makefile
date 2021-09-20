@@ -27,6 +27,7 @@ RM := rm -rf
 -include ra/microsoft/azure-rtos/netxduo/addons/ftp/subdir.mk
 -include ra/microsoft/azure-rtos/netxduo/addons/dns/subdir.mk
 -include ra/microsoft/azure-rtos/netxduo/addons/dhcp/subdir.mk
+-include ra/microsoft/azure-rtos/netxduo/addons/cloud/subdir.mk
 -include ra/microsoft/azure-rtos/netxduo/addons/auto_ip/subdir.mk
 -include ra/fsp/src/rm_threadx_port/subdir.mk
 -include ra/fsp/src/rm_netxduo_ether/subdir.mk

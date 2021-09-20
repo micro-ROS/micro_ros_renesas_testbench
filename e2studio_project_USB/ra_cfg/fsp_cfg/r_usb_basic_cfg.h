@@ -25,15 +25,24 @@
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_PVND_USE
             #endif
-
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_HCDC_USE
             #endif
-
+#if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_HMSC_USE
+            #endif
+#if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_HHID_USE
+            #endif
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_PCDC_USE
             #endif
-
+#if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_PHID_USE
+            #endif
+#if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_PMSC_USE
+            #endif
 #if (defined(USB_CFG_HCDC_USE) || defined(USB_CFG_HMSC_USE) || defined(USB_CFG_HHID_USE) || defined(USB_CFG_HVND_USE))
             #define USB_CFG_HOST_MODE 1
             #else

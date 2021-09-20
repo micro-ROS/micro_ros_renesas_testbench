@@ -10,7 +10,7 @@ const agt_extended_cfg_t g_timer0_extend =
 						AGT_TRIGGER_EDGE_RISING, };
 const timer_cfg_t g_timer0_cfg = { .mode = TIMER_MODE_PERIODIC,
 /* Actual period: 0.04194304 seconds. Actual duty: 50%. */.period_counts =
-		0x10000, .duty_cycle_counts = 0x8000, .source_div =
+		(uint32_t) 0x10000, .duty_cycle_counts = 0x8000, .source_div =
 		(timer_source_div_t) 3, .channel = 0, .p_callback = micro_ros_timer_cb,
 /** If NULL then do not add & */
 #if defined(NULL)
@@ -43,7 +43,7 @@ const sci_uart_extended_cfg_t g_uart0_cfg_extend = {
 				&g_uart0_baud_setting,
 		.flow_control = SCI_UART_FLOW_CONTROL_RTS,
 #if 0xFF != 0xFF
-                .flow_control_pin       = BSP_IO_PORT_0xFF_PIN_0xFF,
+                .flow_control_pin       = BSP_IO_PORT_FF_PIN_0xFF,
                 #else
 		.flow_control_pin = (bsp_io_port_pin_t) UINT16_MAX,
 #endif

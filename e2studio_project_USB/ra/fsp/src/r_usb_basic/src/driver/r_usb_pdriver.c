@@ -84,10 +84,8 @@ usb_pcdreg_t g_usb_pstd_driver;
 usb_setup_t  g_usb_pstd_req_reg;                        /* Device Request - Request structure */
 
  #if (BSP_CFG_RTOS == 1)
-extern TX_SEMAPHORE                g_usb_peri_usbx_sem[USB_MAX_PIPE_NO + 1];
-extern const transfer_instance_t * g_p_usbx_transfer_tx;
-extern const transfer_instance_t * g_p_usbx_transfer_rx;
- #endif                                /* #if (BSP_CFG_RTOS == 1) */
+extern TX_SEMAPHORE g_usb_peri_usbx_sem[USB_MAX_PIPE_NO + 1];
+ #endif                                                 /* #if (BSP_CFG_RTOS == 1) */
 
 /******************************************************************************
  * Renesas Abstracted Peripheral Driver functions
@@ -781,7 +779,6 @@ usb_er_t usb_pstd_set_submitutr (usb_utr_t * utrmsg)
         {
             usb_cstd_pipe_msg_clear(utrmsg, pipenum);
         }
-
  #else                                 /* (BSP_CFG_RTOS != 0) */
         /* Transfer stop */
         usb_pstd_forced_termination(pipenum, (uint16_t) USB_DATA_ERR, utrmsg);
@@ -1349,7 +1346,6 @@ usb_er_t usb_pstd_transfer_start (usb_utr_t * ptr)
     {
         return USB_ERROR;
     }
-
    #elif (BSP_CFG_RTOS == 2)           /* BSP_CFG_RTOS == 0 */
     ptr->msghead = (usb_mh_t) USB_NULL;
     ptr->msginfo = USB_MSG_PCD_SUBMITUTR;
@@ -1386,6 +1382,7 @@ usb_er_t usb_pstd_transfer_start (usb_utr_t * ptr)
     }
    #endif                              /* #if (BSP_CFG_RTOS == 1) */
   #endif                               /* (BSP_CFG_RTOS == 0) */
+
     return err;
 }
 
@@ -1851,7 +1848,9 @@ void usb_peri_configured (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
     usb_set_event(USB_STATUS_CONFIGURED, &ctrl);
 
  #if defined(USB_CFG_PMSC_USE)
+  #if (BSP_CFG_RTOS != 1)
     usb_pmsc_receive_cbw(ptr);
+  #endif                               /* (BSP_CFG_RTOS != 1) */
  #endif
 }                                      /* End of function usb_configured() */
 
@@ -1891,12 +1890,29 @@ void usb_peri_detach (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
 void usb_peri_suspended (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
 {
     usb_instance_ctrl_t ctrl;
+ #if BSP_CFG_RTOS == 1
+    uint8_t i;
+ #endif                                /*  #if BSP_CFG_RTOS == 1 */
 
     FSP_PARAMETER_NOT_USED(data1);
     FSP_PARAMETER_NOT_USED(data2);
 
     ctrl.module_number = ptr->ip;
     usb_set_event(USB_STATUS_SUSPEND, &ctrl);
+
+ #if BSP_CFG_RTOS == 1
+    if (UX_NULL != _ux_system_slave->ux_system_slave_change_function)
+    {
+        _ux_system_slave->ux_system_slave_change_function(UX_DEVICE_SUSPENDED);
+        for (i = USB_MIN_PIPE_NO; i < (USB_MAXPIPE_NUM + 1); i++)
+        {
+            if (USB_TRUE == g_usb_pipe_table[ptr->ip][i].use_flag)
+            {
+                tx_semaphore_put(&g_usb_peri_usbx_sem[i]);
+            }
+        }
+    }
+ #endif                                /* #if (BSP_CFG_RTOS == 1) */
 }                                      /* End of function usb_suspended() */
 
 /******************************************************************************
@@ -1924,7 +1940,14 @@ void usb_peri_resume (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
  #endif                                /* (BSP_CFG_RTOS != 0) */
 
     usb_set_event(USB_STATUS_RESUME, &ctrl);
-} /* End of function usb_peri_resume() */
+
+ #if BSP_CFG_RTOS == 1
+    if (UX_NULL != _ux_system_slave->ux_system_slave_change_function)
+    {
+        _ux_system_slave->ux_system_slave_change_function(UX_DEVICE_RESUMED);
+    }
+ #endif
+}                                      /* End of function usb_peri_resume() */
 
 /******************************************************************************
  * Function Name   : usb_peri_interface
@@ -1941,10 +1964,12 @@ void usb_peri_interface (usb_utr_t * ptr, uint16_t data1, uint16_t data2)
     FSP_PARAMETER_NOT_USED(data2);
 
  #if defined(USB_CFG_PMSC_USE)
+  #if (BSP_CFG_RTOS != 1)
     usb_pmsc_receive_cbw(ptr);
+  #endif                               /* (BSP_CFG_RTOS != 1) */
  #else                                 /* defined(USB_CFG_PMSC_USE) */
     /* Non processing */
- #endif /* defined(USB_CFG_PMSC_USE) */
+ #endif                                /* defined(USB_CFG_PMSC_USE) */
 }                                      /* End of function usb_peri_interface() */
 
  #if defined(USB_CFG_PVND_USE)
