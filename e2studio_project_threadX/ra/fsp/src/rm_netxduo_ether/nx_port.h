@@ -8,7 +8,9 @@ extern "C"
 {
  #endif
 
- #define NX_INCLUDE_USER_DEFINE_FILE
+ #ifndef NX_INCLUDE_USER_DEFINE_FILE
+  #define NX_INCLUDE_USER_DEFINE_FILE
+ #endif
 
  #if   defined(__GNUC__)               /* GCC compiler */
   #include "gnu/inc/nx_port.h"
