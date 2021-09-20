@@ -61,7 +61,7 @@ main-build: microros_testbench.elf secondary-outputs
 microros_testbench.elf: $(OBJS) $(USER_OBJS) $(LINKER_SCRIPT)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GNU ARM Cross C Linker'
-	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g -T "fsp.ld" -Xlinker --gc-sections -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
+	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g -T "fsp.ld" -Xlinker --gc-sections -L "/home/pgarrido/dev/micro-ROS/micro_ros_renesas_testbench/e2studio_project_USB/script" -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
 	arm-none-eabi-gcc @"microros_testbench.elf.in"
 	@echo 'Finished building target: $@'
 	@echo ' '

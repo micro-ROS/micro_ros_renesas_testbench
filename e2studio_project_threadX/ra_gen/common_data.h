@@ -53,6 +53,14 @@ void g_packet_pool0_quick_setup();
 #define G_IP0_TASK_PRIORITY   (3)
 #define G_IP0_ARP_CACHE_SIZE (520 * 1)
 
+#define RA_NOT_DEFINED 0xFFFFFFFF
+#if (RA_NOT_DEFINED != g_netxduo_ether_0)
+#define G_IP0_NETWORK_DRIVER g_netxduo_ether_0
+#else
+#define G_IP0_NETWORK_DRIVER rm_netxduo_wifi
+#endif
+#undef RA_NOT_DEFINED
+
 void g_ip0_quick_setup();
 void g_ip0_error_handler(UINT status);
 

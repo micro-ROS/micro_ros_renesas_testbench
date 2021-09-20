@@ -160,6 +160,9 @@
 #define NX_PACKET_ALIGNMENT      
 #endif
 
+/* Azure IoT Configuration */
+#define NX_AZURE_DISABLE_IOT_SECURITY_MODULE /* The Azure IoT Security Module redefines a reserved symbol and cannot be supported at this time. */
+
 /* DHCP Common Configuration. */
 #define NX_DHCP_TYPE_OF_SERVICE                    (NX_IP_NORMAL)
 #define NX_DHCP_FRAGMENT_OPTION                    (NX_DONT_FRAGMENT)
@@ -327,10 +330,6 @@
 #define NX_WEB_HTTP_CLIENT_MIN_PACKET_SIZE              300
 
 /* Web HTTP Server Configuration. */
-/* Defined, this option removes the basic Web HTTP server error checking */
-#if (BSP_CFG_PARAM_CHECKING_ENABLE)
-#define NX_DISABLE_ERROR_CHECKING
-#endif
 
 #define NX_WEB_HTTP_SERVER_PRIORITY                     16
 #define NX_WEB_HTTP_SERVER_WINDOW_SIZE                  2048
@@ -425,13 +424,10 @@
 #define NX_TFTP_SERVER_TIME_SLICE                           (2)
 
 /* MQTT Client Configuration */
-/* Defined, this option removes the basic MQTT client error checking */
-#if (BSP_CFG_PARAM_CHECKING_ENABLE)
-#define NX_DISABLE_ERROR_CHECKING
-#endif
 #define NXD_MQTT_SOCKET_TIMEOUT (0xFFFFFFFF)
 #define NXD_MQTT_KEEPALIVE_TIMER_RATE (1 * TX_TIMER_TICKS_PER_SECOND)
 #define NXD_MQTT_PING_TIMEOUT_DELAY (1 * TX_TIMER_TICKS_PER_SECOND)
+
 #if (0)
 #ifndef NX_SECURE_ENABLE
 #define NX_SECURE_ENABLE
