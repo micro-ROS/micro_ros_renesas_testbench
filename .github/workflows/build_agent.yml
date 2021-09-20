@@ -18,8 +18,6 @@ jobs:
             branch: foxy
           - ros_distribution: galactic
             branch: galactic
-          - ros_distribution: rolling
-            branch: main
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
@@ -38,4 +36,4 @@ jobs:
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
-        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to micro_ros_agent
+        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to micro_ros_agent microxrcedds_agent

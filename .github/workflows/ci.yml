@@ -18,8 +18,6 @@ jobs:
             branch: foxy
           - ros_distribution: galactic
             branch: galactic
-          - ros_distribution: rolling
-            branch: main
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1

@@ -239,7 +239,7 @@ TEST_P(HardwareTestAllTransports, Subscriber) {
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
 
-#ifdef ROS_DISTRO_GALACTIC
+#ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, ComplexSubscriber) {
   auto out_msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
   out_msg->distortion_model = "string_1";
@@ -272,9 +272,9 @@ TEST_P(HardwareTestAllTransports, ComplexSubscriber) {
   auto timer = node->create_wall_timer(1s, publish_message);
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
-#endif  // ROS_DISTRO_GALACTIC
+#endif  // !ROS_DISTRO_FOXY
 
-#ifdef ROS_DISTRO_GALACTIC
+#ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, CustomTypeIntrospection) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
@@ -294,7 +294,7 @@ TEST_P(HardwareTestAllTransports, CustomTypeIntrospection) {
 
   ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
-#endif  // ROS_DISTRO_GALACTIC
+#endif  // !ROS_DISTRO_FOXY
 
 class ContinousFragment: public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
@@ -420,7 +420,7 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
     ASSERT_TRUE(received);
 }
 
-#ifdef ROS_DISTRO_GALACTIC
+#ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, Parameters) {
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
@@ -523,7 +523,7 @@ TEST_P(HardwareTestAllTransports, Parameters) {
 
     ASSERT_EQ(on_parameter_calls, 1u);
 }
-#endif  // ROS_DISTRO_GALACTIC
+#endif  // !ROS_DISTRO_FOXY
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
