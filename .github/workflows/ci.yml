@@ -13,7 +13,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ros_distribution: [ foxy, galactic ]
+        include:
+          - ros_distribution: foxy
+            branch: foxy
+          - ros_distribution: galactic
+            branch: galactic
+          - ros_distribution: rolling
+            branch: main
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
@@ -27,7 +33,7 @@ jobs:
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
-        ref: ${{ matrix.ros_distribution }}
+        ref: ${{ matrix.branch }}
     - name: Download dependencies
       run: |
         cd ros_ws
