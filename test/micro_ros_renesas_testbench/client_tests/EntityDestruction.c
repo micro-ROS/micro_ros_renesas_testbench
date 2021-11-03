@@ -32,10 +32,10 @@ void microros_app(void)
     //create init_options
     rclc_support_t support;
 
-	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-	rcl_init_options_init(&init_options, allocator);
-	rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
-	rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
+    rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+    rcl_init_options_init(&init_options, allocator);
+    rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
+    rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
 
     // create nodes
     for(size_t i = 0; i < ENTITY_NUMBER; i++){
@@ -97,6 +97,6 @@ void microros_app(void)
     {
         rcl_publisher_fini(&publishers[i], &nodes[i]);
         rcl_subscription_fini(&subscribers[i], &nodes[i]);
-	    rcl_node_fini(&nodes[i]);
+        rcl_node_fini(&nodes[i]);
     }
 }
