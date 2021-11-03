@@ -26,15 +26,17 @@ void microros_app(void)
 {
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
-    //create init_options
+    // Create init_options
     rclc_support_t support;
-    rclc_support_init(&support, 0, NULL, &allocator);
 
-    // create node
+	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+	rcl_init_options_init(&init_options, allocator);
+	rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
+	rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
+
+	// Create node
 	rcl_node_t node;
-	rcl_node_options_t node_ops = rcl_node_get_default_options();
-	node_ops.domain_id = (size_t)(DOMAIN_ID);
-	rclc_node_init_with_options(&node, "test_node", "", &support, &node_ops);
+    rclc_node_init_default(&node, "test_node", "", &support);
 
     // create publisher
     rclc_publisher_init_default(
