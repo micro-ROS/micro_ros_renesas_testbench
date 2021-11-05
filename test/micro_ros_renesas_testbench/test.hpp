@@ -24,6 +24,7 @@
 
 #include <std_msgs/msg/u_int32_multi_array.hpp>
 
+#include <sstream>
 #include <string>
 #include <memory>
 #include <vector>
