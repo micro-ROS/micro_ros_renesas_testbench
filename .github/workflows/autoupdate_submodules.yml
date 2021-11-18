@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - distro: foxy
-            branch: test/timer_fix
+            branch: test/foxy
     steps:
       - uses: actions/checkout@v2
         with:
@@ -28,7 +28,7 @@ jobs:
       - name: Update submodules
         run: |
           git submodule foreach git fetch
-          git submodule foreach git reset --hard origin/${{ matrix.branch }}
+          git submodule foreach git reset --hard origin/test/timer_fix
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
