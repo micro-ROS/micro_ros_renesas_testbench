@@ -15,11 +15,7 @@ jobs:
       matrix:
         include:
           - distro: foxy
-            branch: foxy
-          - distro: galactic
-            branch: galactic
-          - distro: rolling
-            branch: main
+            branch: test/timer_fix
     steps:
       - uses: actions/checkout@v2
         with:
@@ -42,4 +38,4 @@ jobs:
           branch: autoupdate_micro_ros_submodule_${{ matrix.branch }}
           delete-branch: true
           reviewers: pablogs9
-          base: ${{ matrix.branch }}
+          base: test/foxy
