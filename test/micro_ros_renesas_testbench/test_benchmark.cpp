@@ -90,12 +90,14 @@ TEST_P(ThroughputTest, Throughput)
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::String>(
       "test_throughput", qos, callback);
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
-
-    int rate = (int) future.get();
-    log_file << "\tTopic size: " << msg_size << " B" << std::endl;
-    log_file << "\tRate: " << rate << " Hz" << std::endl;
-    log_file << std::fixed << std::setprecision(2) << "\tThroughput: " << rate * msg_size << " Bps" << std::endl;
+    if(rclcpp::spin_until_future_complete(node, future, default_spin_timeout) == rclcpp::FutureReturnCode::SUCCESS) {
+        int rate = (int) future.get();
+        log_file << "\tTopic size: " << msg_size << " B" << std::endl;
+        log_file << "\tRate: " << rate << " Hz" << std::endl;
+        log_file << std::fixed << std::setprecision(2) << "\tThroughput: " << rate * msg_size << " Bps" << std::endl;
+    } else {
+        log_file << "\tFAILED" << std::endl;
+    }
 }
 
 TEST_P(BenchmarkTestAllTransports, RTT)
@@ -133,12 +135,13 @@ TEST_P(BenchmarkTestAllTransports, RTT)
     rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int64>(
       "test_RTT_pub", qos, callback);
 
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
-    ASSERT_NE(agent_time, 0L);
-
-    log_file << std::fixed << std::setprecision(2) << "\tClient publish time: " << client_time/1e6 << " ms" << std::endl;
-    log_file << std::fixed << std::setprecision(2) << "\tAgent publish time: " << agent_time/1e6 << " ms" << std::endl;
-    log_file << std::fixed << std::setprecision(2) << "\tRTT: " << total_time/1e6 << " ms" << std::endl;
+    if(rclcpp::spin_until_future_complete(node, future, default_spin_timeout) == rclcpp::FutureReturnCode::SUCCESS && agent_time > 0) {
+        log_file << std::fixed << std::setprecision(2) << "\tClient publish time: " << client_time/1e6 << " ms" << std::endl;
+        log_file << std::fixed << std::setprecision(2) << "\tAgent publish time: " << agent_time/1e6 << " ms" << std::endl;
+        log_file << std::fixed << std::setprecision(2) << "\tRTT: " << total_time/1e6 << " ms" << std::endl;
+    } else {
+        log_file << "\tFAILED" << std::endl;
+    }
 }
 
 INSTANTIATE_TEST_CASE_P(
