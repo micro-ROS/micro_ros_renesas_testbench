@@ -52,6 +52,7 @@ void microros_app(void)
         sleep_ms(100);
     }
 
+    rcl_init_options_fini(&init_options);
     rcl_publisher_fini(&publisher, &node);
     rcl_node_fini(&node);
     rclc_support_fini(&support);
