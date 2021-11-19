@@ -32,6 +32,7 @@ if(BUILD_TESTING)
   find_package(rmw REQUIRED)
   find_package(std_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
+  find_package(tf2_msgs REQUIRED)
   find_package(example_interfaces REQUIRED)
 
   # ament_lint_auto_find_test_dependencies()
@@ -60,6 +61,7 @@ if(BUILD_TESTING)
     rmw
     std_msgs
     sensor_msgs
+    tf2_msgs
     example_interfaces
   )
 endif()
