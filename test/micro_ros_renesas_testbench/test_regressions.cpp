@@ -28,6 +28,26 @@ TEST_F(HardwareTestOneTransport, Regression_microCDR_1) {
     "test_pub", 10,
     [&](tf2_msgs::msg::TFMessage::UniquePtr msg) {
       // Check here message contents
+      EXPECT_EQ(msg->transforms.size(), 20U);
+      for(size_t i = 0; i < msg->transforms.size(); i++){
+        auto t = msg->transforms[i];
+
+        EXPECT_EQ(0, t.header.frame_id.compare(std::string("frame_") + std::to_string(i)));
+        EXPECT_EQ(i, static_cast<size_t>(t.header.stamp.sec));
+        EXPECT_EQ(i, t.header.stamp.nanosec);
+
+        EXPECT_EQ(0, t.child_frame_id.compare(std::string("child_") + std::to_string(i)));
+
+        EXPECT_EQ(i, t.transform.translation.x);
+        EXPECT_EQ(i, t.transform.translation.y);
+        EXPECT_EQ(i, t.transform.translation.z);
+
+        EXPECT_EQ(i, t.transform.rotation.x);
+        EXPECT_EQ(i, t.transform.rotation.y);
+        EXPECT_EQ(i, t.transform.rotation.z);
+        EXPECT_EQ(i, t.transform.rotation.w);
+
+      }
       promise->set_value();
     }
   );

@@ -36,7 +36,7 @@ void microros_app(void)
 
     tf2_msgs__msg__TFMessage msg;
 
-    size_t size = 30;
+    size_t size = 20;
 
     msg.transforms.data = (geometry_msgs__msg__TransformStamped*) malloc(size * sizeof(geometry_msgs__msg__TransformStamped));
     msg.transforms.size = size;
@@ -45,15 +45,15 @@ void microros_app(void)
     for(size_t i = 0; i < size; i++)
     {
         msg.transforms.data[i].header.frame_id.data = (char *) malloc(sizeof(char) * 100);
-        snprintf(msg.transforms.data[i].header.frame_id.data, 10, "frame_%ld", i);
+        snprintf(msg.transforms.data[i].header.frame_id.data, 10, "frame_%d", i);
         msg.transforms.data[i].header.frame_id.size = strlen(msg.transforms.data[i].header.frame_id.data);
         msg.transforms.data[i].header.frame_id.capacity = 100;
 
-        msg.transforms.data[i].header.stamp.sec = i;
+        msg.transforms.data[i].header.stamp.sec = (int)i;
         msg.transforms.data[i].header.stamp.nanosec = i;
 
         msg.transforms.data[i].child_frame_id.data = (char *) malloc(sizeof(char) * 100);
-        snprintf(msg.transforms.data[i].child_frame_id.data, 10, "child_%ld", i);
+        snprintf(msg.transforms.data[i].child_frame_id.data, 10, "child_%d", i);
         msg.transforms.data[i].child_frame_id.size = strlen(msg.transforms.data[i].child_frame_id.data);
         msg.transforms.data[i].child_frame_id.capacity = 100;
 
