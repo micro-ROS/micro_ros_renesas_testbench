@@ -32,6 +32,7 @@ if(BUILD_TESTING)
   find_package(rmw REQUIRED)
   find_package(std_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
+  find_package(tf2_msgs REQUIRED)
   find_package(example_interfaces REQUIRED)
 
   # ament_lint_auto_find_test_dependencies()
@@ -39,6 +40,7 @@ if(BUILD_TESTING)
   ament_add_gtest(${PROJECT_NAME}_test
     test/micro_ros_renesas_testbench/test.cpp
     test/micro_ros_renesas_testbench/test_agent.cpp
+    test/micro_ros_renesas_testbench/test_regressions.cpp
     $<$<BOOL:${UBUILD_TEST_BENCHMARK}>:test/micro_ros_renesas_testbench/test_benchmark.cpp>
   )
 
@@ -59,6 +61,7 @@ if(BUILD_TESTING)
     rmw
     std_msgs
     sensor_msgs
+    tf2_msgs
     example_interfaces
   )
 endif()
