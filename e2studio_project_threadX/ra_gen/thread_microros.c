@@ -19,8 +19,8 @@ const agt_extended_cfg_t g_timer0_extend =
   .trigger_edge = AGT_TRIGGER_EDGE_RISING, };
 const timer_cfg_t g_timer0_cfg =
 { .mode = TIMER_MODE_PERIODIC,
-/* Actual period: 0.01048576 seconds. Actual duty: 50%. */.period_counts = (uint32_t) 0x10000,
-  .duty_cycle_counts = 0x8000, .source_div = (timer_source_div_t) 3, .channel = 0, .p_callback = micro_ros_timer_cb,
+/* Actual period: 0.00001 seconds. Actual duty: 50%. */.period_counts = (uint32_t) 0x1f4,
+  .duty_cycle_counts = 0xfa, .source_div = (timer_source_div_t) 0, .channel = 0, .p_callback = micro_ros_timer_cb,
   /** If NULL then do not add & */
 #if defined(NULL)
     .p_context           = NULL,
