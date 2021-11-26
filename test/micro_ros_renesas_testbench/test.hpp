@@ -138,11 +138,20 @@ public:
         node = std::make_shared<rclcpp::Node>("test_node");
 
         runClientCode();
+
+        if (!agent_serial_dev.empty() && !check_serial_port(agent_serial_dev)) {
+            std::cout << transport_ << " serial port not available" << std::endl;
+            GTEST_SKIP();
+        }
     }
 
     void TearDown() override {
         agent->stop();
         rclcpp::shutdown();
+    }
+
+    bool check_serial_port(std::string port) {
+        return access(port.c_str(), W_OK | R_OK ) == 0;
     }
 
     bool checkConnection(){
