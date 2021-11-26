@@ -123,11 +123,6 @@ public:
     ~HardwareTestBase(){}
 
     void SetUp() override {
-        if (!agent_serial_dev.empty() && !check_serial_port(agent_serial_dev)) {
-            std::cout << "Serial port  " << agent_serial_dev << "not available" << std::endl;
-            GTEST_SKIP();
-        }
-
         ASSERT_TRUE(checkConnection());
 
         // Set domain id
@@ -144,6 +139,11 @@ public:
         node = std::make_shared<rclcpp::Node>("test_node");
 
         runClientCode();
+
+        if (!agent_serial_dev.empty() && !check_serial_port(agent_serial_dev)) {
+            std::cout << transport_ << " serial port not available" << std::endl;
+            GTEST_SKIP();
+        }
     }
 
     void TearDown() override {
