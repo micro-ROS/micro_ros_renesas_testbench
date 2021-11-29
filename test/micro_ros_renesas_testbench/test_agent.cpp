@@ -40,6 +40,9 @@ TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 
       case Transport::USB_TRANSPORT:
           transport_type = "serial";
           break;
+      case Transport::CAN_TRANSPORT:
+          transport_type = "canfd";
+          break;
       default:
           break;
   }
