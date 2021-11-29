@@ -1,0 +1,20 @@
+{
+    "names": {
+        "rmw_microxrcedds": {
+            "cmake-args": [
+                "-DRMW_UXRCE_MAX_NODES=10",
+                "-DRMW_UXRCE_MAX_PUBLISHERS=10",
+                "-DRMW_UXRCE_MAX_SUBSCRIPTIONS=10",
+                "-DRMW_UXRCE_MAX_SERVICES=10",
+                "-DRMW_UXRCE_MAX_CLIENTS=10",
+                "-DRMW_UXRCE_MAX_HISTORY=8",
+                "-DRMW_UXRCE_TRANSPORT=custom"
+            ]
+        },
+        "microxrcedds_client": {
+            "cmake-args": [
+                "-DUCLIENT_CUSTOM_TRANSPORT_MTU=64"
+            ]
+        },
+    }
+}
