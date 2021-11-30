@@ -28,7 +28,7 @@ jobs:
       - name: Update submodules
         run: |
           git submodule foreach git fetch
-          git submodule foreach git reset --hard origin/ feature/can_transport
+          git submodule foreach git reset --hard origin/feature/can_transport
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
