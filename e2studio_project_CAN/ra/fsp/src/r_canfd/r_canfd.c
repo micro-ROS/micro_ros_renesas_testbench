@@ -477,7 +477,7 @@ fsp_err_t R_CANFD_Write (can_ctrl_t * const p_api_ctrl, uint32_t buffer, can_fra
     }
 
     /* Request transmission */
-    R_CANFD->CFDTMC[txmb] = 5; //1;
+    R_CANFD->CFDTMC[txmb] = 1;
 
     return FSP_SUCCESS;
 }
@@ -1108,56 +1108,17 @@ static void r_canfd_mode_ctr_set (volatile uint32_t * p_ctr_reg, can_operation_m
  **********************************************************************************************************************/
 static uint8_t r_canfd_bytes_to_dlc (uint8_t bytes)
 {
-    uint8_t result = 0;
-    // TODO: ask for fix
     if (bytes <= 8)
     {
-        result = bytes;
-    }
-    else if (bytes <= 12)
-    {
-        result = 9;
-    }
-    else if (bytes <= 16)
-    {
-        result = 10;
-    }
-    else if (bytes <= 20)
-    {
-        result = 11;
-    }
-    else if (bytes <= 24)
-    {
-        result = 12;
-    }
-    else if (bytes <= 32)
-    {
-        result = 13;
-    }
-    else if (bytes <= 48)
-    {
-        result = 14;
-    }
-    else if (bytes <= 64)
-    {
-        result = 15;
-    }
-
-    return result;
-/*
-    if (bytes <= 8)
-    {
-        result= bytes;
+        return bytes;
     }
 
     if (bytes <= 24)
     {
-        result = (uint8_t) (8U + ((bytes - 8U) / 4U));
+        return (uint8_t) (8U + ((bytes - 8U) / 4U));
     }
     else
     {
-        result = (uint8_t) (0xDU + ((bytes / 16U) - 2U));
+        return (uint8_t) (0xDU + ((bytes / 16U) - 2U));
     }
-*/
-    return result;
 }
