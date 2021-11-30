@@ -153,5 +153,13 @@ INSTANTIATE_TEST_SUITE_P(
     BenchmarkTest,
     ThroughputTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 100, 200, 400)));
+
+// TODO: Throughput test with enable_BRS = true
+INSTANTIATE_TEST_SUITE_P(
+    BenchmarkTest,
+    ThroughputTest,
+        ::testing::Combine(
+        ::testing::Values(TestAgent::Transport::CAN_TRANSPORT),
+        ::testing::Values(10, 30, 45)));
