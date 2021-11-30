@@ -14,10 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ros_distribution: foxy
-            branch: foxy
           - ros_distribution: galactic
-            branch: galactic
+            branch: feature/can_tests
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1

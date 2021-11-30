@@ -14,10 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ros_distribution: foxy
-            branch: foxy
           - ros_distribution: galactic
-            branch: galactic
+            branch: feature/can_tests
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
@@ -41,6 +39,13 @@ jobs:
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_USB/micro_ros_renesas2estudio_component
           rm -rf libmicroros
         popd
+
+        # Compile CAN library
+        pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_CAN/micro-ROS_tests
+          mv makefile.init makefile.init.old || true
+          make clean && make -j$(nproc)
+        popd
+
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_USB/micro-ROS_tests
           mv makefile.init makefile.init.old || true
           make clean && make -j$(nproc)
