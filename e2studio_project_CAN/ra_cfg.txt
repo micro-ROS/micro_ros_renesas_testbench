@@ -465,7 +465,7 @@ FSP Configuration
     
   Module "CANFD Driver on r_canfd"
     Parameter Checking: Default (BSP)
-    Global Error Interrupt: Priority: Priority 12
+    Global Error Interrupt: Priority: Priority 3
     Global Error Interrupt: Sources: DLC Check, Message Lost, FD Payload Overflow
     Global Error Interrupt: Callback Channel: Channel 1
     Transmission Priority: Buffer Number
@@ -473,14 +473,14 @@ FSP Configuration
     Flexible Data (FD): FD Frame Format: ISO 11898-1
     Flexible Data (FD): Protocol Exceptions: Enabled (ISO 11898-1)
     Flexible Data (FD): Payload Overflow: Reject
-    Reception: Message Buffers: Number of Buffers: 1
+    Reception: Message Buffers: Number of Buffers: 0
     Reception: Message Buffers: Payload Size: 64 bytes
-    Reception: FIFOs: Interrupt Priority: Priority 12
+    Reception: FIFOs: Interrupt Priority: Priority 3
     Reception: FIFOs: FIFO 0: Enable: Enabled
     Reception: FIFOs: FIFO 0: Interrupt Mode: Every Frame
-    Reception: FIFOs: FIFO 0: Interrupt Threshold: 1/2 full
+    Reception: FIFOs: FIFO 0: Interrupt Threshold: 1/8 full
     Reception: FIFOs: FIFO 0: Payload Size: 64 bytes
-    Reception: FIFOs: FIFO 0: Depth: 16 stages
+    Reception: FIFOs: FIFO 0: Depth: 4 stages
     Reception: FIFOs: FIFO 1: Enable: Disabled
     Reception: FIFOs: FIFO 1: Interrupt Mode: Every Frame
     Reception: FIFOs: FIFO 1: Interrupt Threshold: 1/2 full
@@ -532,7 +532,7 @@ FSP Configuration
       General: Name: g_timer0
       General: Channel: 0
       General: Mode: Periodic
-      General: Period: 10
+      General: Period: 100
       General: Period Unit: Microseconds
       Output: Duty Cycle Percent (only applicable in PWM mode): 50
       General: Count Source: PCLKB

@@ -42,11 +42,11 @@ using namespace std::chrono_literals;
 class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_serial_verbosity = 4, size_t domain_id = 0)
+    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_verbosity = 4, size_t domain_id = 0)
         : transport_(transport)
         , agent_port(8888)
-        , agent_serial_dev("")
-        , agent_serial_verbosity_(agent_serial_verbosity)
+        , agent_dev("")
+        , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
     {
         char * cwd_str = get_current_dir_name();
@@ -57,24 +57,30 @@ public:
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 project_name = "e2studio_project_threadX";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_port, agent_verbosity));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
                 project_name = "e2studio_project_freeRTOS";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_port, agent_verbosity));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
-                agent_serial_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
+                agent_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
                 project_name = "e2studio_project_USB";
-                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_dev, agent_verbosity));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
-                agent_serial_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
+                agent_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
                 project_name = "e2studio_project_serial";
-                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                break;
+
+            case TestAgent::Transport::CAN_TRANSPORT:
+                agent_dev = "--dev can0";
+                project_name = "e2studio_project_CAN";
+                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
                 break;
 
             default:
@@ -111,6 +117,7 @@ public:
             }
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
+            case TestAgent::Transport::CAN_TRANSPORT:
             default:
                 break;
         }
@@ -229,8 +236,8 @@ protected:
 
     size_t domain_id_;
     uint16_t agent_port;
-    std::string agent_serial_dev;
-    uint8_t agent_serial_verbosity_;
+    std::string agent_dev;
+    uint8_t agent_verbosity_;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 
