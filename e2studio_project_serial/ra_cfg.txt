@@ -504,7 +504,7 @@ FSP Configuration
       General: Name: g_timer0
       General: Channel: 0
       General: Mode: Periodic
-      General: Period: 10
+      General: Period: 100
       General: Period Unit: Microseconds
       Output: Duty Cycle Percent (only applicable in PWM mode): 50
       General: Count Source: PCLKB
