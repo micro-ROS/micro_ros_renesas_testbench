@@ -1,20 +1,20 @@
 [submodule "e2studio_project_serial/micro_ros_renesas2estudio_component"]
 	path = e2studio_project_serial/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = feature/can_transport
+	branch = galactic
 [submodule "e2studio_project_threadX/micro_ros_renesas2estudio_component"]
 	path = e2studio_project_threadX/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = feature/can_transport
+	branch = galactic
 [submodule "e2studio_project_freeRTOS/micro_ros_renesas2estudio_component"]
 	path = e2studio_project_freeRTOS/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = feature/can_transport
+	branch = galactic
 [submodule "e2studio_project_USB/micro_ros_renesas2estudio_component"]
 	path = e2studio_project_USB/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = feature/can_transport
+	branch = galactic
 [submodule "e2studio_project_CAN/micro_ros_renesas2estudio_component"]
 	path = e2studio_project_CAN/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = feature/can_transport
+	branch = galactic
