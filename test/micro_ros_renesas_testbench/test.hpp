@@ -17,6 +17,9 @@
 
 #include <gtest/gtest.h>
 
+#include <linux/can.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 #include <unistd.h>
 
 #include <rclcpp/rclcpp.hpp>
@@ -24,6 +27,7 @@
 
 #include <std_msgs/msg/u_int32_multi_array.hpp>
 
+#include <sstream>
 #include <string>
 #include <memory>
 #include <vector>
@@ -41,11 +45,11 @@ using namespace std::chrono_literals;
 class HardwareTestBase : public ::testing::Test
 {
 public:
-    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_serial_verbosity = 4, size_t domain_id = 0)
+    HardwareTestBase(TestAgent::Transport transport, uint8_t agent_verbosity = 4, size_t domain_id = 0)
         : transport_(transport)
         , agent_port(8888)
-        , agent_serial_dev("")
-        , agent_serial_verbosity_(agent_serial_verbosity)
+        , agent_dev("")
+        , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
     {
         char * cwd_str = get_current_dir_name();
@@ -56,24 +60,30 @@ public:
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 project_name = "e2studio_project_threadX";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_port, agent_verbosity));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
                 project_name = "e2studio_project_freeRTOS";
-                agent.reset(new TestAgent(agent_port, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_port, agent_verbosity));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
-                agent_serial_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
+                agent_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
                 project_name = "e2studio_project_USB";
-                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_dev, agent_verbosity));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
-                agent_serial_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
+                agent_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
                 project_name = "e2studio_project_serial";
-                agent.reset(new TestAgent(agent_serial_dev, agent_serial_verbosity));
+                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                break;
+
+            case TestAgent::Transport::CAN_TRANSPORT:
+                agent_dev = "can0";
+                project_name = "e2studio_project_CAN";
+                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
                 break;
 
             default:
@@ -95,7 +105,6 @@ public:
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             {
-
                 std::replace(ip_address.begin(), ip_address.end(), '.', ',');
                 addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
                 addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
@@ -110,6 +119,7 @@ public:
             }
             case TestAgent::Transport::SERIAL_TRANSPORT:
             case TestAgent::Transport::USB_TRANSPORT:
+            case TestAgent::Transport::CAN_TRANSPORT:
             default:
                 break;
         }
@@ -138,11 +148,6 @@ public:
         node = std::make_shared<rclcpp::Node>("test_node");
 
         runClientCode();
-
-        if (!agent_serial_dev.empty() && !check_serial_port(agent_serial_dev)) {
-            std::cout << transport_ << " serial port not available" << std::endl;
-            GTEST_SKIP();
-        }
     }
 
     void TearDown() override {
@@ -152,6 +157,16 @@ public:
 
     bool check_serial_port(std::string port) {
         return access(port.c_str(), W_OK | R_OK ) == 0;
+    }
+
+    bool is_interface_up(std::string can_interface) {
+        struct ifreq ifr;
+        int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+        memset(&ifr, 0, sizeof(ifr));
+        strcpy(ifr.ifr_name, can_interface.c_str());
+        ioctl(sock, SIOCGIFFLAGS, &ifr);
+        close(sock);
+        return (ifr.ifr_flags & IFF_UP);
     }
 
     bool checkConnection(){
@@ -181,6 +196,33 @@ public:
     void runClientCode(){
         ASSERT_TRUE(buildClientCode());
         ASSERT_TRUE(flashClientCode());
+        std::this_thread::sleep_for(2000ms);
+
+        // Check transport interface
+        switch (transport_)
+        {
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+            case TestAgent::Transport::USB_TRANSPORT:
+                if (!check_serial_port(agent_dev)) {
+                    std::cout << transport_ << " serial port not available" << std::endl;
+                    GTEST_SKIP();
+                }
+                break;
+
+            case TestAgent::Transport::CAN_TRANSPORT:
+                if (!is_interface_up(agent_dev)) {
+                    std::cout << agent_dev << " interface not available" << std::endl;
+                    GTEST_SKIP();
+                }
+                break;
+
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+            default:
+                // Do nothing
+                break;
+        }
+
         agent->start();
         std::this_thread::sleep_for(3000ms);
     }
@@ -237,8 +279,8 @@ protected:
 
     size_t domain_id_;
     uint16_t agent_port;
-    std::string agent_serial_dev;
-    uint8_t agent_serial_verbosity_;
+    std::string agent_dev;
+    uint8_t agent_verbosity_;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 };
 

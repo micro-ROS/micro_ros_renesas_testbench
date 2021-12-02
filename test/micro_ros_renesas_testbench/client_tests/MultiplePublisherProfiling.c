@@ -66,9 +66,9 @@ void microros_app(void)
         rcl_publisher_fini(&publishers[i], &node);
     }
 
-    rcl_init_options_fini(&init_options);
     rcl_node_fini(&node);
     rclc_support_fini(&support);
+    rcl_init_options_fini(&init_options);
 
     measured_max_used_stack = BSP_CFG_STACK_MAIN_BYTES - (uxTaskGetStackHighWaterMark(NULL)*4);
     measured_absoluteUsedMemory = absoluteUsedMemory;
