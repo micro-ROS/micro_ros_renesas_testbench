@@ -17,13 +17,13 @@ void microros_app(void)
     //create init_options
     rclc_support_t support;
 
-    rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-    rcl_init_options_init(&init_options, allocator);
-    rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
-    rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
+	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+	rcl_init_options_init(&init_options, allocator);
+	rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
+	rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
 
-    // create node
-    rcl_node_t node;
+	// create node
+	rcl_node_t node;
     rclc_node_init_default(&node, "test_node", "", &support);
 
     // create publisher reliable

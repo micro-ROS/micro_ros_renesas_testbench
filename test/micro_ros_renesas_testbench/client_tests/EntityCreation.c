@@ -19,10 +19,10 @@ void microros_app(void)
     //create init_options
     rclc_support_t support;
 
-    rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-    rcl_init_options_init(&init_options, allocator);
-    rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
-    rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
+	rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+	rcl_init_options_init(&init_options, allocator);
+	rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
+	rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
 
     // create nodes
     rcl_node_t nodes[ENTITY_NUMBER];
@@ -33,7 +33,7 @@ void microros_app(void)
         snprintf(buf_namespace, 100, "ns_%d", i);
 
         // create node
-        rclc_node_init_default(&nodes[i], buf_name, buf_namespace, &support);
+	    rclc_node_init_default(&nodes[i], buf_name, buf_namespace, &support);
     }
 
     // create publishers

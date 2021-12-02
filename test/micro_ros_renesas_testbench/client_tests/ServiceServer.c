@@ -22,7 +22,7 @@ void microros_app(void)
 {
     rcl_allocator_t allocator = rcl_get_default_allocator();
 
-    // Create init_options
+    //create init_options
     rclc_support_t support;
 
     rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
@@ -30,7 +30,7 @@ void microros_app(void)
     rcl_init_options_set_domain_id(&init_options, DOMAIN_ID);
     rclc_support_init_with_options(&support, 0, NULL, &init_options, &allocator);
 
-    // Create node
+    // create node
     rcl_node_t node;
     rclc_node_init_default(&node, "test_node", "", &support);
 
