@@ -14,8 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - distro: foxy
+            branch: foxy
           - distro: galactic
-            branch: feature/can_tests
+            branch: galactic
+          - distro: rolling
+            branch: main
     steps:
       - uses: actions/checkout@v2
         with:
@@ -28,7 +32,7 @@ jobs:
       - name: Update submodules
         run: |
           git submodule foreach git fetch
-          git submodule foreach git reset --hard origin/feature/can_transport
+          git submodule foreach git reset --hard origin/${{ matrix.branch }}
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3
         with:
@@ -38,4 +42,4 @@ jobs:
           branch: autoupdate_micro_ros_submodule_${{ matrix.branch }}
           delete-branch: true
           reviewers: pablogs9
-          base: feature/can_tests
+          base: ${{ matrix.branch }}
