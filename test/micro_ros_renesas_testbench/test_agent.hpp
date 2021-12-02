@@ -35,6 +35,7 @@ public:
   {
       SERIAL_TRANSPORT,
       USB_TRANSPORT,
+      CAN_TRANSPORT,
       UDP_THREADX_TRANSPORT,
       UDP_FREERTOS_TRANSPORT,
   };
@@ -54,6 +55,9 @@ public:
           break;
         case Transport::USB_TRANSPORT:
           text = "USB_TRANSPORT";
+          break;
+        case Transport::CAN_TRANSPORT:
+          text = "CAN_TRANSPORT";
           break;
         default:
           text = "Unknown transport";

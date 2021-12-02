@@ -241,6 +241,11 @@ TEST_P(HardwareTestAllTransports, Subscriber) {
 
 #ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, ComplexSubscriber) {
+  if (transport_ == TestAgent::Transport::CAN_TRANSPORT)
+  {
+      GTEST_SKIP();
+  }
+
   auto out_msg = std::make_shared<sensor_msgs::msg::CameraInfo>();
   out_msg->distortion_model = "string_1";
   out_msg->header.frame_id = "string_2";
@@ -422,6 +427,12 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
 
 #ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, Parameters) {
+    // TODO: Fix
+    if (transport_ == TestAgent::Transport::CAN_TRANSPORT)
+    {
+        GTEST_SKIP();
+    }
+
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
         param_client_node,
@@ -607,13 +618,13 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     PublisherRateTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     HardwareTestAllTransports,
-    ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
+    ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
 
 INSTANTIATE_TEST_CASE_P(
     RenesasTest,
@@ -626,7 +637,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     ContinousFragment,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
         ::testing::Values(4095, 30000, 100000)));
 
 // Profiling tests
