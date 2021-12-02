@@ -196,7 +196,7 @@ public:
     void runClientCode(){
         ASSERT_TRUE(buildClientCode());
         ASSERT_TRUE(flashClientCode());
-        std::this_thread::sleep_for(200ms);
+        std::this_thread::sleep_for(2000ms);
 
         // Check transport interface
         switch (transport_)
