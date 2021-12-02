@@ -85,7 +85,7 @@ FSP Configuration
     ICLK Div /1
     PCLKA Div /2
     PCLKB Div /4
-    PCLKC Div /16
+    PCLKC Div /4
     PCLKD Div /2
     BCLK Div /2
     BCLK/2
@@ -2003,8 +2003,8 @@ FSP Configuration
       General: Name: g_timer0
       General: Channel: 0
       General: Mode: Periodic
-      General: Period: 0x800000
-      General: Period Unit: Raw Counts
+      General: Period: 100
+      General: Period Unit: Microseconds
       Output: Duty Cycle Percent (only applicable in PWM mode): 50
       General: Count Source: PCLKB
       Output: AGTOA Output: Disabled
@@ -2015,7 +2015,7 @@ FSP Configuration
       Input: Enable Pin: Enable Pin Not Used
       Input: Trigger Edge: Trigger Edge Rising
       Interrupts: Callback: micro_ros_timer_cb
-      Interrupts: Underflow Interrupt Priority: Priority 15
+      Interrupts: Underflow Interrupt Priority: Priority 12
       
     Instance "g_dhcp_client0 NetX Duo DHCP IPv4 Client"
       Name: g_dhcp_client0
