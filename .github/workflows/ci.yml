@@ -40,6 +40,10 @@ jobs:
           rm -rf libmicroros
         popd
 
+         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_CAN/micro_ros_renesas2estudio_component
+          rm -rf libmicroros
+        popd
+
         # Compile CAN library
         pushd ros_ws/src/micro_ros_renesas_testbench/e2studio_project_CAN/micro-ROS_tests
           mv makefile.init makefile.init.old || true
