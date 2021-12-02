@@ -158,7 +158,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 // TODO: Throughput test with enable_BRS = true
 INSTANTIATE_TEST_SUITE_P(
-    BenchmarkTest,
+    BenchmarkTestCan,
     ThroughputTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::CAN_TRANSPORT),
