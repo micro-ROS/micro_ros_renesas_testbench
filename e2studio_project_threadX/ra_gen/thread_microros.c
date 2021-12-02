@@ -28,7 +28,7 @@ const timer_cfg_t g_timer0_cfg =
   .p_context = &NULL,
 #endif
   .p_extend = &g_timer0_extend,
-  .cycle_end_ipl = (15),
+  .cycle_end_ipl = (12),
 #if defined(VECTOR_NUMBER_AGT0_INT)
     .cycle_end_irq       = VECTOR_NUMBER_AGT0_INT,
 #else
