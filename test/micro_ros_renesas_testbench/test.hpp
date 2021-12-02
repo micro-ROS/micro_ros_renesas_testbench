@@ -17,6 +17,9 @@
 
 #include <gtest/gtest.h>
 
+#include <linux/can.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 #include <unistd.h>
 
 #include <rclcpp/rclcpp.hpp>
@@ -78,7 +81,7 @@ public:
                 break;
 
             case TestAgent::Transport::CAN_TRANSPORT:
-                agent_dev = "--dev can0";
+                agent_dev = "can0";
                 project_name = "e2studio_project_CAN";
                 agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
                 break;
@@ -102,7 +105,6 @@ public:
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             {
-
                 std::replace(ip_address.begin(), ip_address.end(), '.', ',');
                 addDefineToClient("AGENT_IP_ADDRESS", "IP_ADDRESS(" + ip_address+ ")");
                 addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
@@ -153,6 +155,20 @@ public:
         rclcpp::shutdown();
     }
 
+    bool check_serial_port(std::string port) {
+        return access(port.c_str(), W_OK | R_OK ) == 0;
+    }
+
+    bool is_interface_up(std::string can_interface) {
+        struct ifreq ifr;
+        int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+        memset(&ifr, 0, sizeof(ifr));
+        strcpy(ifr.ifr_name, can_interface.c_str());
+        ioctl(sock, SIOCGIFFLAGS, &ifr);
+        close(sock);
+        return (ifr.ifr_flags & IFF_UP);
+    }
+
     bool checkConnection(){
         std::cout << "Checking device connection ";
         std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/check.sh";
@@ -180,6 +196,32 @@ public:
     void runClientCode(){
         ASSERT_TRUE(buildClientCode());
         ASSERT_TRUE(flashClientCode());
+
+        // Check transport interface
+        switch (transport_)
+        {
+            case TestAgent::Transport::SERIAL_TRANSPORT:
+            case TestAgent::Transport::USB_TRANSPORT:
+                if (!check_serial_port(agent_dev)) {
+                    std::cout << transport_ << " serial port not available" << std::endl;
+                    GTEST_SKIP();
+                }
+                break;
+
+            case TestAgent::Transport::CAN_TRANSPORT:
+                if (!is_interface_up(agent_dev)) {
+                    std::cout << agent_dev << " interface not available" << std::endl;
+                    GTEST_SKIP();
+                }
+                break;
+
+            case TestAgent::Transport::UDP_THREADX_TRANSPORT:
+            case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
+            default:
+                // Do nothing
+                break;
+        }
+
         agent->start();
         std::this_thread::sleep_for(3000ms);
     }

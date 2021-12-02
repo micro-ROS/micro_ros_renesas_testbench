@@ -28,26 +28,30 @@ TestAgent::TestAgent(std::string dev, uint8_t verbosity = 6)
 
 TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 6)
 {
-  std::string transport_type;
+  std::string transport_type = "";
+  std::string aux_args = "";
 
   switch (transport)
   {
       case Transport::UDP_THREADX_TRANSPORT:
       case Transport::UDP_FREERTOS_TRANSPORT:
           transport_type = "udp4";
+          aux_args = "--port " + args;
           break;
       case Transport::SERIAL_TRANSPORT:
       case Transport::USB_TRANSPORT:
           transport_type = "serial";
+          aux_args = "--dev " + args;
           break;
       case Transport::CAN_TRANSPORT:
           transport_type = "canfd";
+          aux_args = "--dev " + args;
           break;
       default:
           break;
   }
 
-  command_ = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + args + " -v" +  std::to_string(verbosity);
+  command_ = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " " + aux_args + " -v" +  std::to_string(verbosity);
 }
 
 void TestAgent::start()
