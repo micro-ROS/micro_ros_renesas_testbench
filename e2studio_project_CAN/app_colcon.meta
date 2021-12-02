@@ -7,8 +7,8 @@
                 "-DRMW_UXRCE_MAX_SUBSCRIPTIONS=10",
                 "-DRMW_UXRCE_MAX_SERVICES=10",
                 "-DRMW_UXRCE_MAX_CLIENTS=10",
-                "-DRMW_UXRCE_MAX_HISTORY=8",
-                "-DRMW_UXRCE_STREAM_HISTORY=8",
+                "-DRMW_UXRCE_MAX_HISTORY=4",
+                "-DRMW_UXRCE_STREAM_HISTORY=12",
                 "-DRMW_UXRCE_TRANSPORT=custom"
             ]
         },
