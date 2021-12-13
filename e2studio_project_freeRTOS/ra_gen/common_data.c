@@ -21,13 +21,20 @@ uint8_t g_ether0_mac_address[6] =
 { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
 
 __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_tx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
-__attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[1] ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[4] ETHER_BUFFER_PLACE_IN_SECTION;
 
 __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer0[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 __attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer1[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer2[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer3[1536]ETHER_BUFFER_PLACE_IN_SECTION;
+__attribute__((__aligned__(32)))uint8_t g_ether0_ether_buffer4[1536]ETHER_BUFFER_PLACE_IN_SECTION;
 
-uint8_t *pp_g_ether0_ether_buffers[2] =
-{ (uint8_t*) &g_ether0_ether_buffer0[0], (uint8_t*) &g_ether0_ether_buffer1[0], };
+uint8_t *pp_g_ether0_ether_buffers[5] =
+{ (uint8_t*) &g_ether0_ether_buffer0[0],
+  (uint8_t*) &g_ether0_ether_buffer1[0],
+  (uint8_t*) &g_ether0_ether_buffer2[0],
+  (uint8_t*) &g_ether0_ether_buffer3[0],
+  (uint8_t*) &g_ether0_ether_buffer4[0], };
 
 const ether_cfg_t g_ether0_cfg =
 { .channel = 0, .zerocopy = ETHER_ZEROCOPY_DISABLE, .multicast = ETHER_MULTICAST_ENABLE, .promiscuous =
@@ -40,7 +47,7 @@ const ether_cfg_t g_ether0_cfg =
   .p_tx_descriptors = g_ether0_tx_descriptors,
 
   .num_tx_descriptors = 1,
-  .num_rx_descriptors = 1,
+  .num_rx_descriptors = 4,
 
   .pp_ether_buffers = pp_g_ether0_ether_buffers,
 
