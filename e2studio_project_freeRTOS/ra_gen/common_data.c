@@ -39,7 +39,7 @@ uint8_t *pp_g_ether0_ether_buffers[5] =
 const ether_cfg_t g_ether0_cfg =
 { .channel = 0, .zerocopy = ETHER_ZEROCOPY_DISABLE, .multicast = ETHER_MULTICAST_ENABLE, .promiscuous =
           ETHER_PROMISCUOUS_DISABLE,
-  .flow_control = ETHER_FLOW_CONTROL_DISABLE, .padding = ETHER_PADDING_DISABLE, .padding_offset = 1, .broadcast_filter =
+  .flow_control = ETHER_FLOW_CONTROL_DISABLE, .padding = ETHER_PADDING_DISABLE, .padding_offset = 0, .broadcast_filter =
           0,
   .p_mac_address = g_ether0_mac_address,
 
