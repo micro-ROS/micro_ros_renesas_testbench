@@ -162,4 +162,4 @@ INSTANTIATE_TEST_SUITE_P(
     ThroughputTest,
         ::testing::Combine(
         ::testing::Values(TestAgent::Transport::CAN_TRANSPORT),
-        ::testing::Values(10, 30, 45)));
+        ::testing::Values(10, 20, 40)));
