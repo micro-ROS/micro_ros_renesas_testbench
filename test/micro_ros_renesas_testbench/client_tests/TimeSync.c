@@ -39,11 +39,13 @@ void microros_app(void)
     msg.data = 0;
 
     for(;;){
-        rmw_uros_sync_session(1000);
-        int64_t time = rmw_uros_epoch_millis();
-        msg.data = time / 1000; // Convert to seconds
+        if (RMW_RET_OK == rmw_uros_sync_session(1000))
+        {
+            int64_t time = rmw_uros_epoch_millis();
+            msg.data = time / 1000; // Convert to seconds
 
-        rcl_publish(&publisher, &msg, NULL);
+            rcl_publish(&publisher, &msg, NULL);
+        }
 
         sleep_ms(100);
     }
