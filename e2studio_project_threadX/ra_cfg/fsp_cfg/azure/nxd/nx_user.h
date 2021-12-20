@@ -484,7 +484,6 @@
 #define NX_SNMP_AGENT_PORT                        (161)
 #define NX_SNMP_MANAGER_TRAP_PORT                 (162)
 #define NX_SNMP_MAX_TRAP_KEY                      (64)
-#define NX_SNMP_DISABLE_V1
 
 /* POP3 Client Configuration */
 #define NXD_POP3_CLIENT_MAIL_BUFFER_SIZE            (2000)

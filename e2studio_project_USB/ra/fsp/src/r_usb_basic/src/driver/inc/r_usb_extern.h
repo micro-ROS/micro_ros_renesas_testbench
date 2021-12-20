@@ -486,6 +486,12 @@ uint16_t usb_hstd_get_string_desc(usb_utr_t * ptr, uint16_t addr, uint16_t strin
 uint16_t usb_hstd_set_feature(usb_utr_t * ptr, uint16_t addr, uint16_t epnum);
 uint16_t usb_hstd_get_config_desc(usb_utr_t * ptr, uint16_t addr, uint16_t length);
 
+  #if ((BSP_CFG_RTOS == 1) && defined(USB_CFG_HHID_USE))
+void usb_hid_set_protocol(usb_utr_t * ptr, uint16_t addr, uint16_t setaddr);
+void usb_hid_get_string_desc(usb_utr_t * ptr, uint16_t addr, uint16_t string);
+
+  #endif
+
  #else                                 /* #if (BSP_CFG_RTOS != 0) */
 uint16_t usb_hstd_get_string_desc(usb_utr_t * ptr, uint16_t addr, uint16_t string, usb_cb_t complete);
 uint16_t usb_hstd_set_feature(usb_utr_t * ptr, uint16_t addr, uint16_t epnum, usb_cb_t complete);
@@ -712,11 +718,6 @@ void     usb_hstd_device_information(usb_utr_t * ptr, uint16_t devaddr, uint16_t
 void     usb_pstd_device_information(usb_utr_t * ptr, uint16_t * tbl);
 usb_er_t usb_pstd_set_stall_clr_feature(usb_utr_t * ptr, usb_cb_t complete, uint16_t pipe);
 
-#if USB_CFG_COMPLIANCE == USB_CFG_ENABLE
-void usb_compliance_disp(void *);
-
-#endif                                 /* USB_CFG_COMPLIANCE == USB_CFG_ENABLE */
-
 #if USB_CFG_BC == USB_CFG_ENABLE
 
 /* BC State change function */
@@ -759,10 +760,11 @@ void usb_cstd_usbx_callback(usb_event_info_t * p_api_event, usb_hdl_t cur_task, 
 void usb_host_usbx_registration(usb_utr_t * p_utr);
 void usb_host_usbx_attach_init(uint8_t module_number);
 
- #else                                 /* #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST) */
+ #endif                                /* #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST) */
+ #if ((USB_CFG_MODE & USB_CFG_PERI) == USB_CFG_PERI)
 uint32_t usb_peri_usbx_initialize_complete(void);
 
- #endif /* #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST) */
+ #endif                                /* #if ((USB_CFG_MODE & USB_CFG_PERI) == USB_CFG_PERI) */
 
 #endif                                 /* #if (BSP_CFG_RTOS == 1) */
 
