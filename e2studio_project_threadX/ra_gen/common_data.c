@@ -9,7 +9,7 @@ const ether_phy_cfg_t g_ether_phy0_cfg =
 .channel = 0,
   .phy_lsi_address = 0, .phy_reset_wait_time = 0x00020000, .mii_bit_access_wait_time = 8, .flow_control =
           ETHER_PHY_FLOW_CONTROL_DISABLE,
-  .mii_type = ETHER_PHY_MII_TYPE_MII, .p_context = NULL, .p_extend = NULL,
+  .mii_type = ETHER_PHY_MII_TYPE_RMII, .p_context = NULL, .p_extend = NULL,
 
 };
 /* Instance structure to use this module. */

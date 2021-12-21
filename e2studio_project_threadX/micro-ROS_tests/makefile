@@ -95,20 +95,20 @@ main-build: microros_testbench.elf secondary-outputs
 # Tool invocations
 microros_testbench.elf: $(OBJS) $(USER_OBJS) $(LINKER_SCRIPT)
 	@echo 'Building target: $@'
-	@echo 'Invoking: GNU ARM Cross C Linker'
-	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g -T "fsp.ld" -Xlinker --gc-sections -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
+	@echo 'Invoking: GNU Arm Cross C Linker'
+	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g -T "fsp.ld" -Xlinker --gc-sections -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
 	arm-none-eabi-gcc @"microros_testbench.elf.in"
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 microros_testbench.hex: microros_testbench.elf
-	@echo 'Invoking: GNU ARM Cross Create Flash Image'
+	@echo 'Invoking: GNU Arm Cross Create Flash Image'
 	arm-none-eabi-objcopy -O ihex "microros_testbench.elf"  "microros_testbench.hex"
 	@echo 'Finished building: $@'
 	@echo ' '
 
 microros_testbench.siz: microros_testbench.elf
-	@echo 'Invoking: GNU ARM Cross Print Size'
+	@echo 'Invoking: GNU Arm Cross Print Size'
 	arm-none-eabi-size --format=berkeley "microros_testbench.elf"
 	@echo 'Finished building: $@'
 	@echo ' '
@@ -179,7 +179,7 @@ endif
 	-@echo ' '
 
 pre-build:
-	-cd ../micro_ros_renesas2estudio_component/library_generation && ./library_generation.sh "-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g"
+	-cd ../micro_ros_renesas2estudio_component/library_generation && ./library_generation.sh "-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g"
 	-@echo ' '
 
 secondary-outputs: $(SECONDARY_FLASH) $(SECONDARY_SIZE)

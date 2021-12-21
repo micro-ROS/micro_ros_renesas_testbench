@@ -191,7 +191,7 @@
 #define NX_DHCP_RESTART_WAIT                         (10 * NX_IP_PERIODIC_RATE)
 
 /* DHCP IPv4 Server Configuration. */
-#define NX_DHCP_SERVER_THREAD_PRIORITY             (1)
+#define NX_DHCP_SERVER_THREAD_PRIORITY             (2)
 #define NX_DHCP_PACKET_ALLOCATE_TIMEOUT            (2 * NX_IP_PERIODIC_RATE)
 #define NX_DHCP_FAST_PERIODIC_TIME_INTERVAL        (10)
 #define NX_DHCP_CLIENT_SESSION_TIMEOUT             (10 * NX_DHCP_FAST_PERIODIC_TIME_INTERVAL)
@@ -225,7 +225,7 @@
 #define NX_DHCPV6_MAX_MESSAGE_SIZE                     (100)
 
 /* DHCP IPv6 Server Configuration. */
-#define NX_DHCPV6_SERVER_THREAD_PRIORITY               (1)
+#define NX_DHCPV6_SERVER_THREAD_PRIORITY               (2)
 #define NX_DHCPV6_IP_LEASE_TIMER_INTERVAL              (60)
 #define NX_DHCPV6_PACKET_WAIT_OPTION                   (1)
 #define NX_DHCPV6_PREFERENCE_VALUE                     (0)
@@ -259,7 +259,7 @@
 #define NX_HTTP_MAX_PASSWORD                        20
 
 /* HTTP Client Configuration. */
-#define NX_HTTP_CLIENT_MIN_PACKET_SIZE              300
+#define NX_HTTP_CLIENT_MIN_PACKET_SIZE              600
 #define NX_HTTP_CLIENT_TIMEOUT                      (10 * NX_IP_PERIODIC_RATE)
 
 /* HTTP Server Configuration. */
@@ -388,7 +388,7 @@
 #define NX_SNTP_CLIENT_MIN_NTP_VERSION             (3)
 #define NX_SNTP_CLIENT_MIN_SERVER_STRATUM          (2)
 #define NX_SNTP_CLIENT_MIN_TIME_ADJUSTMENT         (10)
-#define NX_SNTP_CLIENT_MAX_TIME_ADJUSTMENT         (10800000)
+#define NX_SNTP_CLIENT_MAX_TIME_ADJUSTMENT         (180000)
 #define NX_SNTP_CLIENT_IGNORE_MAX_ADJUST_STARTUP   (NX_TRUE)
 #define NX_SNTP_CLIENT_MAX_TIME_LAPSE              (7200)
 #define NX_SNTP_UPDATE_TIMEOUT_INTERVAL            (1)
@@ -467,7 +467,7 @@
 #define  NX_FTP_SERVER_RETRY_SECONDS                              2
 #define  NX_FTP_SERVER_TRANSMIT_QUEUE_DEPTH                       20
 #define  NX_FTP_SERVER_RETRY_MAX                                  10
-#define  NX_FTP_SERVER_RETRY_SHIFT                                1
+#define  NX_FTP_SERVER_RETRY_SHIFT                                2
 
 /* SNMP Agent Configuration */
 #define NX_SNMP_AGENT_THREAD_STACK_SIZE           (4096)

@@ -128,7 +128,7 @@
     <node id="board.clock.clkout.div" option="board.clock.clkout.div.1"/>
     <node id="board.clock.uclk.div" option="board.clock.uclk.div.5"/>
     <node id="board.clock.octaspiclk.div" option="board.clock.octaspiclk.div.1"/>
-    <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.1"/>
+    <node id="board.clock.canfdclk.div" option="board.clock.canfdclk.div.6"/>
     <node id="board.clock.iclk.display" option="board.clock.iclk.display.value"/>
     <node id="board.clock.pclka.display" option="board.clock.pclka.display.value"/>
     <node id="board.clock.pclkb.display" option="board.clock.pclkb.display.value"/>
@@ -143,33 +143,29 @@
     <node id="board.clock.canfdclk.display" option="board.clock.canfdclk.display.value"/>
   </raClockConfiguration>
   <raComponentSelection>
-    <component apiversion="" class="BSP" condition="" group="Board" subgroup="ra6m5_ek" variant="" vendor="Renesas" version="3.5.0">
-      <description>RA6M5-EK Board Support Files</description>
-      <originalPack>Renesas.RA_board_ra6m5_ek.3.5.0.pack</originalPack>
-    </component>
     <component apiversion="" class="Common" condition="" group="all" subgroup="fsp_common" variant="" vendor="Renesas" version="3.5.0">
       <description>Board Support Package Common Files</description>
-      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
-    </component>
-    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_agt" variant="" vendor="Renesas" version="3.5.0">
-      <description>Asynchronous General Purpose Timer</description>
-      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
-    </component>
-    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_ether_phy" variant="" vendor="Renesas" version="3.5.0">
-      <description>Ethernet PHY</description>
-      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
-    </component>
-    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_ether" variant="" vendor="Renesas" version="3.5.0">
-      <description>Ethernet</description>
       <originalPack>Renesas.RA.3.5.0.pack</originalPack>
     </component>
     <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_ioport" variant="" vendor="Renesas" version="3.5.0">
       <description>I/O Port</description>
       <originalPack>Renesas.RA.3.5.0.pack</originalPack>
     </component>
-    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_netxduo_ether" variant="" vendor="Renesas" version="3.5.0">
-      <description>NetX Duo Ethernet Driver</description>
+    <component apiversion="" class="RTOS" condition="" group="Azure" subgroup="ThreadX" variant="" vendor="Microsoft" version="6.1.9+fsp.3.5.0">
+      <description>Azure RTOS ThreadX</description>
+      <originalPack>Microsoft.ThreadX.6.1.9+fsp.3.5.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="CMSIS" condition="" group="CMSIS5" subgroup="CoreM" variant="" vendor="Arm" version="5.8.0+renesas.0.fsp.3.5.0">
+      <description>Arm CMSIS Version 5 - Core (M)</description>
+      <originalPack>Arm.CMSIS5.5.8.0+renesas.0.fsp.3.5.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_threadx_port" variant="" vendor="Renesas" version="3.5.0">
+      <description>Azure RTOS ThreadX Port</description>
       <originalPack>Renesas.RA.3.5.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="BSP" condition="" group="Board" subgroup="ra6m5_ek" variant="" vendor="Renesas" version="3.5.0">
+      <description>RA6M5-EK Board Support Files</description>
+      <originalPack>Renesas.RA_board_ra6m5_ek.3.5.0.pack</originalPack>
     </component>
     <component apiversion="" class="BSP" condition="" group="ra6m5" subgroup="device" variant="R7FA6M5BH3CFC" vendor="Renesas" version="3.5.0">
       <description>Board support package for R7FA6M5BH3CFC</description>
@@ -183,17 +179,25 @@
       <description>Board support package for RA6M5 - FSP Data</description>
       <originalPack>Renesas.RA_mcu_ra6m5.3.5.0.pack</originalPack>
     </component>
-    <component apiversion="" class="RTOS" condition="" group="Azure" subgroup="ThreadX" variant="" vendor="Microsoft" version="6.1.9+fsp.3.5.0">
-      <description>Azure RTOS ThreadX</description>
-      <originalPack>Microsoft.ThreadX.6.1.9+fsp.3.5.0.pack</originalPack>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_agt" variant="" vendor="Renesas" version="3.5.0">
+      <description>Asynchronous General Purpose Timer</description>
+      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_ether_phy" variant="" vendor="Renesas" version="3.5.0">
+      <description>Ethernet PHY</description>
+      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="HAL Drivers" condition="" group="all" subgroup="r_ether" variant="" vendor="Renesas" version="3.5.0">
+      <description>Ethernet</description>
+      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
+    </component>
+    <component apiversion="" class="Middleware" condition="" group="all" subgroup="rm_netxduo_ether" variant="" vendor="Renesas" version="3.5.0">
+      <description>NetX Duo Ethernet Driver</description>
+      <originalPack>Renesas.RA.3.5.0.pack</originalPack>
     </component>
     <component apiversion="" class="Azure" condition="" group="NetX Duo" subgroup="nxd" variant="" vendor="Microsoft" version="6.1.9+fsp.3.5.0">
       <description>Azure RTOS NetX Duo</description>
       <originalPack>Microsoft.NetXDuo.6.1.9+fsp.3.5.0.pack</originalPack>
-    </component>
-    <component apiversion="" class="CMSIS" condition="" group="CMSIS5" subgroup="CoreM" variant="" vendor="Arm" version="5.8.0+renesas.0.fsp.3.5.0">
-      <description>Arm CMSIS Version 5 - Core (M)</description>
-      <originalPack>Arm.CMSIS5.5.8.0+renesas.0.fsp.3.5.0.pack</originalPack>
     </component>
   </raComponentSelection>
   <raElcConfiguration/>
@@ -211,7 +215,8 @@
       <property id="module.driver.ioport.elc_trigger_ioporte" value="_disabled"/>
       <property id="module.driver.ioport.pincfg" value="g_bsp_pin_cfg"/>
     </module>
-    <module id="module.driver.timer_on_agt.2120718410">
+    <module id="module.middleware.rm_threadx_port.0"/>
+    <module id="module.driver.timer_on_agt.1261522350">
       <property id="module.driver.timer.name" value="g_timer0"/>
       <property id="module.driver.timer.channel" value="0"/>
       <property id="module.driver.timer.mode" value="module.driver.timer.mode.mode_periodic"/>
@@ -229,9 +234,12 @@
       <property id="module.driver.timer.p_callback" value="micro_ros_timer_cb"/>
       <property id="module.driver.timer.ipl" value="board.icu.common.irq.priority12"/>
     </module>
-    <module id="module.azure.nxd.ip.596417486">
+    <module id="module.azure.nxd_dhcp_client.353485044">
+      <property id="module.azure.nxd_dhcp_client.name" value="g_dhcp_client0"/>
+    </module>
+    <module id="module.azure.nxd.ip.16952038">
       <property id="module.azure.nxd.ip.name" value="g_ip0"/>
-      <property id="module.azure.nxd.ip.address" value="192.168.1.180"/>
+      <property id="module.azure.nxd.ip.address" value="192.168.0.2"/>
       <property id="module.azure.nxd.ip.subnet_mask" value="255.255.255.0"/>
       <property id="module.azure.nxd.ip.gateway_address" value="0.0.0.0"/>
       <property id="module.azure.nxd.ipv6.address_global" value="2001:0:0:0:0:0:0:1"/>
@@ -241,16 +249,16 @@
       <property id="module.azure.nxd.ip.arp_cache_size_units" value="module.azure.nxd.ip.arp_cache_size_units.bytes"/>
       <property id="module.azure.nxd.ip.arp_cache_size" value="520"/>
     </module>
-    <module id="module.azure.nxd.packet_pool.39699715">
+    <module id="module.azure.nxd.packet_pool.1950695015">
       <property id="module.azure.nxd.packet_pool.name" value="g_packet_pool0"/>
       <property id="module.azure.nxd.packet_pool.packet_size" value="1568"/>
       <property id="module.azure.nxd.packet_pool.number_of_packets" value="16"/>
     </module>
-    <module id="module.middleware.rm_netxduo_ether.1218426412">
+    <module id="module.middleware.rm_netxduo_ether.769256152">
       <property id="module.middleware.rm_netxduo_ether.name" value="g_netxduo_ether_0"/>
       <property id="module.middleware.rm_netxduo_ether.ip_mtu" value="1500"/>
     </module>
-    <module id="module.driver.ether_on_ether.346038555">
+    <module id="module.driver.ether_on_ether.569736238">
       <property id="module.driver.ether.name" value="g_ether0"/>
       <property id="module.driver.ether.channel" value="module.driver.ether.channel.0"/>
       <property id="module.driver.ether.mac_address" value="00:11:22:33:44:55"/>
@@ -268,41 +276,39 @@
       <property id="module.driver.ether.interrupt_priority" value="board.icu.common.irq.priority12"/>
       <property id="module.driver.ether.p_callback" value="NULL"/>
     </module>
-    <module id="module.driver.ether_phy_on_ether_phy.878367452">
+    <module id="module.driver.ether_phy_on_ether_phy.93768391">
       <property id="module.driver.ether_phy.name" value="g_ether_phy0"/>
       <property id="module.driver.ether_phy.channel" value="module.driver.ether_phy.channel.0"/>
       <property id="module.driver.ether_phy.phy_lsi_address" value="0"/>
       <property id="module.driver.ether_phy.phy_reset_wait_time" value="0x00020000"/>
-      <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.mii"/>
+      <property id="module.driver.ether_phy.mii_type" value="module.driver.mii_type.rmii"/>
       <property id="module.driver.ether_phy.mii_bit_access_wait_time" value="8"/>
       <property id="module.driver.ether_phy.flow_control" value="module.driver.ether_phy.flow_control.0"/>
     </module>
-    <module id="module.azure.nxd.common.1447741910"/>
-    <module id="module.azure.nxd_dhcp_client.297726111">
-      <property id="module.azure.nxd_dhcp_client.name" value="g_dhcp_client0"/>
-    </module>
+    <module id="module.azure.nxd.common.183572223"/>
     <context id="_hal.0">
       <stack module="module.driver.ioport_on_ioport.0"/>
+      <stack module="module.middleware.rm_threadx_port.0"/>
+      <stack module="module.driver.timer_on_agt.1261522350"/>
     </context>
-    <context id="rtos.threadx.thread.836563757">
+    <context id="rtos.threadx.thread.115453566">
       <property id="_symbol" value="thread_microros"/>
-      <property id="rtos.threadx.thread.name" value="microROS thread"/>
+      <property id="rtos.threadx.thread.name" value="micro_ros_thread"/>
       <property id="rtos.threadx.thread.stack" value="5000"/>
       <property id="rtos.threadx.thread.priority" value="1"/>
       <property id="rtos.threadx.thread.autostart" value="rtos.threadx.thread.autostart.enabled"/>
       <property id="rtos.threadx.thread.timeslice" value="1"/>
-      <stack module="module.driver.timer_on_agt.2120718410"/>
-      <stack module="module.azure.nxd_dhcp_client.297726111">
-        <stack module="module.azure.nxd.ip.596417486" requires="module.azure.nxd_dhcp_client.requires.nxd.ip">
-          <stack module="module.azure.nxd.packet_pool.39699715" requires="module.azure.nxd.ip.requires.nxd.packet_pool"/>
-          <stack module="module.middleware.rm_netxduo_ether.1218426412" requires="module.azure.nxd.ip.requires.nxd.driver">
-            <stack module="module.driver.ether_on_ether.346038555" requires="module.middleware.rm_netxduo_ether.requires.ether">
-              <stack module="module.driver.ether_phy_on_ether_phy.878367452" requires="module.driver.ether.requires.ether_phy"/>
+      <stack module="module.azure.nxd_dhcp_client.353485044">
+        <stack module="module.azure.nxd.ip.16952038" requires="module.azure.nxd_dhcp_client.requires.nxd.ip">
+          <stack module="module.azure.nxd.packet_pool.1950695015" requires="module.azure.nxd.ip.requires.nxd.packet_pool"/>
+          <stack module="module.middleware.rm_netxduo_ether.769256152" requires="module.azure.nxd.ip.requires.nxd.driver">
+            <stack module="module.driver.ether_on_ether.569736238" requires="module.middleware.rm_netxduo_ether.requires.ether">
+              <stack module="module.driver.ether_phy_on_ether_phy.93768391" requires="module.driver.ether.requires.ether_phy"/>
             </stack>
-            <stack module="module.azure.nxd.common.1447741910" requires="module.middleware.rm_netxduo_ether.requires.nxd.common"/>
+            <stack module="module.azure.nxd.common.183572223" requires="module.middleware.rm_netxduo_ether.requires.nxd.common"/>
           </stack>
         </stack>
-        <stack module="module.azure.nxd.packet_pool.39699715" requires="module.azure.nxd_dhcp_client.requires.nxd.packet_pool"/>
+        <stack module="module.azure.nxd.packet_pool.1950695015" requires="module.azure.nxd_dhcp_client.requires.nxd.packet_pool"/>
       </stack>
     </context>
     <config id="config.driver.ioport">
@@ -444,7 +450,7 @@
       <property id="config.azure.nxd_http_common.max_resource" value="40"/>
       <property id="config.azure.nxd_http_common.max_password" value="20"/>
       <property id="config.azure.nxd_http_common.max_name" value="20"/>
-      <property id="config.azure.nxd_http_client.min_packet_size" value="300"/>
+      <property id="config.azure.nxd_http_client.min_packet_size" value="600"/>
       <property id="config.azure.nxd_http_client.timeout" value="10"/>
       <property id="config.azure.nxd_dns_client.control_tos" value="config.azure.nxd_dns_client.control_tos.normal"/>
       <property id="config.azure.nxd_dns_client.fragment_option" value="config.azure.nxd_dns_client.fragment_option.dont_fragment"/>
@@ -506,7 +512,7 @@
       <property id="config.azure.nxd_dhcpv6_common.queue_depth" value="5"/>
       <property id="config.azure.nxd_dhcpv6_common.packet_time_out" value="3"/>
       <property id="config.azure.nxd_dhcpv6_common.session_timer_interval" value="3"/>
-      <property id="config.azure.nxd_dhcp_server.priority" value="1"/>
+      <property id="config.azure.nxd_dhcp_server.priority" value="2"/>
       <property id="config.azure.nxd_dhcp_server.packet_alloc_timeout" value="2"/>
       <property id="config.azure.nxd_dhcp_server.fast_periodic_time_interval" value="10"/>
       <property id="config.azure.nxd_dhcp_server.client_session_timeout" value="10"/>
@@ -520,7 +526,7 @@
       <property id="config.azure.nxd_dhcp_server.ip_address_max_list_size" value="20"/>
       <property id="config.azure.nxd_dhcp_server.client_record_table_size" value="50"/>
       <property id="config.azure.nxd_dhcp_server.boot_buffer_size" value="548"/>
-      <property id="config.azure.nxd_dhcpv6_server.priority" value="1"/>
+      <property id="config.azure.nxd_dhcpv6_server.priority" value="2"/>
       <property id="config.azure.nxd_dhcpv6_server.ip_lease_timer_interval" value="60"/>
       <property id="config.azure.nxd_dhcpv6_server.packet_wait_option" value="1"/>
       <property id="config.azure.nxd_dhcpv6_server.preference_value" value="0"/>
@@ -566,7 +572,7 @@
       <property id="config.azure.nxd_sntp_client.ntp_min_version" value="3"/>
       <property id="config.azure.nxd_sntp_client.min_server_stratum" value="2"/>
       <property id="config.azure.nxd_sntp_client.min_time_adjustment" value="10"/>
-      <property id="config.azure.nxd_sntp_client.max_time_adjustment" value="10800000"/>
+      <property id="config.azure.nxd_sntp_client.max_time_adjustment" value="180000"/>
       <property id="config.azure.nxd_sntp_client.ignore_max_adjust_startup" value="config.azure.nxd_sntp_client.ignore_max_adjust_startup.enable"/>
       <property id="config.azure.nxd_sntp_client.max_time_lapse" value="7200"/>
       <property id="config.azure.nxd_sntp_client.update_timeout_interval" value="1"/>
@@ -640,7 +646,7 @@
       <property id="config.azure.nxd_ftp_server.retry_seconds" value="2"/>
       <property id="config.azure.nxd_ftp_server.transmit_queue_depth" value="20"/>
       <property id="config.azure.nxd_ftp_server.retry_max" value="10"/>
-      <property id="config.azure.nxd_ftp_server.retry_shift" value="1"/>
+      <property id="config.azure.nxd_ftp_server.retry_shift" value="2"/>
       <property id="config.azure.nxd_http_server.filex" value="config.azure.nxd_http_server.filex.enable"/>
       <property id="config.azure.nxd_http_server.multipart" value="config.azure.nxd_http_server.multipart.disable"/>
       <property id="config.azure.nxd_http_server.priority" value="16"/>
