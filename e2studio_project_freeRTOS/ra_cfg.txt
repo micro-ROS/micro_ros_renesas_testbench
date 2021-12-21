@@ -56,7 +56,7 @@ FSP Configuration
     Main stack size (bytes): 5000
     Heap size (bytes): 5000
     MCU Vcc (mV): 3300
-    Parameter checking: Enabled
+    Parameter checking: Disabled
     Assert Failures: Return FSP_ERR_ASSERTION
     Error Log: No Error Log
     Clock Registers not Reset Values during Startup: Disabled
@@ -94,7 +94,7 @@ FSP Configuration
     CLKOUT Div /1
     UCLK Div /5
     OCTASPICLK Div /1
-    CANFDCLK Div /1
+    CANFDCLK Div /6
     
   Pin Configurations
     RA6M5 EK -> g_bsp_pin_cfg
@@ -205,7 +205,7 @@ FSP Configuration
       P612 103 - - - - Disabled - - "AGT2: AGTO2; BUS_ASYNCH0: D08; SCI7: SCK7" - None - - 
       P613 104 SCI7_TXD7 MIKROBUS_TX_ARDUINO_TX Low - "Peripheral mode" CMOS None "AGT1: AGTO1; BUS_ASYNCH0: D09; SCI7: SDA7; SCI7: TXD7" - IO - - 
       P614 105 SCI7_RXD7 MIKROBUS_RX_ARDUINO_RX Low - "Peripheral mode" CMOS None "AGT0: AGTO0; BUS_ASYNCH0: D10; SCI7: RXD7; SCI7: SCL7" - IO - - 
-      P615 106 GPIO OSPI_RST Low None "Output mode (Initial High)" CMOS - "ICU0: IRQ07; USB_FS0: USB_VBUSEN" - IO - - 
+      P615 106 GPIO OSPI_RST Medium None "Output mode (Initial High)" CMOS - "ICU0: IRQ07; USB_FS0: USB_VBUSEN" - IO - - 
       P700 8 ETHERC_RMII0_RMII_TXD0 ETH_TXD0 High - "Peripheral mode" CMOS None "AGT4: AGTO4; ETHERC_MII0: ET0_ETXD1; ETHERC_RMII0: RMII_TXD0; GPT5: GTIOC5A; SPI0: MISOA" - IO - - 
       P701 9 ETHERC_RMII0_REF50CK ETH_50REF High - "Peripheral mode" CMOS None "AGT3: AGTO3; ETHERC_MII0: ET0_ETXD0; ETHERC_RMII0: REF50CK; GPT5: GTIOC5B; SPI0: MOSIA" - IO - - 
       P702 10 ETHERC_RMII0_RMII_RXD0 ETH_RXD0 High - "Peripheral mode" CMOS None "AGT2: AGTO2; ETHERC_MII0: ET0_ERXD1; ETHERC_RMII0: RMII_RXD0; GPT6: GTIOC6A; SPI0: RSPCKA" - IO - - 
@@ -459,23 +459,29 @@ FSP Configuration
   Module "I/O Port (r_ioport)"
     Parameter Checking: Default (BSP)
     
+  Module "FreeRTOS Port (rm_freertos_port)"
+  Module "Timer, Low-Power (r_agt)"
+    Parameter Checking: Default (BSP)
+    Pin Output Support: Disabled
+    Pin Input Support: Disabled
+    
   Module "FreeRTOS+TCP"
     Print debug messages: Disable
     Print info messages: Disable
     Byte order of the target MCU: pdFREERTOS_LITTLE_ENDIAN 
     IP/TCP/UDP checksums: Enable 
-    Receive Block Time: 2000
-    Send Block Time: 2000
+    Receive Block Time: 10000
+    Send Block Time: 10000
     DNS caching: Enable 
-    DNS Request Attempts: 5
-    IP stack task priority: configMAX_PRIORITIES - 1
-    Stack size in words (not bytes): configMINIMAL_STACK_SIZE * 10
+    DNS Request Attempts: 2
+    IP stack task priority: configMAX_PRIORITIES - 2
+    Stack size in words (not bytes): configMINIMAL_STACK_SIZE * 5
     Network Events call vApplicationIPNetworkEventHook: Disable
     Max UDP send block time: 15000 / portTICK_PERIOD_MS
     Use DHCP: Enable 
     DHCP Register Hostname: Disable
     DHCP Uses Unicast: Enable 
-    DHCP Send Discover After Auto IP: Enable 
+    DHCP Send Discover After Auto IP: Disable
     DHCP callback function: Disable
     Interval between transmissions: 120000 / portTICK_PERIOD_MS
     ARP Cache Entries: 6
@@ -523,11 +529,6 @@ FSP Configuration
     Reference Clock: Default
     
   Module "FreeRTOS Buffer Allocation 2"
-  Module "Timer, Low-Power (r_agt)"
-    Parameter Checking: Default (BSP)
-    Pin Output Support: Disabled
-    Pin Input Support: Disabled
-    
   Module "FreeRTOS Heap 4"
   FreeRTOS
     General: Custom FreeRTOSConfig.h: 
@@ -539,7 +540,7 @@ FSP Configuration
     Hooks: Use Daemon Task Startup Hook: Disabled
     Hooks: Use Tick Hook: Disabled
     General: Cpu Clock Hz: SystemCoreClock
-    General: Tick Rate Hz: 100
+    General: Tick Rate Hz: 1000
     General: Max Priorities: 5
     General: Minimal Stack Size: 128
     General: Max Task Name Len: 16
@@ -607,11 +608,30 @@ FSP Configuration
       Port E ELC Trigger Source: Disabled
       Pin Configuration Name: g_bsp_pin_cfg
       
+    Instance "FreeRTOS Port (rm_freertos_port)"
+    Instance "g_timer0 Timer, Low-Power (r_agt)"
+      General: Name: g_timer0
+      General: Channel: 0
+      General: Mode: Periodic
+      General: Period: 100
+      General: Period Unit: Microseconds
+      Output: Duty Cycle Percent (only applicable in PWM mode): 50
+      General: Count Source: PCLKB
+      Output: AGTOA Output: Disabled
+      Output: AGTOB Output: Disabled
+      Output: AGTO Output: Disabled
+      Input: Measurement Mode: Measure Disabled
+      Input: Input Filter: No Filter
+      Input: Enable Pin: Enable Pin Not Used
+      Input: Trigger Edge: Trigger Edge Rising
+      Interrupts: Callback: micro_ros_timer_cb
+      Interrupts: Underflow Interrupt Priority: Priority 12
+      
   Thread "Net thread"
     Symbol: net_thread
     Name: Net thread
     Stack size (bytes): 5000
-    Priority: 2
+    Priority: 1
     Thread Context: NULL
     Memory Allocation: Static
     Allocate Secure Context: Enable
@@ -632,7 +652,7 @@ FSP Configuration
           Buffers: Allocate RX buffer: Enable
           Buffers: Buffer size: 1514
           Buffers: Padding size: Disable
-          Buffers: Padding offset: 1
+          Buffers: Padding offset: 0
           Interrupts: Interrupt priority: Priority 12
           Interrupts: Callback: vEtherISRCallback
           
@@ -641,27 +661,9 @@ FSP Configuration
             Channel: 0
             PHY-LSI Address: 0
             PHY-LSI Reset Completion Timeout: 0x00020000
-            Select MII type: MII
+            Select MII type: RMII
             MII/RMII Register Access Wait-time: 8
             Flow Control: Disable
             
         Instance "FreeRTOS Buffer Allocation 2"
-    Instance "g_timer0 Timer, Low-Power (r_agt)"
-      General: Name: g_timer0
-      General: Channel: 0
-      General: Mode: Periodic
-      General: Period: 100
-      General: Period Unit: Microseconds
-      Output: Duty Cycle Percent (only applicable in PWM mode): 50
-      General: Count Source: PCLKB
-      Output: AGTOA Output: Disabled
-      Output: AGTOB Output: Disabled
-      Output: AGTO Output: Disabled
-      Input: Measurement Mode: Measure Disabled
-      Input: Input Filter: No Filter
-      Input: Enable Pin: Enable Pin Not Used
-      Input: Trigger Edge: Trigger Edge Rising
-      Interrupts: Callback: micro_ros_timer_cb
-      Interrupts: Underflow Interrupt Priority: Priority 12
-      
     Instance "FreeRTOS Heap 4"
