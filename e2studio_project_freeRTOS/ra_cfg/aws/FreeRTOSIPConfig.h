@@ -67,8 +67,8 @@
  * performed, for example FreeRTOS_send() and FreeRTOS_recv().  The timeouts can be
  * set per socket, using setsockopt().  If not set, the times below will be
  * used as defaults. */
-#define ipconfigSOCK_DEFAULT_RECEIVE_BLOCK_TIME    (2000)
-#define ipconfigSOCK_DEFAULT_SEND_BLOCK_TIME       (2000)
+#define ipconfigSOCK_DEFAULT_RECEIVE_BLOCK_TIME    (10000)
+#define ipconfigSOCK_DEFAULT_SEND_BLOCK_TIME       (10000)
 
 /* Include support for DNS caching.  For TCP, having a small DNS cache is very
  * useful.  When a cache is present, ipconfigDNS_REQUEST_ATTEMPTS can be kept low
@@ -77,7 +77,7 @@
  * call to FreeRTOS_gethostbyname() will return immediately, without even creating
  * a socket. */
 #define ipconfigUSE_DNS_CACHE                      (1)
-#define ipconfigDNS_REQUEST_ATTEMPTS               (5)
+#define ipconfigDNS_REQUEST_ATTEMPTS               (2)
 
 /* The IP stack executes it its own task (although any application task can make
  * use of its services through the published sockets API). ipconfigUDP_TASK_PRIORITY
@@ -88,14 +88,14 @@
  * FreeRTOSConfig.h, not FreeRTOSIPConfig.h. Consideration needs to be given as to
  * the priority assigned to the task executing the IP stack relative to the
  * priority assigned to tasks that use the IP stack. */
-#define ipconfigIP_TASK_PRIORITY                   (configMAX_PRIORITIES - 1)
+#define ipconfigIP_TASK_PRIORITY                   (configMAX_PRIORITIES - 2)
 
 /* The size, in words (not bytes), of the stack allocated to the FreeRTOS+TCP
  * task.  This setting is less important when the FreeRTOS Win32 simulator is used
  * as the Win32 simulator only stores a fixed amount of information on the task
  * stack.  FreeRTOS includes optional stack overflow detection, see:
  * http://www.freertos.org/Stacks-and-stack-overflow-checking.html. */
-#define ipconfigIP_TASK_STACK_SIZE_WORDS           (configMINIMAL_STACK_SIZE * 10)
+#define ipconfigIP_TASK_STACK_SIZE_WORDS           (configMINIMAL_STACK_SIZE * 5)
 
 /* ipconfigRAND32() is called by the IP stack to generate random numbers for
  * things such as a DHCP transaction number or initial sequence number.  Random
@@ -136,7 +136,7 @@ uint32_t ulRand(void);
 #define ipconfigUSE_DHCP                         1
 #define ipconfigDHCP_REGISTER_HOSTNAME           0
 #define ipconfigDHCP_USES_UNICAST                1
-#define ipconfigDHCP_SEND_DISCOVER_AFTER_AUTO_IP 1
+#define ipconfigDHCP_SEND_DISCOVER_AFTER_AUTO_IP 0
 
 /* If ipconfigDHCP_USES_USER_HOOK is set to 1 then the application writer must
  * provide an implementation of the DHCP callback function,
