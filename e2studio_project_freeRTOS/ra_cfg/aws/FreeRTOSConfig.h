@@ -39,7 +39,7 @@
 #define configCPU_CLOCK_HZ (SystemCoreClock)
 #endif
 #ifndef configTICK_RATE_HZ
-#define configTICK_RATE_HZ (100)
+#define configTICK_RATE_HZ (1000)
 #endif
 #ifndef configMAX_PRIORITIES
 #define configMAX_PRIORITIES (5)
