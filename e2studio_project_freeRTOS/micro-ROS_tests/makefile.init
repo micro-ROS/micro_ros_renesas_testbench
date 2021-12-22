@@ -3,9 +3,9 @@
 ################################################################################
 
 arg1 = $(1)
-export PATH=/home/pgarrido/Downloads/gcc-arm-none-eabi-9-2020-q2-update/bin/:/home/pgarrido/.eclipse/com.renesas.platform_1172302338/Utilities:/home/pgarrido/.local/bin:/home/pgarrido/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-export TCINSTALL=/home/pgarrido/Downloads/gcc-arm-none-eabi-9-2020-q2-update/
+export PATH=/home/username/Downloads/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux/gcc-arm-none-eabi-10.3-2021.10/bin/:/home/username/.eclipse/com.renesas.platform_725534088/Utilities:/home/username/.local/bin:/home/username/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+export TCINSTALL=/home/username/Downloads/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux/gcc-arm-none-eabi-10.3-2021.10/
 export CWD=$(CURDIR)
-export TC_VERSION=9.3.1.20200408
+export TC_VERSION=10.3.1.20210824
 export PWD=$(CURDIR)
-export GCC_VERSION=9.3.1
+export GCC_VERSION=10.3.1
