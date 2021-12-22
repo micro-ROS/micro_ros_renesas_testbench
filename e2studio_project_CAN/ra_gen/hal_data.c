@@ -37,6 +37,7 @@ canfd_global_cfg_t g_canfd_global_cfg = { .global_interrupts =
 								<< R_CANFD_CFDRFCC_RFPLS_Pos)
 						| (CANFD_CFG_RXFIFO1_INT_MODE)
 						| (CANFD_CFG_RXFIFO1_ENABLE)),
+#if !BSP_FEATURE_CANFD_LITE
 				((CANFD_CFG_RXFIFO2_INT_THRESHOLD << R_CANFD_CFDRFCC_RFIGCV_Pos)
 						| (CANFD_CFG_RXFIFO2_DEPTH << R_CANFD_CFDRFCC_RFDC_Pos)
 						| (CANFD_CFG_RXFIFO2_PAYLOAD
@@ -72,7 +73,9 @@ canfd_global_cfg_t g_canfd_global_cfg = { .global_interrupts =
 						| (CANFD_CFG_RXFIFO7_PAYLOAD
 								<< R_CANFD_CFDRFCC_RFPLS_Pos)
 						| (CANFD_CFG_RXFIFO7_INT_MODE)
-						| (CANFD_CFG_RXFIFO7_ENABLE)), }, };
+						| (CANFD_CFG_RXFIFO7_ENABLE)),
+#endif
+				}, };
 #endif
 
 canfd_extended_cfg_t g_canfd0_extended_cfg = { .p_afl = p_canfd0_afl,
