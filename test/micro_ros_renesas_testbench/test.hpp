@@ -64,6 +64,7 @@ public:
         , agent_dev("")
         , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
+        , test_initialized(false)
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
@@ -97,12 +98,15 @@ public:
         rclcpp::init(0, NULL, options);
         node = std::make_shared<rclcpp::Node>("test_node");
 
+        test_initialized = true;
         runClientCode();
     }
 
     void TearDown() override {
-        agent->stop();
-        rclcpp::shutdown();
+        if (test_initialized) {
+            agent->stop();
+            rclcpp::shutdown();
+        }
     }
 
     void configureAgent() {
@@ -343,6 +347,7 @@ protected:
     uint8_t agent_verbosity_;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 
+    bool test_initialized;
     board connected_board;
 };
 
