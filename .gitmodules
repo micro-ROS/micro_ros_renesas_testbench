@@ -19,10 +19,10 @@
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = galactic
 [submodule "boards/MCK-RA6T2/e2studio_project_CAN/micro_ros_renesas2estudio_component"]
-	path = boards/MCK-RA6T2/e2studio_project_CAN/micro_ros_renesas2estudio_component
+	path = boards/MCK_RA6T2/e2studio_project_CAN/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = feature/RA6T2
 [submodule "boards/MCK-RA6T2/e2studio_project_serial/micro_ros_renesas2estudio_component"]
-	path = boards/MCK-RA6T2/e2studio_project_serial/micro_ros_renesas2estudio_component
+	path = boards/MCK_RA6T2/e2studio_project_serial/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = feature/RA6T2
