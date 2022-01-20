@@ -38,12 +38,16 @@ public:
       CAN_TRANSPORT,
       UDP_THREADX_TRANSPORT,
       UDP_FREERTOS_TRANSPORT,
+      TCP_FREERTOS_TRANSPORT,
   };
 
   friend std::ostream& operator<<(std::ostream& os, const Transport& transport) {
     std::string text;
     switch (transport)
     {
+        case Transport::TCP_FREERTOS_TRANSPORT:
+          text = "TCP_FREERTOS_TRANSPORT";
+          break;
         case Transport::UDP_THREADX_TRANSPORT:
           text = "UDP_THREADX_TRANSPORT";
           break;
@@ -67,7 +71,7 @@ public:
   }
 
   TestAgent(Transport transport, std::string args, uint8_t verbosity);
-  TestAgent(uint16_t port, uint8_t verbosity);
+  TestAgent(Transport transport, uint16_t port, uint8_t verbosity);
   TestAgent(std::string dev, uint8_t verbosity);
 
   ~TestAgent(){};
