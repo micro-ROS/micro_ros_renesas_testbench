@@ -612,13 +612,25 @@ INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     PublisherRateTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(
+            TestAgent::Transport::CAN_TRANSPORT, 
+            TestAgent::Transport::USB_TRANSPORT, 
+            TestAgent::Transport::SERIAL_TRANSPORT, 
+            TestAgent::Transport::UDP_THREADX_TRANSPORT, 
+            TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
+            TestAgent::Transport::TCP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
 
 INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     HardwareTestAllTransports,
-    ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT));
+    ::testing::Values(
+        TestAgent::Transport::CAN_TRANSPORT, 
+        TestAgent::Transport::USB_TRANSPORT, 
+        TestAgent::Transport::SERIAL_TRANSPORT, 
+        TestAgent::Transport::UDP_THREADX_TRANSPORT, 
+        TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
+        TestAgent::Transport::TCP_FREERTOS_TRANSPORT));
 
 INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
@@ -631,7 +643,13 @@ INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     ContinousFragment,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::CAN_TRANSPORT, TestAgent::Transport::USB_TRANSPORT, TestAgent::Transport::SERIAL_TRANSPORT, TestAgent::Transport::UDP_THREADX_TRANSPORT, TestAgent::Transport::UDP_FREERTOS_TRANSPORT),
+        ::testing::Values(
+            TestAgent::Transport::CAN_TRANSPORT, 
+            TestAgent::Transport::USB_TRANSPORT, 
+            TestAgent::Transport::SERIAL_TRANSPORT, 
+            TestAgent::Transport::UDP_THREADX_TRANSPORT, 
+            TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
+            TestAgent::Transport::TCP_FREERTOS_TRANSPORT),
         ::testing::Values(4095, 30000, 100000)));
 
 // Profiling tests

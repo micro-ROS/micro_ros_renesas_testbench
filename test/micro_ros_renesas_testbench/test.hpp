@@ -60,12 +60,17 @@ public:
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 project_name = "e2studio_project_threadX";
-                agent.reset(new TestAgent(agent_port, agent_verbosity));
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
                 project_name = "e2studio_project_freeRTOS";
-                agent.reset(new TestAgent(agent_port, agent_verbosity));
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                break;
+
+            case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
+                project_name = "e2studio_project_wifi";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
@@ -83,7 +88,7 @@ public:
             case TestAgent::Transport::CAN_TRANSPORT:
                 agent_dev = "can0";
                 project_name = "e2studio_project_CAN";
-                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
+                agent.reset(new TestAgent(agent_dev, agent_verbosity));
                 break;
 
             default:
@@ -103,6 +108,13 @@ public:
 
         switch (transport_)
         {
+            case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
+            {
+                std::replace(ip_address.begin(), ip_address.end(), '.', ',');
+                addDefineToClient("AGENT_IP_ADDRESS", "SOCKETS_inet_addr_quick(" + ip_address+ ")");
+                addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
+                break;
+            }
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             {
                 std::replace(ip_address.begin(), ip_address.end(), '.', ',');
@@ -216,6 +228,7 @@ public:
                 }
                 break;
 
+            case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
             default:
@@ -225,6 +238,12 @@ public:
 
         agent->start();
         std::this_thread::sleep_for(3000ms);
+
+        if (TestAgent::Transport::TCP_FREERTOS_TRANSPORT == transport_)
+        {
+            // Add extra time for board wifi connection
+            std::this_thread::sleep_for(10000ms);
+        }
     }
 
     void addDefineToClient(std::string name, std::string value){
