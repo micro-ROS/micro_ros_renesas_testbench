@@ -228,6 +228,7 @@ public:
                 }
                 break;
 
+            case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
             default:
@@ -237,6 +238,12 @@ public:
 
         agent->start();
         std::this_thread::sleep_for(3000ms);
+
+        if (TestAgent::Transport::TCP_FREERTOS_TRANSPORT == transport_)
+        {
+            // Add extra time for board wifi connection
+            std::this_thread::sleep_for(10000ms);
+        }
     }
 
     void addDefineToClient(std::string name, std::string value){
