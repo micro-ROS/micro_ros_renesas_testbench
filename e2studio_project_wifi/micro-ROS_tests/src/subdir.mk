@@ -9,7 +9,7 @@ C_SRCS += \
 ../src/microros_allocators.c \
 ../src/microros_app.c \
 ../src/microros_time.c \
-../src/wifi_transport_freeRTOS.c 
+../src/microros_transports.c 
 
 OBJS += \
 ./src/hal_entry.o \
@@ -17,7 +17,7 @@ OBJS += \
 ./src/microros_allocators.o \
 ./src/microros_app.o \
 ./src/microros_time.o \
-./src/wifi_transport_freeRTOS.o 
+./src/microros_transports.o 
 
 C_DEPS += \
 ./src/hal_entry.d \
@@ -25,7 +25,7 @@ C_DEPS += \
 ./src/microros_allocators.d \
 ./src/microros_app.d \
 ./src/microros_time.d \
-./src/wifi_transport_freeRTOS.d 
+./src/microros_transports.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

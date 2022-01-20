@@ -1,3 +1,6 @@
+#include "config.h"
+#include "./utils.h"
+
 #include <micro_ros_thread.h>
 
 #include <microros_transports.h>
@@ -10,7 +13,7 @@
 #include <rcutils/allocator.h>
 #include <rmw_microros/rmw_microros.h>
 
-#include "iot_secure_sockets.h"
+void microros_app(void);
 
 /* New Thread entry function */
 /* pvParameters contains TaskHandle_t */
@@ -28,8 +31,8 @@ void micro_ros_thread_entry(void *pvParameters)
 
     // Configure agent address
     SocketsSockaddr_t socket_addr = {
-         .ulAddress = SOCKETS_inet_addr_quick(192, 168, 1, 93),
-         .usPort    = SOCKETS_htons(8889)
+         .ulAddress = AGENT_IP_ADDRESS,
+         .usPort    = SOCKETS_htons(AGENT_IP_PORT)
     };
 
     // Add configuration to transport args
@@ -56,7 +59,7 @@ void micro_ros_thread_entry(void *pvParameters)
 
 
     if (!rcutils_set_default_allocator(&custom_allocator)) {
-        // printf("Error on default allocators (line %d)\n", __LINE__);
+        printf("Error on default allocators (line %d)\n", __LINE__);
     }
 
     microros_app();
