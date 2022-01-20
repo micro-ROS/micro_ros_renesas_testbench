@@ -14,10 +14,24 @@
 
 #include "test_agent.hpp"
 
-TestAgent::TestAgent(uint16_t port, uint8_t verbosity = 6)
+TestAgent::TestAgent(Transport transport, uint16_t port, uint8_t verbosity = 6)
 {
+  std::string transport_type = "";
+  switch (transport)
+  {
+      case Transport::TCP_FREERTOS_TRANSPORT:
+          transport_type = "tcp4";
+          break;
+      case Transport::UDP_THREADX_TRANSPORT:
+      case Transport::UDP_FREERTOS_TRANSPORT:
+          transport_type = "udp4";
+          break;
+      default:
+          break;
+  }
+
   port_ = port;
-  command_ = "ros2 run micro_ros_agent micro_ros_agent udp4 --port " + std::to_string(port_) + " -v" +  std::to_string(verbosity);
+  command_ = "ros2 run micro_ros_agent micro_ros_agent " + transport_type + " --port " + std::to_string(port_) + " -v" +  std::to_string(verbosity);
 }
 
 TestAgent::TestAgent(std::string dev, uint8_t verbosity = 6)
@@ -33,6 +47,10 @@ TestAgent::TestAgent(Transport transport, std::string args, uint8_t verbosity = 
 
   switch (transport)
   {
+      case Transport::TCP_FREERTOS_TRANSPORT:
+          transport_type = "tcp4";
+          aux_args = "--port " + args;
+          break;
       case Transport::UDP_THREADX_TRANSPORT:
       case Transport::UDP_FREERTOS_TRANSPORT:
           transport_type = "udp4";
