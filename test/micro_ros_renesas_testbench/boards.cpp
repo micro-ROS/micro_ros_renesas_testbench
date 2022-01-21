@@ -1,4 +1,4 @@
-#include "board.h"
+#include "boards.hpp"
 
 const std::vector<board> testbench_boards =
 {
