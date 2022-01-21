@@ -1,3 +1,6 @@
+#ifndef BOARDS_HPP
+#define BOARDS_HPP
+
 #include <string>
 #include <vector>
 
@@ -13,3 +16,5 @@ struct board
 };
 
 extern const std::vector<board> testbench_boards;
+
+#endif //BOARDS_HPP
