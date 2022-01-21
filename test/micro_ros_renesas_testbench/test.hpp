@@ -88,7 +88,7 @@ public:
             case TestAgent::Transport::CAN_TRANSPORT:
                 agent_dev = "can0";
                 project_name = "e2studio_project_CAN";
-                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
                 break;
 
             default:
