@@ -24,9 +24,11 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
+#include "boards.hpp"
 
 #include <std_msgs/msg/u_int32_multi_array.hpp>
 
+#include <algorithm>
 #include <sstream>
 #include <string>
 #include <memory>
@@ -47,54 +49,99 @@ class HardwareTestBase : public ::testing::Test
 public:
     HardwareTestBase(TestAgent::Transport transport, uint8_t agent_verbosity = 4, size_t domain_id = 0)
         : transport_(transport)
+        , domain_id_(domain_id)
         , agent_port(8888)
         , agent_dev("")
         , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
+        , test_initialized(false)
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
         free(cwd_str);
+    }
 
+    ~HardwareTestBase(){}
+
+    void SetUp() override {
+        ASSERT_TRUE(checkConnection());
+        ASSERT_TRUE(getDevice());
+
+        if (!check_board_transport(connected_board.transports, transport_)) {
+            std::cout << "Transport not supported on " << connected_board.folder << std::endl;
+            GTEST_SKIP();
+        }
+
+        configureAgent();
+        configureTest();
+
+        // Set domain id
+        rcl_allocator_t allocator = rcl_get_default_allocator();
+        rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+
+        ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
+        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+        rmw_options->domain_id = domain_id_;
+
+        options = rclcpp::InitOptions(init_options);
+
+        rclcpp::init(0, NULL, options);
+        node = std::make_shared<rclcpp::Node>("test_node");
+
+        test_initialized = true;
+        runClientCode();
+    }
+
+    void TearDown() override {
+        if (test_initialized) {
+            agent->stop();
+            rclcpp::shutdown();
+        }
+    }
+
+    void configureAgent() {
         switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
-                project_name = "e2studio_project_threadX";
-                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                // TODO: rework path
+                project_name = "boards/" + connected_board.folder + "/e2studio_project_threadX";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
-                project_name = "e2studio_project_freeRTOS";
-                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                project_name = "boards/" + connected_board.folder + "/e2studio_project_freeRTOS";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
-                project_name = "e2studio_project_wifi";
-                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                project_name = "boards/" + connected_board.folder + "/e2studio_project_wifi";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
-                agent_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
-                project_name = "e2studio_project_USB";
-                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                agent_dev = connected_board.usb_port;
+                project_name = "boards/" + connected_board.folder + "/e2studio_project_USB";
+                agent.reset(new TestAgent(agent_dev, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
-                agent_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
-                project_name = "e2studio_project_serial";
-                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                agent_dev = connected_board.serial_port;
+                project_name = "boards/" + connected_board.folder + "/e2studio_project_serial";
+                agent.reset(new TestAgent(agent_dev, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::CAN_TRANSPORT:
                 agent_dev = "can0";
-                project_name = "e2studio_project_CAN";
-                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
+                project_name = "boards/" + connected_board.folder + "/e2studio_project_CAN";
+                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity_));
                 break;
 
             default:
                 break;
         }
+    }
 
+    void configureTest() {
         // Delete content of client config
         client_config_path = cwd + "/src/micro_ros_renesas_testbench/" + project_name + "/src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
@@ -137,35 +184,42 @@ public:
         }
 
         size_t isolation_domain_id = (size_t)(sum % ROS_MAX_DOMAIN_ID);
-        domain_id_ = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
+        domain_id_ = (domain_id_ + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 
-    ~HardwareTestBase(){}
+    // Utilities
+    bool getDevice() {
+        std::cout << "Getting device type ";
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/get_device.sh";
+        bool ret = false;
 
-    void SetUp() override {
-        ASSERT_TRUE(checkConnection());
+        std::shared_ptr<FILE> pipe(popen(command.c_str(), "r"), pclose);
+        std::string result = "";
+        char buffer[128];
+        while (!feof(pipe.get())) {
+            if (fgets(buffer, 128, pipe.get()) != NULL) {
+                // Remove new lines from buffer
+                buffer[strcspn(buffer, "\r\n")] = 0;
+                result += buffer;
+            }
+        }
 
-        // Set domain id
-        rcl_allocator_t allocator = rcl_get_default_allocator();
-        rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+        for(auto device : testbench_boards) {
+            if (0 == device.device_name.compare(result)) {
+                connected_board = device;
+                ret = true;
+                break;
+            }
+        }
 
-        ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
-        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-        rmw_options->domain_id = domain_id_;
-
-        options = rclcpp::InitOptions(init_options);
-
-        rclcpp::init(0, NULL, options);
-        node = std::make_shared<rclcpp::Node>("test_node");
-
-        runClientCode();
+        std::cout << (ret ? connected_board.folder : "ERROR") << std::endl;
+        return ret;
     }
 
-    void TearDown() override {
-        agent->stop();
-        rclcpp::shutdown();
-    }
+    bool check_board_transport(std::vector<TestAgent::Transport> board_transports, TestAgent::Transport test_transport) { 
+        return std::find(board_transports.begin(), board_transports.end(), test_transport) != std::end(board_transports);
+    };
 
     bool check_serial_port(std::string port) {
         return access(port.c_str(), W_OK | R_OK ) == 0;
@@ -301,6 +355,9 @@ protected:
     std::string agent_dev;
     uint8_t agent_verbosity_;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
+
+    bool test_initialized;
+    board connected_board;
 };
 
 class HardwareTestAllTransports : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
