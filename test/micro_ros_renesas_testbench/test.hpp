@@ -28,7 +28,6 @@
 
 #include <std_msgs/msg/u_int32_multi_array.hpp>
 
-#include <algorithm>
 #include <sstream>
 #include <string>
 #include <memory>
@@ -55,6 +54,7 @@ public:
         , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
         , test_initialized(false)
+        , connected_board()
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
@@ -67,8 +67,8 @@ public:
         ASSERT_TRUE(checkConnection());
         ASSERT_TRUE(getDevice());
 
-        if (!check_board_transport(connected_board.transports, transport_)) {
-            std::cout << "Transport not supported on " << connected_board.folder << std::endl;
+        if (!connected_board.check_board_transport(transport_)) {
+            std::cout << "Transport not supported on " << connected_board.folder_ << std::endl;
             GTEST_SKIP();
         }
 
@@ -104,35 +104,35 @@ public:
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
                 // TODO: rework path
-                project_name = "boards/" + connected_board.folder + "/e2studio_project_threadX";
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_threadX";
                 agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
-                project_name = "boards/" + connected_board.folder + "/e2studio_project_freeRTOS";
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_freeRTOS";
                 agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
-                project_name = "boards/" + connected_board.folder + "/e2studio_project_wifi";
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_wifi";
                 agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
-                agent_dev = connected_board.usb_port;
-                project_name = "boards/" + connected_board.folder + "/e2studio_project_USB";
+                agent_dev = connected_board.usb_port_;
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_USB";
                 agent.reset(new TestAgent(agent_dev, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
-                agent_dev = connected_board.serial_port;
-                project_name = "boards/" + connected_board.folder + "/e2studio_project_serial";
+                agent_dev = connected_board.serial_port_;
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_serial";
                 agent.reset(new TestAgent(agent_dev, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::CAN_TRANSPORT:
                 agent_dev = "can0";
-                project_name = "boards/" + connected_board.folder + "/e2studio_project_CAN";
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_CAN";
                 agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity_));
                 break;
 
@@ -206,20 +206,16 @@ public:
         }
 
         for(auto device : testbench_boards) {
-            if (0 == device.device_name.compare(result)) {
+            if (0 == device.device_name_.compare(result)) {
                 connected_board = device;
                 ret = true;
                 break;
             }
         }
 
-        std::cout << (ret ? connected_board.folder : "ERROR") << std::endl;
+        std::cout << (ret ? connected_board.folder_ : "ERROR") << std::endl;
         return ret;
     }
-
-    bool check_board_transport(std::vector<TestAgent::Transport> board_transports, TestAgent::Transport test_transport) { 
-        return std::find(board_transports.begin(), board_transports.end(), test_transport) != std::end(board_transports);
-    };
 
     bool check_serial_port(std::string port) {
         return access(port.c_str(), W_OK | R_OK ) == 0;
@@ -357,7 +353,7 @@ protected:
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 
     bool test_initialized;
-    board connected_board;
+    Board connected_board;
 };
 
 class HardwareTestAllTransports : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
