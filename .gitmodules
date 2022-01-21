@@ -1,24 +1,24 @@
 [submodule "e2studio_project_serial/micro_ros_renesas2estudio_component"]
-	path = boards/EK-RA6M5/e2studio_project_serial/micro_ros_renesas2estudio_component
+	path = boards/EK_RA6M5/e2studio_project_serial/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = galactic
 [submodule "e2studio_project_threadX/micro_ros_renesas2estudio_component"]
-	path = boards/EK-RA6M5/e2studio_project_threadX/micro_ros_renesas2estudio_component
+	path = boards/EK_RA6M5/e2studio_project_threadX/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = galactic
 [submodule "e2studio_project_freeRTOS/micro_ros_renesas2estudio_component"]
-	path = boards/EK-RA6M5/e2studio_project_freeRTOS/micro_ros_renesas2estudio_component
+	path = boards/EK_RA6M5/e2studio_project_freeRTOS/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = galactic
 [submodule "e2studio_project_USB/micro_ros_renesas2estudio_component"]
-	path = boards/EK-RA6M5/e2studio_project_USB/micro_ros_renesas2estudio_component
+	path = boards/EK_RA6M5/e2studio_project_USB/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = galactic
 [submodule "e2studio_project_CAN/micro_ros_renesas2estudio_component"]
-	path = boards/EK-RA6M5/e2studio_project_CAN/micro_ros_renesas2estudio_component
+	path = boards/EK_RA6M5/e2studio_project_CAN/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = galactic
 [submodule "e2studio_project_wifi/micro_ros_renesas2estudio_component"]
-	path = boards/EK-RA6M5/e2studio_project_wifi/micro_ros_renesas2estudio_component
+	path = boards/EK_RA6M5/e2studio_project_wifi/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
 	branch = feature/pmod_wifi
