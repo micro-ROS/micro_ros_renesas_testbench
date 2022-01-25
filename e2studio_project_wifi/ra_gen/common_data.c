@@ -48,8 +48,8 @@ sci_uart_instance_ctrl_t g_uart0_ctrl;
 
 baud_setting_t g_uart0_baud_setting =
 {
-/* Baud rate calculated with 0.469% error. */.abcse = 0,
-  .abcs = 0, .bgdm = 1, .cks = 0, .brr = 53, .mddr = (uint8_t) 256, .brme = false };
+/* Baud rate calculated with 4.334% error. */.abcse = 0,
+  .abcs = 0, .bgdm = 1, .cks = 0, .brr = 12, .mddr = (uint8_t) 256, .brme = false };
 
 /** UART extended configuration for UARTonSCI HAL driver */
 const sci_uart_extended_cfg_t g_uart0_cfg_extend =
@@ -108,7 +108,7 @@ const uart_cfg_t g_uart0_cfg =
 /* Instance structure to use this module. */
 const uart_instance_t g_uart0 =
 { .p_ctrl = &g_uart0_ctrl, .p_cfg = &g_uart0_cfg, .p_api = &g_uart_on_sci };
-const char *g_wifi_onchip_silex_uart_cmd_baud = "115200";
+const char *g_wifi_onchip_silex_uart_cmd_baud = "460800";
 
 /** WiFi Onchip Silex configuration */
 const wifi_onchip_silex_cfg_t g_wifi_onchip_silex_cfg =

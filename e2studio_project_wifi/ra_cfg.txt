@@ -662,7 +662,7 @@ FSP Configuration
           General: Data Bits: 8bits
           General: Parity: None
           General: Stop Bits: 1bit
-          Baud: Baud Rate: 115200
+          Baud: Baud Rate: 460800
           Baud: Baud Rate Modulation: Disabled
           Baud: Max Error (%): 5
           Flow Control: CTS/RTS Selection: Hardware RTS
