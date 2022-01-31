@@ -20,6 +20,22 @@ const std::vector<Board> testbench_boards =
             TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
             TestAgent::Transport::TCP_FREERTOS_TRANSPORT
         }
+    },
+    {
+        // device_name
+        "R7FA6T2BD3CFP",  // TODO: check
+        // folder
+        "MCK_RA6T2",
+        // serial_port
+        "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0",
+        // usb_port
+        "",
+        // transports
+        {
+            // TODO(acuadros95): Test CANFD transport
+            // TestAgent::Transport::CAN_TRANSPORT,
+            TestAgent::Transport::SERIAL_TRANSPORT
+        }
     }
 };
 
