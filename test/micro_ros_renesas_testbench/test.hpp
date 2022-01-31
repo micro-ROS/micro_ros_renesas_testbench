@@ -72,6 +72,7 @@ public:
         }
 
         configureAgent();
+        configureTransport();
         configureTest();
 
         // Set domain id
@@ -140,7 +141,7 @@ public:
         }
     }
 
-    void configureTest() {
+    void configureTransport() {
         // Delete content of client config
         client_config_path = cwd + "/src/micro_ros_renesas_testbench/" + project_name + "/src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
@@ -186,6 +187,8 @@ public:
         domain_id_ = (domain_id_ + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
+
+    virtual void configureTest() {};
 
     // Utilities
     bool check_serial_port(std::string port) {
@@ -353,13 +356,15 @@ public:
     HardwareTestMemoryProfiling()
         : HardwareTestBase(TestAgent::Transport::UDP_FREERTOS_TRANSPORT)
         {
-            addDefineToClient("MICROROS_PROFILING", "1");
-
             log_file.open(PROFILING_FILE_NAME, std::ios_base::app);
         }
 
     ~HardwareTestMemoryProfiling(){
         log_file.close();
+    }
+
+    void configureTest() override {
+        addDefineToClient("MICROROS_PROFILING", "1");
     }
 
     void SetUp() override {

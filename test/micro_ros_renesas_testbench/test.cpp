@@ -308,10 +308,11 @@ class ContinousFragment: public HardwareTestBase, public ::testing::WithParamInt
 public:
     ContinousFragment()
         : HardwareTestBase(std::get<0>(GetParam()), 4)
-        , msg_size(std::get<1>(GetParam()))
-        {
-          addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
-        }
+        , msg_size(std::get<1>(GetParam())) {}
+
+    void configureTest() override {
+        addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
+    }
 
 protected:
   size_t msg_size;
@@ -558,10 +559,12 @@ class PublisherRateTest : public HardwareTestBase, public ::testing::WithParamIn
 public:
     PublisherRateTest()
         : HardwareTestBase(std::get<0>(GetParam()))
-        , expected_freq(std::get<1>(GetParam()))
-        {
-          addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
-        }
+        , expected_freq(std::get<1>(GetParam())) {}
+
+    void configureTest() override {
+        addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
+    }
+
 protected:
     int expected_freq;
 };
