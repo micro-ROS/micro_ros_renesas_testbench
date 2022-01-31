@@ -51,6 +51,4 @@ void Board::getDevice() {
             break;
         }
     }
-
-    std::cout << (device_found() ? "Found device: " + folder_ : "ERROR: No device found") << std::endl;
 }
