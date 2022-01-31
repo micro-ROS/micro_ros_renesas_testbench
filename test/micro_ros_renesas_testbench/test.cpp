@@ -25,6 +25,8 @@
 
 using namespace std::chrono_literals;
 
+Board HardwareTestBase::connected_board;
+
 TEST_P(HardwareTestAllTransports, EntityCreation) {
   std::vector<std::string> node_list =
   {
@@ -306,9 +308,8 @@ class ContinousFragment: public HardwareTestBase, public ::testing::WithParamInt
 public:
     ContinousFragment()
         : HardwareTestBase(std::get<0>(GetParam()), 4)
-        , msg_size(std::get<1>(GetParam())) {}
-
-        void configureTest() override {
+        , msg_size(std::get<1>(GetParam()))
+        {
           addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
         }
 
@@ -557,12 +558,10 @@ class PublisherRateTest : public HardwareTestBase, public ::testing::WithParamIn
 public:
     PublisherRateTest()
         : HardwareTestBase(std::get<0>(GetParam()))
-        , expected_freq(std::get<1>(GetParam())) {}
-
-        void configureTest() override {
+        , expected_freq(std::get<1>(GetParam()))
+        {
           addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
         }
-
 protected:
     int expected_freq;
 };

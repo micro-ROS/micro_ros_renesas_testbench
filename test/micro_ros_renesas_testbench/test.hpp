@@ -54,7 +54,6 @@ public:
         , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
         , test_initialized(false)
-        , connected_board()
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
@@ -65,7 +64,7 @@ public:
 
     void SetUp() override {
         ASSERT_TRUE(checkConnection());
-        ASSERT_TRUE(getDevice());
+        ASSERT_TRUE(connected_board.device_found());
 
         if (!connected_board.check_board_transport(transport_)) {
             std::cout << "Transport not supported on " << connected_board.folder_ << std::endl;
@@ -73,7 +72,6 @@ public:
         }
 
         configureAgent();
-        configureTransport();
         configureTest();
 
         // Set domain id
@@ -142,7 +140,7 @@ public:
         }
     }
 
-    void configureTransport() {
+    void configureTest() {
         // Delete content of client config
         client_config_path = cwd + "/src/micro_ros_renesas_testbench/" + project_name + "/src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
@@ -189,37 +187,7 @@ public:
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 
-    virtual void configureTest() {};
-
     // Utilities
-    bool getDevice() {
-        std::cout << "Getting device type ";
-        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/get_device.sh";
-        bool ret = false;
-
-        std::shared_ptr<FILE> pipe(popen(command.c_str(), "r"), pclose);
-        std::string result = "";
-        char buffer[128];
-        while (!feof(pipe.get())) {
-            if (fgets(buffer, 128, pipe.get()) != NULL) {
-                // Remove new lines from buffer
-                buffer[strcspn(buffer, "\r\n")] = 0;
-                result += buffer;
-            }
-        }
-
-        for(auto device : testbench_boards) {
-            if (0 == device.device_name_.compare(result)) {
-                connected_board = device;
-                ret = true;
-                break;
-            }
-        }
-
-        std::cout << (ret ? connected_board.folder_ : "ERROR") << std::endl;
-        return ret;
-    }
-
     bool check_serial_port(std::string port) {
         return access(port.c_str(), W_OK | R_OK ) == 0;
     }
@@ -356,7 +324,7 @@ protected:
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
 
     bool test_initialized;
-    Board connected_board;
+    static Board connected_board;
 };
 
 class HardwareTestAllTransports : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
@@ -385,15 +353,13 @@ public:
     HardwareTestMemoryProfiling()
         : HardwareTestBase(TestAgent::Transport::UDP_FREERTOS_TRANSPORT)
         {
+            addDefineToClient("MICROROS_PROFILING", "1");
+
             log_file.open(PROFILING_FILE_NAME, std::ios_base::app);
         }
 
     ~HardwareTestMemoryProfiling(){
         log_file.close();
-    }
-
-    void configureTest() override {
-        addDefineToClient("MICROROS_PROFILING", "1");
     }
 
     void SetUp() override {

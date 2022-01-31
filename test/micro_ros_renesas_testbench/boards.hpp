@@ -17,11 +17,21 @@ public:
         , usb_port_(usb_port)
         , transports_(transports) {}
 
-    Board() {}
+    Board() {
+        getDevice();
+    }
 
     bool check_board_transport(TestAgent::Transport test_transport) {
         return std::find(transports_.begin(), transports_.end(), test_transport) != std::end(transports_);
     };
+
+    bool device_found() {
+        bool ret = !device_name_.empty();
+        std::cout << (ret ? "Testing for device: " + folder_ : "ERROR: No device found") << std::endl;
+        return ret;
+    };
+
+    void getDevice();
 
     std::string device_name_;
     std::string folder_;

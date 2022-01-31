@@ -22,3 +22,35 @@ const std::vector<Board> testbench_boards =
         }
     }
 };
+
+void Board::getDevice() {
+    char * cwd_str = get_current_dir_name();
+    std::string cwd = std::string(cwd_str);
+    free(cwd_str);
+
+    std::cout << "Getting device type" << std::endl;
+    std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/get_device.sh";
+    std::shared_ptr<FILE> pipe(popen(command.c_str(), "r"), pclose);
+    std::string result = "";
+    char buffer[128];
+    while (!feof(pipe.get())) {
+        if (fgets(buffer, 128, pipe.get()) != NULL) {
+            // Remove new lines from buffer
+            buffer[strcspn(buffer, "\r\n")] = 0;
+            result += buffer;
+        }
+    }
+
+    for(auto device : testbench_boards) {
+        if (0 == device.device_name_.compare(result)) {
+            device_name_ = device.device_name_;
+            folder_ = device.folder_;
+            serial_port_ = device.serial_port_;
+            usb_port_ = device.usb_port_;
+            transports_ = device.transports_;
+            break;
+        }
+    }
+
+    std::cout << (device_found() ? "Found device: " + folder_ : "ERROR: No device found") << std::endl;
+}
