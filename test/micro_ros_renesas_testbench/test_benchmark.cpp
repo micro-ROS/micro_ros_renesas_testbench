@@ -48,12 +48,13 @@ class ThroughputTest: public BenchmarkHardwareTest, public ::testing::WithParamI
 public:
     ThroughputTest()
         : BenchmarkHardwareTest(std::get<0>(GetParam()))
-        , msg_size(std::get<1>(GetParam()))
-        {
-            addDefineToClient("TOPIC_LEN", std::to_string(msg_size));
-        }
+        , msg_size(std::get<1>(GetParam())) {}
 
     ~ThroughputTest(){}
+
+    void configureTest() override {
+        addDefineToClient("TOPIC_LEN", std::to_string(msg_size));
+    }
 
 protected:
   size_t msg_size;
