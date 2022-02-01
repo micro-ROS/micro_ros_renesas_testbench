@@ -78,9 +78,9 @@ microros_testbench.elf: $(OBJS) $(USER_OBJS) $(LINKER_SCRIPT)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-microros_testbench.srec: microros_testbench.elf
+microros_testbench.hex: microros_testbench.elf
 	@echo 'Invoking: GNU Arm Cross Create Flash Image'
-	arm-none-eabi-objcopy -O srec "microros_testbench.elf"  "microros_testbench.srec"
+	arm-none-eabi-objcopy -O ihex "microros_testbench.elf"  "microros_testbench.hex"
 	@echo 'Finished building: $@'
 	@echo ' '
 
