@@ -16,11 +16,13 @@ jobs:
         include:
           - ros_distribution: foxy
             branch: foxy
+            runs-on: rpi-ros2-foxy-20
           - ros_distribution: galactic
             branch: feature/multiboard
+            runs-on: rpi-ros2-galactic-19
           - ros_distribution: galactic
             branch: feature/multiboard
-    runs-on: rpi-ros2-${{ matrix.ros_distribution }}
+            runs-on: rpi-ros2-galactic-21
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
