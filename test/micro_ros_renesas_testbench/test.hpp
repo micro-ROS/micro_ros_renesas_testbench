@@ -108,7 +108,6 @@ public:
         switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
-                // TODO: rework path
                 project_name = "boards/" + connected_board.folder_ + "/e2studio_project_threadX";
                 agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
