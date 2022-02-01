@@ -62,5 +62,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: benchmark-results-${{ matrix.ros_distribution }}
+        name: benchmark-results-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
         path: ros_ws/*.txt
