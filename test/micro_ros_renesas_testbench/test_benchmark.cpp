@@ -26,7 +26,7 @@ public:
         : HardwareTestBase(transport)
         {
             log_file.open(BENCHMARK_FILE_NAME, std::ios_base::app);
-            log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << ": " << transport_ << std::endl;
+            log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << ": " << connected_board.folder_ << "::" << transport_ << std::endl;
         }
 
     ~BenchmarkHardwareTest(){

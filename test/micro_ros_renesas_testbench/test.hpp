@@ -382,7 +382,7 @@ public:
             GTEST_SKIP();
         }
 
-        log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << std::endl;
+        log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << " (" << connected_board.folder_ << ")" << std::endl;
 
         auto sizes = get_library_size();
         log_file << "\tused static: " << std::to_string(sizes[0]) << " B" << std::endl;
