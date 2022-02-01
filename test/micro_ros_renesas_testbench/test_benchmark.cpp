@@ -52,8 +52,9 @@ public:
 
     ~ThroughputTest(){}
 
-    void configureTest() override {
+    bool configureTest() override {
         addDefineToClient("TOPIC_LEN", std::to_string(msg_size));
+        return true;
     }
 
 protected:

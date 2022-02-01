@@ -67,13 +67,17 @@ public:
         ASSERT_TRUE(connected_board.device_found());
 
         if (!connected_board.check_board_transport(transport_)) {
-            std::cout << "Transport not supported on " << connected_board.folder_ << std::endl;
+            std::cout << "Transport " << transport_ << " not supported on " << connected_board.folder_ << std::endl;
             GTEST_SKIP();
         }
 
         configureAgent();
         configureTransport();
-        configureTest();
+
+        if (!configureTest()) {
+            std::cout << "Test case not supported on " << connected_board.folder_ << std::endl;
+            GTEST_SKIP();
+        }
 
         // Set domain id
         rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -188,7 +192,9 @@ public:
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 
-    virtual void configureTest() {};
+    virtual bool configureTest() {
+        return true;
+    };
 
     // Utilities
     bool check_serial_port(std::string port) {
@@ -343,7 +349,7 @@ class HardwareTestOneTransport : public HardwareTestBase
 {
 public:
     HardwareTestOneTransport()
-        : HardwareTestBase(TestAgent::Transport::USB_TRANSPORT){}
+        : HardwareTestBase(TestAgent::Transport::SERIAL_TRANSPORT){}
 
     ~HardwareTestOneTransport(){}
 };
@@ -363,12 +369,18 @@ public:
         log_file.close();
     }
 
-    void configureTest() override {
+    bool configureTest() override {
         addDefineToClient("MICROROS_PROFILING", "1");
+        return true;
     }
 
     void SetUp() override {
         HardwareTestBase::SetUp();
+
+        if (!connected_board.check_board_transport(transport_)) {
+            std::cout << "Memory profiling not supported on " << connected_board.folder_ << std::endl;
+            GTEST_SKIP();
+        }
 
         log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << std::endl;
 

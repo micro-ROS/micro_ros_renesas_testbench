@@ -310,8 +310,15 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()), 4)
         , msg_size(std::get<1>(GetParam())) {}
 
-    void configureTest() override {
+    bool configureTest() override {
+        if (0 == connected_board.folder_.compare("MCK_RA6T2") && msg_size > 10000)
+        {
+            // RAM overflow
+            return false;
+        }
+  
         addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
+        return true;
     }
 
 protected:
@@ -561,8 +568,9 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam())) {}
 
-    void configureTest() override {
+    bool configureTest() override {
         addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
+        return true;
     }
 
 protected:
@@ -641,7 +649,7 @@ INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::SERIAL_TRANSPORT),
         ::testing::Values(10, 24)));
 
 INSTANTIATE_TEST_SUITE_P(
