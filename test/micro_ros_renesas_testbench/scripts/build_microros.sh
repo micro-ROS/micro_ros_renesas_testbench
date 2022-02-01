@@ -47,27 +47,12 @@ popd
 
 # Copying library to speed up tests
 if [[ ${DEVICE} == ${RA6M5_DEVICE} ]]; then
-    ## e2studio_project_USB
-    cp -r -n ${PROJECTS_PATH}/e2studio_project_serial/micro_ros_renesas2estudio_component/libmicroros/ ${PROJECTS_PATH}/e2studio_project_USB/micro_ros_renesas2estudio_component/
-    pushd ${PROJECTS_PATH}/e2studio_project_USB/micro-ROS_tests
-        make clean && make -j$(nproc)
-    popd
-
-    ## e2studio_project_freeRTOS
-    cp -r -n ${PROJECTS_PATH}/e2studio_project_serial/micro_ros_renesas2estudio_component/libmicroros/ ${PROJECTS_PATH}/e2studio_project_freeRTOS/micro_ros_renesas2estudio_component/
-    pushd ${PROJECTS_PATH}/e2studio_project_freeRTOS/micro-ROS_tests
-        make clean && make -j$(nproc)
-    popd
-
-    ## e2studio_project_threadX
-    cp -r -n ${PROJECTS_PATH}/e2studio_project_serial/micro_ros_renesas2estudio_component/libmicroros/ ${PROJECTS_PATH}/e2studio_project_threadX/micro_ros_renesas2estudio_component/
-    pushd ${PROJECTS_PATH}/e2studio_project_threadX/micro-ROS_tests
-        make clean && make -j$(nproc)
-    popd
-
-    ## e2studio_project_wifi
-    cp -r -n ${PROJECTS_PATH}/e2studio_project_serial/micro_ros_renesas2estudio_component/libmicroros/ ${PROJECTS_PATH}/e2studio_project_wifi/micro_ros_renesas2estudio_component/
-    pushd ${PROJECTS_PATH}/e2studio_project_wifi/micro-ROS_tests
-        make clean && make -j$(nproc)
-    popd
+    for PROJECT in "e2studio_project_USB" "e2studio_project_freeRTOS" "e2studio_project_threadX" "e2studio_project_wifi"
+    do
+        ## e2studio_project_USB
+        cp -r -n ${PROJECTS_PATH}/e2studio_project_serial/micro_ros_renesas2estudio_component/libmicroros/ ${PROJECTS_PATH}/${PROJECT}/micro_ros_renesas2estudio_component/
+        pushd ${PROJECTS_PATH}/${PROJECT}/micro-ROS_tests
+            make clean && make -j$(nproc)
+        popd
+    done
 fi
