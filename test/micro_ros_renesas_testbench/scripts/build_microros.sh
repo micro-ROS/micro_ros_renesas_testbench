@@ -49,7 +49,6 @@ popd
 if [[ ${DEVICE} == ${RA6M5_DEVICE} ]]; then
     for PROJECT in "e2studio_project_USB" "e2studio_project_freeRTOS" "e2studio_project_threadX" "e2studio_project_wifi"
     do
-        ## e2studio_project_USB
         cp -r -n ${PROJECTS_PATH}/e2studio_project_serial/micro_ros_renesas2estudio_component/libmicroros/ ${PROJECTS_PATH}/${PROJECT}/micro_ros_renesas2estudio_component/
         pushd ${PROJECTS_PATH}/${PROJECT}/micro-ROS_tests
             make clean && make -j$(nproc)
