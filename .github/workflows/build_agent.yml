@@ -14,9 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ros_distribution: foxy
-            branch: foxy
-            board_id: 20
+          #- ros_distribution: foxy
+          #  branch: foxy
+          #  board_id: 20
           - ros_distribution: galactic
             branch: galactic
             board_id: 19
