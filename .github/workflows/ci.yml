@@ -14,14 +14,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          #- ros_distribution: foxy
-          #  branch: foxy
-          #  board_id: 20
+          - ros_distribution: foxy
+            branch: foxy
+            board_id: 20
           - ros_distribution: galactic
-            branch: feature/multiboard
+            branch: galactic
             board_id: 19
           - ros_distribution: galactic
-            branch: feature/multiboard
+            branch: galactic
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:

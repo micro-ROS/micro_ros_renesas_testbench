@@ -23,7 +23,7 @@ const std::vector<Board> testbench_boards =
     },
     {
         // device_name
-        "R7FA6T2BD3CFP",  // TODO: check
+        "R7FA6T2BD3CFP",
         // folder
         "MCK_RA6T2",
         // serial_port
