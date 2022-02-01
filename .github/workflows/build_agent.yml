@@ -16,13 +16,14 @@ jobs:
         include:
           - ros_distribution: foxy
             branch: foxy
-            runs-on: rpi-ros2-foxy-20
+            board_id: 20
           - ros_distribution: galactic
             branch: galactic
-            runs-on: rpi-ros2-galactic-19
+            board_id: 19
           - ros_distribution: galactic
             branch: galactic
-            runs-on: rpi-ros2-galactic-21
+            board_id: 21
+    runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:
     # - uses: ros-tooling/setup-ros@0.2.1
     #   with:
