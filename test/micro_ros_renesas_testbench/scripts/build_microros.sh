@@ -13,6 +13,9 @@ find . -name "libmicroros" -type d -exec rm -r "{}" \;
 # Delete all makefile.init files
 find . -name "makefile.init" -type f -exec rm -r "{}" \;
 
+# Exit when any command fails
+set -e
+
 # Get connected device
 DEVICE=$(bash ${SCRIPTS_DIR}/get_device.sh)
 
