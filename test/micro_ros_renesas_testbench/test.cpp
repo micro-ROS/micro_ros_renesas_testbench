@@ -25,6 +25,8 @@
 
 using namespace std::chrono_literals;
 
+Board HardwareTestBase::connected_board;
+
 TEST_P(HardwareTestAllTransports, EntityCreation) {
   std::vector<std::string> node_list =
   {
@@ -306,10 +308,16 @@ class ContinousFragment: public HardwareTestBase, public ::testing::WithParamInt
 public:
     ContinousFragment()
         : HardwareTestBase(std::get<0>(GetParam()), 4)
-        , msg_size(std::get<1>(GetParam()))
-        {
-          addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
-        }
+        , msg_size(std::get<1>(GetParam())) {}
+
+    void configureTest() override {
+        addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
+    }
+
+    bool isValidTest() override {
+        // Check RAM overflow on RA6T2
+        return !(0 == connected_board.folder_.compare("MCK_RA6T2") && msg_size > 10000);
+    }
 
 protected:
   size_t msg_size;
@@ -556,10 +564,12 @@ class PublisherRateTest : public HardwareTestBase, public ::testing::WithParamIn
 public:
     PublisherRateTest()
         : HardwareTestBase(std::get<0>(GetParam()))
-        , expected_freq(std::get<1>(GetParam()))
-        {
-          addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
-        }
+        , expected_freq(std::get<1>(GetParam())) {}
+
+    void configureTest() override {
+        addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
+    }
+
 protected:
     int expected_freq;
 };
@@ -636,7 +646,7 @@ INSTANTIATE_TEST_CASE_P(
     RenesasTest,
     DomainTest,
         ::testing::Combine(
-        ::testing::Values(TestAgent::Transport::USB_TRANSPORT),
+        ::testing::Values(TestAgent::Transport::SERIAL_TRANSPORT),
         ::testing::Values(10, 24)));
 
 INSTANTIATE_TEST_CASE_P(
