@@ -310,15 +310,13 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()), 4)
         , msg_size(std::get<1>(GetParam())) {}
 
-    bool configureTest() override {
-        if (0 == connected_board.folder_.compare("MCK_RA6T2") && msg_size > 10000)
-        {
-            // RAM overflow
-            return false;
-        }
-  
+    void configureTest() override {
         addDefineToClient("ARRAY_LEN", std::to_string(msg_size));
-        return true;
+    }
+
+    bool isValidTest() override {
+        // Check RAM overflow on RA6T2
+        return !(0 == connected_board.folder_.compare("MCK_RA6T2") && msg_size > 10000);
     }
 
 protected:
@@ -568,9 +566,8 @@ public:
         : HardwareTestBase(std::get<0>(GetParam()))
         , expected_freq(std::get<1>(GetParam())) {}
 
-    bool configureTest() override {
+    void configureTest() override {
         addDefineToClient("PUBLISH_PERIOD_MS", std::to_string(1000/expected_freq));
-        return true;
     }
 
 protected:

@@ -63,7 +63,6 @@ public:
     ~HardwareTestBase(){}
 
     void SetUp() override {
-        ASSERT_TRUE(checkConnection());
         ASSERT_TRUE(connected_board.device_found());
 
         if (!connected_board.check_board_transport(transport_)) {
@@ -71,13 +70,15 @@ public:
             GTEST_SKIP();
         }
 
-        configureAgent();
-        configureTransport();
-
-        if (!configureTest()) {
+        if(!isValidTest()) {
             std::cout << "Test case not supported on " << connected_board.folder_ << std::endl;
             GTEST_SKIP();
         }
+
+        ASSERT_TRUE(checkConnection());
+        configureAgent();
+        configureTransport();
+        configureTest();
 
         // Set domain id
         rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -192,7 +193,9 @@ public:
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 
-    virtual bool configureTest() {
+    virtual void configureTest() {};
+
+    virtual bool isValidTest() {
         return true;
     };
 
@@ -369,20 +372,20 @@ public:
         log_file.close();
     }
 
-    bool configureTest() override {
+    void configureTest() override {
         addDefineToClient("MICROROS_PROFILING", "1");
-        return true;
     }
 
     void SetUp() override {
         HardwareTestBase::SetUp();
 
+        log_file << connected_board.folder_ << " " << ::testing::UnitTest::GetInstance()->current_test_info()->name() << std::endl;
+
         if (!connected_board.check_board_transport(transport_)) {
             std::cout << "Memory profiling not supported on " << connected_board.folder_ << std::endl;
+            log_file << "\tMemory profiling not supported on this board" << std::endl;
             GTEST_SKIP();
         }
-
-        log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << " (" << connected_board.folder_ << ")" << std::endl;
 
         auto sizes = get_library_size();
         log_file << "\tused static: " << std::to_string(sizes[0]) << " B" << std::endl;
