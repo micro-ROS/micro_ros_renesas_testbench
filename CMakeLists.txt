@@ -38,6 +38,7 @@ if(BUILD_TESTING)
   # ament_lint_auto_find_test_dependencies()
 
   ament_add_gtest(${PROJECT_NAME}_test
+    test/micro_ros_renesas_testbench/boards.cpp
     test/micro_ros_renesas_testbench/test.cpp
     test/micro_ros_renesas_testbench/test_agent.cpp
     test/micro_ros_renesas_testbench/test_regressions.cpp

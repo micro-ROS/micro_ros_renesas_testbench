@@ -24,6 +24,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include "test_agent.hpp"
+#include "boards.hpp"
 
 #include <std_msgs/msg/u_int32_multi_array.hpp>
 
@@ -47,54 +48,104 @@ class HardwareTestBase : public ::testing::Test
 public:
     HardwareTestBase(TestAgent::Transport transport, uint8_t agent_verbosity = 4, size_t domain_id = 0)
         : transport_(transport)
+        , domain_id_(domain_id)
         , agent_port(8888)
         , agent_dev("")
         , agent_verbosity_(agent_verbosity)
         , default_spin_timeout( std::chrono::duration<int64_t, std::milli>(10000))
+        , test_initialized(false)
     {
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
         free(cwd_str);
+    }
 
+    ~HardwareTestBase(){}
+
+    void SetUp() override {
+        ASSERT_TRUE(connected_board.device_found());
+
+        if (!connected_board.check_board_transport(transport_)) {
+            std::cout << "Transport " << transport_ << " not supported on " << connected_board.folder_ << std::endl;
+            GTEST_SKIP();
+        }
+
+        if(!isValidTest()) {
+            std::cout << "Test case not supported on " << connected_board.folder_ << std::endl;
+            GTEST_SKIP();
+        }
+
+        ASSERT_TRUE(checkConnection());
+        configureAgent();
+        configureTransport();
+        configureTest();
+
+        // Set domain id
+        rcl_allocator_t allocator = rcl_get_default_allocator();
+        rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
+
+        ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
+        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
+        rmw_options->domain_id = domain_id_;
+
+        options = rclcpp::InitOptions(init_options);
+
+        rclcpp::init(0, NULL, options);
+        node = std::make_shared<rclcpp::Node>("test_node");
+
+        test_initialized = true;
+        runClientCode();
+    }
+
+    void TearDown() override {
+        if (test_initialized) {
+            agent->stop();
+            rclcpp::shutdown();
+        }
+    }
+
+    void configureAgent() {
         switch (transport_)
         {
             case TestAgent::Transport::UDP_THREADX_TRANSPORT:
-                project_name = "e2studio_project_threadX";
-                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_threadX";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::UDP_FREERTOS_TRANSPORT:
-                project_name = "e2studio_project_freeRTOS";
-                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_freeRTOS";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
-                project_name = "e2studio_project_wifi";
-                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity));
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_wifi";
+                agent.reset(new TestAgent(transport_, agent_port, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::USB_TRANSPORT:
-                agent_dev = "/dev/serial/by-id/usb-RENESAS_CDC_USB_Demonstration_0000000000001-if00";
-                project_name = "e2studio_project_USB";
-                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                agent_dev = connected_board.usb_port_;
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_USB";
+                agent.reset(new TestAgent(agent_dev, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::SERIAL_TRANSPORT:
-                agent_dev = "/dev/serial/by-id/usb-Prolific_Technology_Inc._USB-Serial_Controller-if00-port0";
-                project_name = "e2studio_project_serial";
-                agent.reset(new TestAgent(agent_dev, agent_verbosity));
+                agent_dev = connected_board.serial_port_;
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_serial";
+                agent.reset(new TestAgent(agent_dev, agent_verbosity_));
                 break;
 
             case TestAgent::Transport::CAN_TRANSPORT:
                 agent_dev = "can0";
-                project_name = "e2studio_project_CAN";
-                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity));
+                project_name = "boards/" + connected_board.folder_ + "/e2studio_project_CAN";
+                agent.reset(new TestAgent(transport_, agent_dev, agent_verbosity_));
                 break;
 
             default:
                 break;
         }
+    }
 
+    void configureTransport() {
         // Delete content of client config
         client_config_path = cwd + "/src/micro_ros_renesas_testbench/" + project_name + "/src/config.h";
         std::ofstream file(client_config_path, std::ios::out);
@@ -137,36 +188,17 @@ public:
         }
 
         size_t isolation_domain_id = (size_t)(sum % ROS_MAX_DOMAIN_ID);
-        domain_id_ = (domain_id + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
+        domain_id_ = (domain_id_ + isolation_domain_id) % ROS_MAX_DOMAIN_ID;
         addDefineToClient("DOMAIN_ID", std::to_string(domain_id_));
     }
 
-    ~HardwareTestBase(){}
+    virtual void configureTest() {};
 
-    void SetUp() override {
-        ASSERT_TRUE(checkConnection());
+    virtual bool isValidTest() {
+        return true;
+    };
 
-        // Set domain id
-        rcl_allocator_t allocator = rcl_get_default_allocator();
-        rcl_init_options_t init_options = rcl_get_zero_initialized_init_options();
-
-        ASSERT_EQ(rcl_init_options_init(&init_options, allocator), RCL_RET_OK);
-        rmw_init_options_t* rmw_options = rcl_init_options_get_rmw_init_options(&init_options);
-        rmw_options->domain_id = domain_id_;
-
-        options = rclcpp::InitOptions(init_options);
-
-        rclcpp::init(0, NULL, options);
-        node = std::make_shared<rclcpp::Node>("test_node");
-
-        runClientCode();
-    }
-
-    void TearDown() override {
-        agent->stop();
-        rclcpp::shutdown();
-    }
-
+    // Utilities
     bool check_serial_port(std::string port) {
         return access(port.c_str(), W_OK | R_OK ) == 0;
     }
@@ -301,6 +333,9 @@ protected:
     std::string agent_dev;
     uint8_t agent_verbosity_;
     std::chrono::duration<int64_t, std::milli> default_spin_timeout;
+
+    bool test_initialized;
+    static Board connected_board;
 };
 
 class HardwareTestAllTransports : public HardwareTestBase, public ::testing::WithParamInterface<TestAgent::Transport>
@@ -316,7 +351,7 @@ class HardwareTestOneTransport : public HardwareTestBase
 {
 public:
     HardwareTestOneTransport()
-        : HardwareTestBase(TestAgent::Transport::USB_TRANSPORT){}
+        : HardwareTestBase(TestAgent::Transport::SERIAL_TRANSPORT){}
 
     ~HardwareTestOneTransport(){}
 };
@@ -329,8 +364,6 @@ public:
     HardwareTestMemoryProfiling()
         : HardwareTestBase(TestAgent::Transport::UDP_FREERTOS_TRANSPORT)
         {
-            addDefineToClient("MICROROS_PROFILING", "1");
-
             log_file.open(PROFILING_FILE_NAME, std::ios_base::app);
         }
 
@@ -338,10 +371,20 @@ public:
         log_file.close();
     }
 
+    void configureTest() override {
+        addDefineToClient("MICROROS_PROFILING", "1");
+    }
+
     void SetUp() override {
         HardwareTestBase::SetUp();
 
-        log_file << ::testing::UnitTest::GetInstance()->current_test_info()->name() << std::endl;
+        log_file << connected_board.folder_ << " " << ::testing::UnitTest::GetInstance()->current_test_info()->name() << std::endl;
+
+        if (!connected_board.check_board_transport(transport_)) {
+            std::cout << "Memory profiling not supported on " << connected_board.folder_ << std::endl;
+            log_file << "\tMemory profiling not supported on this board" << std::endl;
+            GTEST_SKIP();
+        }
 
         auto sizes = get_library_size();
         log_file << "\tused static: " << std::to_string(sizes[0]) << " B" << std::endl;
