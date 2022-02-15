@@ -30,14 +30,11 @@ fi
 echo "Device connected: ${BOARD_FOLDER}."
 PROJECTS_PATH=ros_ws/src/micro_ros_renesas_testbench/boards/${BOARD_FOLDER}
 
-# Temporal fix, remove when CAN project is added to RA6T2
-if [[ ${DEVICE} == ${RA6M5_DEVICE} ]]; then
-    # Compile CAN library
-    pushd ${PROJECTS_PATH}/e2studio_project_CAN/micro-ROS_tests
-        echo "Building microros for: ${PROJECTS_PATH}/e2studio_project_CAN/micro-ROS_tests"
-        make clean && make -j$(nproc)
-    popd
-fi
+# Compile CAN library
+pushd ${PROJECTS_PATH}/e2studio_project_CAN/micro-ROS_tests
+    echo "Building microros for: ${PROJECTS_PATH}/e2studio_project_CAN/micro-ROS_tests"
+    make clean && make -j$(nproc)
+popd
 
 # Compile serial library
 pushd ${PROJECTS_PATH}/e2studio_project_serial/micro-ROS_tests
