@@ -55,7 +55,7 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 SECONDARY_FLASH += \
-microros_testbench.srec \
+microros_testbench.hex \
 
 SECONDARY_SIZE += \
 microros_testbench.siz \
