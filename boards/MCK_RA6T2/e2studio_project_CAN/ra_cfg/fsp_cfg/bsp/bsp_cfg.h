@@ -19,8 +19,8 @@
              #define BSP_CFG_BOOT_IMAGE (1)
             #endif
 #define BSP_CFG_MCU_VCC_MV (3300)
-#define BSP_CFG_STACK_MAIN_BYTES (5000)
-#define BSP_CFG_HEAP_BYTES (5000)
+#define BSP_CFG_STACK_MAIN_BYTES (15000)
+#define BSP_CFG_HEAP_BYTES (15000)
 #define BSP_CFG_PARAM_CHECKING_ENABLE (0)
 #define BSP_CFG_ASSERT (0)
 #define BSP_CFG_ERROR_LOG (0)
