@@ -32,8 +32,7 @@ const std::vector<Board> testbench_boards =
         "",
         // transports
         {
-            // TODO(acuadros95): Test CANFD transport
-            // TestAgent::Transport::CAN_TRANSPORT,
+            TestAgent::Transport::CAN_TRANSPORT,
             TestAgent::Transport::SERIAL_TRANSPORT
         }
     }
