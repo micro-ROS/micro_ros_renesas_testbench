@@ -433,7 +433,6 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
     ASSERT_TRUE(received);
 }
 
-#ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, Parameters) {
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
@@ -452,7 +451,9 @@ TEST_P(HardwareTestAllTransports, Parameters) {
       rcl_interfaces::msg::ListParametersResult list_params;
       try {
         std::cout << "Listing parameters" << std::endl;
-        list_params = parameters_client->list_parameters({}, 10, std::chrono::duration<int64_t, std::milli>(2000));
+        if (parameters_client->wait_for_service(std::chrono::duration<int64_t, std::milli>(2000))) {
+          list_params = parameters_client->list_parameters({}, 10);
+        }
       } catch(...) {
         continue;
       }
@@ -536,7 +537,6 @@ TEST_P(HardwareTestAllTransports, Parameters) {
 
     ASSERT_EQ(on_parameter_calls, 1u);
 }
-#endif  // !ROS_DISTRO_FOXY
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
