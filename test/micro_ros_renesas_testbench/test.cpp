@@ -428,12 +428,11 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
         }
     );
 
-    auto timeout = std::chrono::duration<int64_t, std::milli>(10000);
+    auto timeout = std::chrono::duration<int64_t, std::milli>(15000);
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), timeout), rclcpp::FutureReturnCode::SUCCESS);
     ASSERT_TRUE(received);
 }
 
-#ifndef ROS_DISTRO_FOXY
 TEST_P(HardwareTestAllTransports, Parameters) {
     auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
@@ -536,7 +535,6 @@ TEST_P(HardwareTestAllTransports, Parameters) {
 
     ASSERT_EQ(on_parameter_calls, 1u);
 }
-#endif  // !ROS_DISTRO_FOXY
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
