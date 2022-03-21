@@ -428,7 +428,7 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
         }
     );
 
-    auto timeout = std::chrono::duration<int64_t, std::milli>(10000);
+    auto timeout = std::chrono::duration<int64_t, std::milli>(15000);
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), timeout), rclcpp::FutureReturnCode::SUCCESS);
     ASSERT_TRUE(received);
 }
