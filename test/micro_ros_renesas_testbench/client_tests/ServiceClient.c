@@ -62,7 +62,7 @@ void microros_app(void)
     req.a = 24;
     req.b = 42;
 
-    sleep_ms(5000); // Sleep a while to ensure DDS matching before sending request
+    sleep_ms(7500); // Sleep a while to ensure DDS matching before sending request
 
     rcl_send_request(&client, &req, &seq);
 
