@@ -388,9 +388,9 @@ TEST_P(HardwareTestAllTransports, ServiceServer) {
     request->a = 10;
     request->b = 20;
 
-    std::this_thread::sleep_for (std::chrono::seconds(5));
+    std::this_thread::sleep_for (std::chrono::seconds(10));
 
-    ASSERT_TRUE(client->wait_for_service(10s));
+    ASSERT_TRUE(client->wait_for_service(5s));
 
     for(size_t i = 0; i < 10; i++){
         request->b += i;
