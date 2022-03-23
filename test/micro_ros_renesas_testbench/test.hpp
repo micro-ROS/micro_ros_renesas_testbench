@@ -91,7 +91,7 @@ public:
         options = rclcpp::InitOptions(init_options);
 
         rclcpp::init(0, NULL, options);
-        node = std::make_shared<rclcpp::Node>("test_node");
+        node = std::make_shared<rclcpp::Node>("test_node_rclcpp");
 
         test_initialized = true;
         runClientCode();

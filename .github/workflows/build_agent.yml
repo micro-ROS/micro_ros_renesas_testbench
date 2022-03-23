@@ -36,6 +36,7 @@ jobs:
     - name: Download dependencies
       run: |
         cd ros_ws
+        rm -rf src/*Agent
         vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS agent
       run: |
