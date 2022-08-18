@@ -434,9 +434,8 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
 }
 
 TEST_P(HardwareTestAllTransports, Parameters) {
-    auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
-        param_client_node,
+        node,
         "test_node");
 
     std::vector<std::string> param_names;
