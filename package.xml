@@ -11,6 +11,7 @@
   <depend>rosidl_runtime_c</depend>
   <depend>rcutils</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_action</depend>
   <depend>rmw</depend>
 
 
