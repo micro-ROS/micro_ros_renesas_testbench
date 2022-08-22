@@ -100,7 +100,7 @@ std::string TestAgent::getIPAddress(){
         if (!ifa->ifa_addr) {
             continue;
         }
-        if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IPv4
+        if (0 == strcmp(ifa->ifa_name, "eth0") && ifa->ifa_addr->sa_family == AF_INET) { // check it is IPv4
             void * tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
             char addressBuffer[INET_ADDRSTRLEN];
             inet_ntop(AF_INET, tmpAddrPtr, addressBuffer, INET_ADDRSTRLEN);
