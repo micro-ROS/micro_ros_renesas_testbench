@@ -21,6 +21,9 @@
 #include <example_interfaces/srv/add_two_ints.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 
+#include <example_interfaces/action/fibonacci.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+
 #include <rmw/types.h>
 
 using namespace std::chrono_literals;
@@ -536,6 +539,47 @@ TEST_P(HardwareTestAllTransports, Parameters) {
 
     ASSERT_EQ(on_parameter_calls, 1u);
 }
+
+#if defined(ROS_DISTRO_HUMBLE) || defined(ROS_DISTRO_ROLLING)
+TEST_P(HardwareTestAllTransports, ActionServer) {
+    auto action_client = rclcpp_action::create_client<example_interfaces::action::Fibonacci>(
+        node,
+        "test_fibonacci");
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+    // Wait for micro-ROS action server
+    ASSERT_TRUE(action_client->wait_for_action_server(default_spin_timeout));
+
+    // Send Goal
+    auto goal_msg = example_interfaces::action::Fibonacci::Goal();
+    goal_msg.order = 12;
+
+    auto future_goal_handle = action_client->async_send_goal(goal_msg);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future_goal_handle, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
+
+    auto goal_handle = future_goal_handle.get();
+
+    // Wait for the result
+    auto future_result = action_client->async_get_result(goal_handle);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future_result, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
+
+    // Check the received fibonacci values
+    auto result = future_result.get();
+    EXPECT_EQ(result.code, rclcpp_action::ResultCode::SUCCEEDED);
+
+    // Check response size and first value manually
+    EXPECT_EQ(result.result->sequence.size(), (size_t) goal_msg.order);
+    EXPECT_EQ(result.result->sequence[0], 0);
+
+    int32_t expected_result = 1;
+    for (size_t i = 1; i < (size_t) goal_msg.order; i++)
+    {
+        EXPECT_EQ(result.result->sequence[i], expected_result);
+        expected_result += result.result->sequence[i-1];
+    }
+}
+#endif  // defined(ROS_DISTRO_HUMBLE) || defined(ROS_DISTRO_ROLLING)
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {

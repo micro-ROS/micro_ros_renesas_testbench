@@ -29,6 +29,7 @@ if(BUILD_TESTING)
   find_package(fastrtps_cmake_module REQUIRED)
   find_package(microxrcedds_agent REQUIRED)
   find_package(rclcpp REQUIRED)
+  find_package(rclcpp_action REQUIRED)
   find_package(rmw REQUIRED)
   find_package(std_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
@@ -59,6 +60,7 @@ if(BUILD_TESTING)
     fastrtps
     microxrcedds_agent
     rclcpp
+    rclcpp_action
     rmw
     std_msgs
     sensor_msgs
