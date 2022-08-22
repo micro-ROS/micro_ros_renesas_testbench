@@ -434,9 +434,8 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
 }
 
 TEST_P(HardwareTestAllTransports, Parameters) {
-    auto param_client_node = std::make_shared<rclcpp::Node>("param_aux_client");
     auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(
-        param_client_node,
+        node,
         "test_node");
 
     std::vector<std::string> param_names;
@@ -446,9 +445,10 @@ TEST_P(HardwareTestAllTransports, Parameters) {
 
 
     // List parameters multiple times until parameter server is available
+    rcl_interfaces::msg::ListParametersResult list_params;
+
     for(size_t i = 0; i < 10; i++)
     {
-      rcl_interfaces::msg::ListParametersResult list_params;
       try {
         std::cout << "Listing parameters" << std::endl;
         if (parameters_client->wait_for_service(std::chrono::duration<int64_t, std::milli>(2000))) {
@@ -457,9 +457,10 @@ TEST_P(HardwareTestAllTransports, Parameters) {
       } catch(...) {
         continue;
       }
-      check_string_vector(list_params.names, param_names, true);
       break;
     }
+
+    ASSERT_EQ(check_string_vector(list_params.names, param_names, true), param_names.size());
 
     bool param_bool_value = parameters_client->get_parameter("param1", false);
     ASSERT_EQ(param_bool_value, true);
