@@ -32,7 +32,7 @@ void microros_app(void)
 
     // create executor
     rclc_executor_t executor;
-    rclc_executor_init(&executor, &support.context, RCLC_PARAMETER_EXECUTOR_HANDLES_NUMBER, &allocator);
+    rclc_executor_init(&executor, &support.context, RCLC_EXECUTOR_PARAMETER_SERVER_HANDLES, &allocator);
     rclc_executor_add_parameter_server(&executor, &param_server, NULL);
 
     // Add parameters
