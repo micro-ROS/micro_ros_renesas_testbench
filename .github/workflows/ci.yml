@@ -20,8 +20,8 @@ jobs:
           - ros_distribution: galactic
             branch: galactic
             board_id: 19
-          - ros_distribution: galactic
-            branch: galactic
+          - ros_distribution: rolling
+            branch: main
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:
