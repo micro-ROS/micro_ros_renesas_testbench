@@ -379,7 +379,7 @@ TEST_P(HardwareTestAllTransports, Ping) {
     };
 
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
-      "test_publisher_ping", 0, callback);
+      "test_publisher_ping", 1, callback);
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
 }
