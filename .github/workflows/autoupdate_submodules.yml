@@ -16,8 +16,6 @@ jobs:
         include:
           - distro: foxy
             branch: foxy
-          - distro: galactic
-            branch: galactic
           - distro: humble
             branch: humble
           - distro: rolling
