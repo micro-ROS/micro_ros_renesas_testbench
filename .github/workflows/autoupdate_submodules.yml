@@ -16,15 +16,10 @@ jobs:
         include:
           - distro: foxy
             branch: foxy
-<<<<<<< HEAD
-          - distro: galactic
-            branch: galactic
-=======
           - distro: humble
             branch: humble
           - distro: rolling
             branch: main
->>>>>>> 52c42ba (Add rolling to CI and deprecate galactic (#160))
     steps:
       - uses: actions/checkout@v2
         with:
