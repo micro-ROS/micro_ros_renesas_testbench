@@ -18,10 +18,10 @@ jobs:
             branch: humble
             board_id: 19
           - ros_distribution: iron
-            branch: iron
+            branch: release/iron
             board_id: 20
           - ros_distribution: rolling
-            branch: rolling
+            branch: fix/rolling
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:
