@@ -3,6 +3,7 @@
   <generalSettings>
     <option key="#Board#" value="board.ra6t2mck"/>
     <option key="CPU" value="RA6T2"/>
+    <option key="Core" value="CM33"/>
     <option key="#TargetName#" value="R7FA6T2BD3CFP"/>
     <option key="#TargetARCHITECTURE#" value="cortex-m33"/>
     <option key="#DeviceCommand#" value="R7FA6T2BD"/>
@@ -80,8 +81,8 @@
       <property id="config.bsp.fsp.mcu.canfd.max_data_rate_hz" value="5"/>
     </config>
     <config id="config.bsp.ra">
-      <property id="config.bsp.common.main" value="15000"/>
-      <property id="config.bsp.common.heap" value="15000"/>
+      <property id="config.bsp.common.main" value="5000"/>
+      <property id="config.bsp.common.heap" value="13000"/>
       <property id="config.bsp.common.vcc" value="3300"/>
       <property id="config.bsp.common.checking" value="config.bsp.common.checking.disabled"/>
       <property id="config.bsp.common.assert" value="config.bsp.common.assert.none"/>
