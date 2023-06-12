@@ -3,8 +3,8 @@
         "rmw_microxrcedds": {
             "cmake-args": [
                 "-DRMW_UXRCE_MAX_NODES=5",
-                "-DRMW_UXRCE_MAX_PUBLISHERS=5",
-                "-DRMW_UXRCE_MAX_SUBSCRIPTIONS=5",
+                "-DRMW_UXRCE_MAX_PUBLISHERS=6",
+                "-DRMW_UXRCE_MAX_SUBSCRIPTIONS=6",
                 "-DRMW_UXRCE_MAX_SERVICES=6",
                 "-DRMW_UXRCE_MAX_CLIENTS=1",
                 "-DRMW_UXRCE_MAX_HISTORY=4",
