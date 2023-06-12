@@ -17,9 +17,9 @@ jobs:
           - distro: humble
             branch: humble
           - distro: iron
-            branch: release/iron
+            branch: iron
           - distro: rolling
-            branch: fix/rolling
+            branch: rolling
     steps:
       - uses: actions/checkout@v3
         with:
