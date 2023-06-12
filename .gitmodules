@@ -1,31 +1,32 @@
 [submodule "e2studio_project_serial/micro_ros_renesas2estudio_component"]
 	path = boards/EK_RA6M5/e2studio_project_serial/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = main
+	branch = iron
 [submodule "e2studio_project_threadX/micro_ros_renesas2estudio_component"]
 	path = boards/EK_RA6M5/e2studio_project_threadX/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = main
+	branch = iron
 [submodule "e2studio_project_freeRTOS/micro_ros_renesas2estudio_component"]
 	path = boards/EK_RA6M5/e2studio_project_freeRTOS/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = main
+	branch = iron
 [submodule "e2studio_project_USB/micro_ros_renesas2estudio_component"]
 	path = boards/EK_RA6M5/e2studio_project_USB/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = main
+	branch = iron
 [submodule "e2studio_project_CAN/micro_ros_renesas2estudio_component"]
 	path = boards/EK_RA6M5/e2studio_project_CAN/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = main
+	branch = iron
 [submodule "e2studio_project_wifi/micro_ros_renesas2estudio_component"]
 	path = boards/EK_RA6M5/e2studio_project_wifi/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = feature/pmod_wifi
+	branch = iron
 [submodule "boards/MCK_RA6T2/e2studio_project_serial/micro_ros_renesas2estudio_component"]
 	path = boards/MCK_RA6T2/e2studio_project_serial/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
+	branch = iron
 [submodule "boards/MCK_RA6T2/e2studio_project_CAN/micro_ros_renesas2estudio_component"]
 	path = boards/MCK_RA6T2/e2studio_project_CAN/micro_ros_renesas2estudio_component
 	url = https://github.com/micro-ROS/micro_ros_renesas2estudio_component
-	branch = galactic
+	branch = iron
