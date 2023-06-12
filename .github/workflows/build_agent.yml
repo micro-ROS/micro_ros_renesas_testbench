@@ -14,21 +14,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ros_distribution: foxy
-            branch: foxy
-            board_id: 20
           - ros_distribution: humble
             branch: humble
             board_id: 19
+          - ros_distribution: iron
+            branch: iron
+            board_id: 20
           - ros_distribution: rolling
-            branch: main
+            branch: rolling
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:
-    # - uses: ros-tooling/setup-ros@0.2.1
-    #   with:
-    #     required-ros-distributions: ${{ matrix.ros_distribution }}
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
@@ -37,6 +34,7 @@ jobs:
       run: |
         cd ros_ws
         rm -rf src/*Agent
+        rm -rf src/micro_ros_msgs
         vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS agent
       run: |
