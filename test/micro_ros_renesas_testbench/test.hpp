@@ -58,12 +58,21 @@ public:
         char * cwd_str = get_current_dir_name();
         cwd = std::string(cwd_str);
         free(cwd_str);
+
+        // Get test name
+        std::stringstream full_testname(::testing::UnitTest::GetInstance()->current_test_info()->name());
+        std::getline(full_testname, test_name, '/');
     }
 
     ~HardwareTestBase(){}
 
     void SetUp() override {
         ASSERT_TRUE(connected_board.device_found());
+
+        if (connected_board.check_skip_test(test_name)) {
+            std::cout << "Test not supported on " << connected_board.folder_ << std::endl;
+            GTEST_SKIP();
+        }
 
         if (!connected_board.check_board_transport(transport_)) {
             std::cout << "Transport " << transport_ << " not supported on " << connected_board.folder_ << std::endl;
@@ -222,13 +231,8 @@ public:
     }
 
     bool buildClientCode(){
-        // Get test name
-        std::string filename;
-        std::stringstream testname(::testing::UnitTest::GetInstance()->current_test_info()->name());
-        std::getline(testname, filename, '/');
-
-        std::cout << "Building client firmware: " << filename << std::endl;
-        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/build.sh " + filename + " " + project_name;
+        std::cout << "Building client firmware: " << test_name << std::endl;
+        std::string command = "bash " + cwd + "/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/build.sh " + test_name + " " + project_name;
         return 0 == system(command.c_str());
     }
 
@@ -325,6 +329,7 @@ protected:
     rclcpp::InitOptions options;
 
     std::string cwd;
+    std::string test_name;
     std::string project_name;
     std::string client_config_path;
 
