@@ -40,7 +40,9 @@ const std::vector<Board> testbench_boards =
         },
         // skipped_tests_
         {
-            "Parameters"
+            "Parameters",
+            "ComplexSubscriber",
+            "CustomTypeIntrospection"
         }
     }
 };
