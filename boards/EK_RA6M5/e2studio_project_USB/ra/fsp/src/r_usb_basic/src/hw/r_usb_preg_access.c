@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -230,13 +230,22 @@ void hw_usb_pmodule_init (uint8_t usb_ip)
             /* Wait for Set of SCKE */
         }
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
-        USB_M0->PHYSLEW = 0x5;
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #if defined(USB_SUPPORT_PHYSLEW)
+        USB_M0->PHYSLEW = USB_PHYSLEW_VALUE;
+ #endif                                /* defined(USB_SUPPORT_PHYSLEW) */
 
         USB_M0->SYSCFG &= (uint16_t) (~USB_DRPD);
 
-        USB_M0->SYSCFG   |= USB_USBE;
+        USB_M0->SYSCFG |= USB_USBE;
+
+ #if defined(USB_SUPPORT_HOCO_MODULE)
+        if (0 == (R_SYSTEM->SCKSCR & R_SYSTEM_SCKSCR_CKSEL_Msk))
+        {
+            /* Use HOCO */
+            hw_usb_set_uckselc();
+        }
+ #endif                                /* defined(USB_SUPPORT_HOCO_MODULE) */
+
         USB_M0->CFIFOSEL  = USB0_CFIFO_MBW;
         USB_M0->D0FIFOSEL = USB0_D0FIFO_MBW;
         USB_M0->D1FIFOSEL = USB0_D1FIFO_MBW;
@@ -245,11 +254,14 @@ void hw_usb_pmodule_init (uint8_t usb_ip)
         USB_M0->D0FIFOSEL |= USB_BIGEND;
         USB_M0->D1FIFOSEL |= USB_BIGEND;
  #endif                                /* USB_CFG_ENDIAN == USB_CFG_BIG */
+
         USB_M0->INTENB0 = (USB_BEMPE | USB_BRDYE | USB_VBSE | USB_DVSE | USB_CTRE);
     }
     else
     {
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
+        USB_M1->PHYSET = (USB_DIRPD | USB_PLLRESET | USB_CLKSEL);
+
   #if USB_CFG_CLKSEL == USB_CFG_20MHZ
         USB_M1->PHYSET &= (uint16_t) ~USB_CLKSEL;
         USB_M1->PHYSET |= USB_CLKSEL_20;
@@ -303,7 +315,7 @@ void hw_usb_pmodule_init (uint8_t usb_ip)
 
         USB_M1->INTSTS0 = 0;
         USB_M1->INTENB0 = (USB_BEMPE | USB_BRDYE | USB_VBSE | USB_DVSE | USB_CTRE);
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
     }
 
  #if (defined(USB_LDO_REGULATOR_MODULE) && (USB_CFG_LDO_REGULATOR == USB_CFG_ENABLE))

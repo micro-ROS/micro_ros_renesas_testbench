@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -46,14 +46,17 @@
 /******************************************************************************
  * Exported global variables (to be accessed by other files)
  ******************************************************************************/
+ #if (BSP_CFG_RTOS == 1)
+extern uint8_t g_usb_peri_usbx_is_configured[USB_NUM_USBIP];
+ #endif                                /* (BSP_CFG_RTOS == 1) */
 
 /******************************************************************************
  * Private global variables and functions
  ******************************************************************************/
 
  #if (BSP_CFG_RTOS == 1)
-static uint8_t        * g_p_usbx_string_table[NUM_STRING_DESC];
-static usb_descriptor_t g_usbx_descriptor;
+static uint8_t * g_p_usbx_string_table[NUM_STRING_DESC];
+usb_descriptor_t g_usbx_descriptor;
 
 void usb_pstd_ux_descriptor_to_basic(usb_cfg_t * p_cfg);
 
@@ -211,6 +214,20 @@ void usb_pstd_ux_descriptor_to_basic (usb_cfg_t * p_cfg)
                 break;
             }
 
+            case USB_SOFT_CHANGE:
+            {
+                if (USB_SPEED_FS == p_cfg->usb_speed)
+                {
+                    p_cfg->p_usb_reg->p_config_f = p;
+                }
+                else
+                {
+                    p_cfg->p_usb_reg->p_config_h = p;
+                }
+
+                break;
+            }
+
             case USB_DT_OTHER_SPEED_CONF:
             {
                 if (USB_SPEED_FS == p_cfg->usb_speed)
@@ -239,6 +256,30 @@ void usb_pstd_ux_descriptor_to_basic (usb_cfg_t * p_cfg)
 
         length = *p;
         p      = p + length;
+    }
+
+    if (USB_SPEED_HS == p_cfg->usb_speed)
+    {
+        start_address = (uint8_t *) (_ux_system_slave->ux_system_slave_device_framework_full_speed);
+        length        = _ux_system_slave->ux_system_slave_device_framework_length_full_speed;
+
+        end_address = (start_address + length);
+
+        p = start_address;
+        if (USB_NULL != p)
+        {
+            while (p < end_address)
+            {
+                if ((USB_DT_OTHER_SPEED_CONF == *(p + 1)) || (USB_SOFT_CHANGE == *(p + 1)))
+                {
+                    p_cfg->p_usb_reg->p_config_f = p;
+                    break;
+                }
+
+                length = *p;
+                p      = p + length;
+            }
+        }
     }
 
     if (USB_NULL != _ux_system_slave->ux_system_slave_language_id_framework)
@@ -338,6 +379,8 @@ void usb_pdriver_init (usb_instance_ctrl_t * ctrl, usb_cfg_t const * const cfg)
         cfg_usbx.p_usb_reg = &g_usbx_descriptor;
         usb_pstd_ux_descriptor_to_basic(&cfg_usbx);
         usb_peri_registration(ctrl, &cfg_usbx);
+
+        g_usb_peri_usbx_is_configured[cfg->module_number] = USB_NO;
     }
  #else                                 /* #if (BSP_CFG_RTOS == 1) */
     usb_peri_registration(ctrl, cfg);

@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -83,7 +83,7 @@ uint16_t usb_cstd_get_buf_size (usb_utr_t * ptr, uint16_t pipe)
         /* Pipe select */
         hw_usb_write_pipesel(ptr, pipe);
 
-#if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+#if defined(USB_HIGH_SPEED_MODULE)
 
         /* Read CNTMD */
         buffer = hw_usb_read_pipecfg(ptr);
@@ -96,14 +96,14 @@ uint16_t usb_cstd_get_buf_size (usb_utr_t * ptr, uint16_t pipe)
         }
         else
         {
-#endif                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+#endif                                 /* defined (USB_HIGH_SPEED_MODULE) */
         buffer = hw_usb_read_pipemaxp(ptr);
 
         /* Max Packet Size */
         size = (uint16_t) (buffer & USB_MXPS);
-#if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+#if defined(USB_HIGH_SPEED_MODULE)
     }
-#endif                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+#endif                                 /* defined (USB_HIGH_SPEED_MODULE) */
     }
 
     return size;
@@ -200,12 +200,12 @@ void usb_cstd_pipe_init (usb_utr_t * ptr, uint16_t pipe)
 
     hw_usb_write_pipecfg(ptr, g_usb_pipe_table[ip_no][pipe].pipe_cfg);
 
-#if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+#if defined(USB_HIGH_SPEED_MODULE)
     if (USB_IP1 == ip_no)
     {
         hw_usb_write_pipebuf(ptr, g_usb_pipe_table[ip_no][pipe].pipe_buf);
     }
-#endif                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+#endif                                 /* defined (USB_HIGH_SPEED_MODULE) */
     hw_usb_write_pipemaxp(ptr, g_usb_pipe_table[ip_no][pipe].pipe_maxp);
     hw_usb_write_pipeperi(ptr, g_usb_pipe_table[ip_no][pipe].pipe_peri);
 
@@ -298,9 +298,9 @@ void usb_cstd_clr_pipe_cnfg (usb_utr_t * ptr, uint16_t pipe_no)
     hw_usb_write_pipesel(ptr, pipe_no);
     hw_usb_write_pipecfg(ptr, 0);
 
-#if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+#if defined(USB_HIGH_SPEED_MODULE)
     hw_usb_write_pipebuf(ptr, 0);
-#endif                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+#endif                                 /* defined (USB_HIGH_SPEED_MODULE) */
     hw_usb_write_pipemaxp(ptr, 0);
     hw_usb_write_pipeperi(ptr, 0);
     hw_usb_write_pipesel(ptr, 0);
@@ -384,7 +384,6 @@ uint16_t usb_cstd_is_set_frdy (usb_utr_t * ptr, uint16_t pipe, uint16_t fifosel,
 
     /* WAIT_LOOP */
 
-// for (i = 0; i < 4; i++)
     for (i = 0; i < USB_VALUE_100; i++)
     {
         buffer = hw_usb_read_fifoctr(ptr, fifosel);
