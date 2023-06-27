@@ -11,32 +11,30 @@ extern bool g_fsp_common_initialized;
 extern uint32_t g_fsp_common_thread_count;
 extern TX_SEMAPHORE g_fsp_common_initialized_semaphore;
 
-void thread_microros_create(void)
-{
-    /* Increment count so we will know the number of ISDE created threads. */
-    g_fsp_common_thread_count++;
+void thread_microros_create(void) {
+	/* Increment count so we will know the number of ISDE created threads. */
+	g_fsp_common_thread_count++;
 
-    /* Initialize each kernel object. */
+	/* Initialize each kernel object. */
 
-    UINT err;
-    err = tx_thread_create (&thread_microros, (CHAR*) "microROS thread", thread_microros_func, (ULONG) NULL,
-                            &thread_microros_stack, 5000, 1, 1, 1, TX_AUTO_START);
-    if (TX_SUCCESS != err)
-    {
-        tx_startup_err_callback (&thread_microros, 0);
-    }
+	UINT err;
+	err = tx_thread_create(&thread_microros, (CHAR*) "micro_ros_thread",
+			thread_microros_func, (ULONG) NULL, &thread_microros_stack, 5000, 1,
+			1, 1, TX_AUTO_START);
+	if (TX_SUCCESS != err) {
+		tx_startup_err_callback(&thread_microros, 0);
+	}
 }
 
-static void thread_microros_func(ULONG thread_input)
-{
-    /* Not currently using thread_input. */
-    FSP_PARAMETER_NOT_USED (thread_input);
+static void thread_microros_func(ULONG thread_input) {
+	/* Not currently using thread_input. */
+	FSP_PARAMETER_NOT_USED(thread_input);
 
-    /* Initialize common components */
-    tx_startup_common_init ();
+	/* Initialize common components */
+	tx_startup_common_init();
 
-    /* Initialize each module instance. */
+	/* Initialize each module instance. */
 
-    /* Enter user code for this thread. */
-    thread_microros_entry ();
+	/* Enter user code for this thread. */
+	thread_microros_entry();
 }
