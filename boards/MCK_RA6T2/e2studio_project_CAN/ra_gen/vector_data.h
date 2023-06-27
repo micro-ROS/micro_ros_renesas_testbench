@@ -1,6 +1,9 @@
 /* generated vector header file - do not edit */
 #ifndef VECTOR_DATA_H
 #define VECTOR_DATA_H
+#ifdef __cplusplus
+        extern "C" {
+        #endif
 /* Number of interrupts allocated */
 #ifndef VECTOR_DATA_IRQ_COUNT
 #define VECTOR_DATA_IRQ_COUNT    (5)
@@ -22,4 +25,7 @@ void canfd_rx_fifo_isr(void);
 #define CAN_GLERR_IRQn          ((IRQn_Type) 3) /* CAN GLERR (Global error) */
 #define VECTOR_NUMBER_CAN_RXF ((IRQn_Type) 4) /* CAN RXF (Global recieve FIFO interrupt) */
 #define CAN_RXF_IRQn          ((IRQn_Type) 4) /* CAN RXF (Global recieve FIFO interrupt) */
+#ifdef __cplusplus
+        }
+        #endif
 #endif /* VECTOR_DATA_H */
