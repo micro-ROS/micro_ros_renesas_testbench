@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -26,7 +26,7 @@
 #include "bsp_api.h"
 #include "r_ether_phy.h"
 
-#if (ETHER_PHY_CFG_USE_PHY == ETHER_PHY_CFG_USE_PHY_KSZ8041)
+#if (ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE)
 
 /***********************************************************************************************************************
  * Macro definitions
@@ -46,7 +46,9 @@
 /***********************************************************************************************************************
  * Exported global function
  ***********************************************************************************************************************/
-void            ether_phy_targets_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+void ether_phy_target_ksz8041_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+bool ether_phy_target_ksz8041_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                              uint32_t                    line_speed_duplex);
 extern uint32_t ether_phy_read(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t reg_addr);
 extern void     ether_phy_write(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t reg_addr, uint32_t data);
 
@@ -65,7 +67,7 @@ extern void     ether_phy_write(ether_phy_instance_ctrl_t * p_instance_ctrl, uin
  *                    Ethernet channel number
  * Return Value : none
  ***********************************************************************************************************************/
-void ether_phy_targets_initialize (ether_phy_instance_ctrl_t * p_instance_ctrl)
+void ether_phy_target_ksz8041_initialize (ether_phy_instance_ctrl_t * p_instance_ctrl)
 {
     uint32_t reg;
 
@@ -80,4 +82,23 @@ void ether_phy_targets_initialize (ether_phy_instance_ctrl_t * p_instance_ctrl)
     ether_phy_write(p_instance_ctrl, ETHER_PHY_REG_PHY_CONTROL_1, reg);
 }                                      /* End of function ether_phy_targets_initialize() */
 
-#endif /* ETHER_PHY_CFG_USE_PHY == ETHER_PHY_CFG_USE_PHY_KSZ8041 */
+/***********************************************************************************************************************
+ * Function Name: ether_phy_targets_is_support_link_partner_ability
+ * Description  : Check if the PHY-LSI connected Ethernet controller supports link ability
+ * Arguments    : p_instance_ctrl -
+ *                    Ethernet control block
+ *                line_speed_duplex -
+ *                    Line speed duplex of link partner PHY-LSI
+ * Return Value : bool
+ ***********************************************************************************************************************/
+bool ether_phy_target_ksz8041_is_support_link_partner_ability (ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                               uint32_t                    line_speed_duplex)
+{
+    FSP_PARAMETER_NOT_USED(p_instance_ctrl);
+    FSP_PARAMETER_NOT_USED(line_speed_duplex);
+
+    /* This PHY-LSI supports half and full duplex mode. */
+    return true;
+}                                      /* End of function ether_phy_targets_is_support_link_partner_ability() */
+
+#endif /* ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE */
