@@ -1,6 +1,10 @@
 /* generated configuration header file - do not edit */
 #ifndef RM_WIFI_ONCHIP_SILEX_CFG_AZURE_H_
 #define RM_WIFI_ONCHIP_SILEX_CFG_AZURE_H_
+#ifdef __cplusplus
+            extern "C" {
+            #endif
+
 #define WIFI_ONCHIP_SILEX_CFG_PARAM_CHECKING_ENABLED        ((BSP_CFG_PARAM_CHECKING_ENABLE))
 #define WIFI_ONCHIP_SILEX_CFG_NUM_CREATEABLE_SOCKETS        ((1))
 #define WIFI_ONCHIP_SILEX_CFG_CMD_TX_BUF_SIZE               (1500)
@@ -13,4 +17,8 @@
 #define wificonfigMAX_SSID_LEN                              (32)
 #define wificonfigMAX_BSSID_LEN                             (6)
 #define wificonfigMAX_PASSPHRASE_LEN                        (32)
+
+#ifdef __cplusplus
+            }
+            #endif
 #endif /* RM_WIFI_ONCHIP_SILEX_CFG_AZURE_H_ */

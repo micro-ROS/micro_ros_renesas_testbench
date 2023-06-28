@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -37,19 +37,17 @@ FSP_HEADER
 
 /* Leading zeroes removed to avoid coding standards violation. */
 
-/** Maximum number of clock counts in 16 bit timer. */
-#if BSP_FEATURE_AGT_HAS_AGTW
- #define AGT_MAX_CLOCK_COUNTS    (UINT32_MAX)
-#else
- #define AGT_MAX_CLOCK_COUNTS    (UINT16_MAX)
-#endif
+/** Maximum number of clock counts for standard AGT peripheral. */
+#define AGT_MAX_CLOCK_COUNTS_16BIT    (UINT16_MAX)
 
-/** Maximum period value allowed for AGT. */
-#if BSP_FEATURE_AGT_HAS_AGTW
- #define AGT_MAX_PERIOD          (UINT32_MAX)
-#else
- #define AGT_MAX_PERIOD          (UINT16_MAX + 1U)
-#endif
+/** Maximum number of clock counts for AGTW peripheral. */
+#define AGT_MAX_CLOCK_COUNTS_32BIT    (UINT32_MAX)
+
+/** Maximum period value allowed for standard AGT peripheral. */
+#define AGT_MAX_PERIOD_16BIT          (UINT16_MAX + 1U)
+
+/** Maximum period valud allowed for AGTW peripheral. */
+#define AGT_MAX_PERIOD_32BIT          (UINT32_MAX)
 
 /*******************************************************************************************************************//**
  * @addtogroup AGT
@@ -127,12 +125,8 @@ typedef struct st_agt_instance_ctrl
 {
     uint32_t            open;                     // Whether or not channel is open
     const timer_cfg_t * p_cfg;                    // Pointer to initial configurations
-#if BSP_FEATURE_AGT_HAS_AGTW
-    R_AGTW0_Type * p_reg;                         // Base register for this channel
-#else
-    R_AGT0_Type * p_reg;                          // Base register for this channel
-#endif
-    uint32_t period;                              // Current timer period (counts)
+    R_AGTX0_Type      * p_reg;                    // Base register for this channel
+    uint32_t            period;                   // Current timer period (counts)
 
     void (* p_callback)(timer_callback_args_t *); // Pointer to callback that is called when a timer_event_t occurs.
     timer_callback_args_t * p_callback_memory;    // Pointer to non-secure memory that can be used to pass arguments to a callback in non-secure memory.
@@ -148,12 +142,13 @@ typedef struct st_agt_extended_cfg
     union
     {
         uint8_t agtoab_settings;
+
         struct
         {
             agt_pin_cfg_t agtoa : 3;     ///< Configure AGTOA/AGTWOA pin
             uint8_t             : 1;
             agt_pin_cfg_t agtob : 3;     ///< Configure AGTOB/AGTWOB pin
-        };
+        } agtoab_settings_b;
     };
     agt_pin_cfg_t agto : 3;              ///< Configure AGTO pin @note AGTIO polarity is opposite AGTO
 

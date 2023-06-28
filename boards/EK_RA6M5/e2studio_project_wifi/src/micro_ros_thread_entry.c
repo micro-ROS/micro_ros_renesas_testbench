@@ -29,16 +29,11 @@ void micro_ros_thread_entry(void *pvParameters)
         .xSecurity               = eWiFiSecurityWPA2,
     };
 
-    // Configure agent address
-    SocketsSockaddr_t socket_addr = {
-         .ulAddress = AGENT_IP_ADDRESS,
-         .usPort    = SOCKETS_htons(AGENT_IP_PORT)
-    };
-
     // Add configuration to transport args
     custom_transport_args wifi_args = {
        .network_conf = &network_conf,
-       .socket_addr = &socket_addr
+       .agent_ip = AGENT_IP_ADDRESS,
+       .agent_port = AGENT_IP_PORT
     };
 
     rmw_uros_set_custom_transport(

@@ -8,6 +8,7 @@
 #include "r_sci_uart.h"
 #include "r_uart_api.h"
 #include "rm_wifi_onchip_silex.h"
+#include "sockets_wrapper.h"
 #include "r_ioport.h"
 #include "bsp_pin_cfg.h"
 FSP_HEADER
