@@ -3,7 +3,8 @@
 agt_instance_ctrl_t g_timer0_ctrl;
 const agt_extended_cfg_t g_timer0_extend =
 		{ .count_source = AGT_CLOCK_PCLKB, .agto = AGT_PIN_CFG_DISABLED,
-				.agtoa = AGT_PIN_CFG_DISABLED, .agtob = AGT_PIN_CFG_DISABLED,
+				.agtoab_settings_b.agtoa = AGT_PIN_CFG_DISABLED,
+				.agtoab_settings_b.agtob = AGT_PIN_CFG_DISABLED,
 				.measurement_mode = AGT_MEASURE_DISABLED, .agtio_filter =
 						AGT_AGTIO_FILTER_NONE, .enable_pin =
 						AGT_ENABLE_PIN_NOT_USED, .trigger_edge =

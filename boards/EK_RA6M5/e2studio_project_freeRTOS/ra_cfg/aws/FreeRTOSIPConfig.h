@@ -37,6 +37,10 @@
 #ifndef FREERTOS_IP_CONFIG_H
 #define FREERTOS_IP_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Set to 1 to print out debug messages.  If ipconfigHAS_DEBUG_PRINTF is set to
  * 1 then FreeRTOS_debug_printf should be defined to the function used to print
  * out the debugging messages. */
@@ -262,9 +266,6 @@ uint32_t ulRand(void);
  * filtering can be removed by using a value other than 1 or 0. */
 #define ipconfigETHERNET_DRIVER_FILTERS_FRAME_TYPES    1 //XXX
 
-/* The windows simulator cannot really simulate MAC interrupts, and needs to
- * block occasionally to allow other tasks to run. */
-//#define configWINDOWS_MAC_INTERRUPT_SIMULATOR_DELAY    ( RA_NOT_DEFINED )
 /* Advanced only: in order to access 32-bit fields in the IP packets with
  * 32-bit memory instructions, all packets will be stored 32-bit-aligned,
  * plus 16-bits. This has to do with the contents of the IP-packets: all
@@ -319,6 +320,10 @@ uint32_t ulRand(void);
 #define portINLINE                               __inline
 
 void vApplicationMQTTGetKeys(const char **ppcRootCA, const char **ppcClientCert, const char **ppcClientPrivateKey);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* FREERTOS_IP_CONFIG_H */
 #endif /* FREERTOSIPCONFIG_H_ */

@@ -31,17 +31,17 @@ void net_thread_create(void)
 #else
                     BaseType_t net_thread_create_err = xTaskCreate(
                     #endif
-                                          net_thread_func,
-                                          (const char*) "Net thread", 5000 / 4, // In words, not bytes
-                                          (void*) &net_thread_parameters, //pvParameters
-                                          1,
+                                    net_thread_func,
+                                    (const char*) "Net thread", 5000 / 4, // In words, not bytes
+                                    (void*) &net_thread_parameters, //pvParameters
+                                    1,
 #if 1
-                                          (StackType_t*) &net_thread_stack,
-                                          (StaticTask_t*) &net_thread_memory
+                                    (StackType_t*) &net_thread_stack,
+                                    (StaticTask_t*) &net_thread_memory
 #else
                         & net_thread
                         #endif
-                                          );
+                                    );
 
 #if 1
     if (NULL == net_thread)

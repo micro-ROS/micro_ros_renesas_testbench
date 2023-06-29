@@ -1,7 +1,9 @@
 /* generated configuration header file - do not edit */
 #ifndef R_CANFD_CFG_H_
 #define R_CANFD_CFG_H_
-/* Buffer RAM used: 304 bytes */
+#ifdef __cplusplus
+            extern "C" {
+            #endif
 
 #define CANFD_CFG_PARAM_CHECKING_ENABLE   ((BSP_CFG_PARAM_CHECKING_ENABLE))
 
@@ -10,18 +12,16 @@
 
 #define CANFD_CFG_GLOBAL_ERROR_CH    ((1U))
 
-#define CANFD_CFG_FD_STANDARD             ((0))
-#define CANFD_CFG_FD_PROTOCOL_EXCEPTION   ((0))
-
+#define CANFD_CFG_FD_STANDARD           ((0))
+#define CANFD_CFG_FD_PROTOCOL_EXCEPTION ((0))
+#define CANFD_CFG_GLOBAL_ERR_IPL        ((3))
+#define CANFD_CFG_RX_FIFO_IPL           ((3))
 #define CANFD_CFG_GLOBAL_ERR_SOURCES    (R_CANFD_CFDGCTR_DEIE_Msk | R_CANFD_CFDGCTR_MEIE_Msk | R_CANFD_CFDGCTR_CMPOFIE_Msk |  0x3)
 #define CANFD_CFG_TX_PRIORITY           ((R_CANFD_CFDGCFG_TPRI_Msk))
 #define CANFD_CFG_DLC_CHECK             ((0))
 #define CANFD_CFG_FD_OVERFLOW           ((0))
 #define CANFD_CFG_RXMB_NUMBER           (0)
 #define CANFD_CFG_RXMB_SIZE             ((7))
-#define CANFD_CFG_GLOBAL_ERR_IPL        ((3))
-#define CANFD_CFG_RX_FIFO_IPL           ((3))
-
 #define CANFD_CFG_RXFIFO0_INT_THRESHOLD ((0U))
 #define CANFD_CFG_RXFIFO0_DEPTH         ((1))
 #define CANFD_CFG_RXFIFO0_PAYLOAD       ((7))
@@ -69,4 +69,8 @@
 #define CANFD_CFG_RXFIFO7_PAYLOAD       ((7))
 #define CANFD_CFG_RXFIFO7_INT_MODE      ((R_CANFD_CFDRFCC_RFIE_Msk | R_CANFD_CFDRFCC_RFIM_Msk))
 #define CANFD_CFG_RXFIFO7_ENABLE        ((0))
+
+#ifdef __cplusplus
+            }
+            #endif
 #endif /* R_CANFD_CFG_H_ */

@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -28,6 +28,7 @@
 #include "../driver/inc/r_usb_extern.h"
 #include "inc/r_usb_bitdefine.h"
 #include "inc/r_usb_reg_access.h"
+#include "inc/r_usb_dmac.h"
 
 /******************************************************************************
  * Macro definitions
@@ -413,10 +414,10 @@ void usb_pstd_test_mode (usb_utr_t * p_utr)
         /* Continue */
         case USB_TEST_PACKET:
         {
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
             hw_usb_set_utst(p_utr, 0);
             hw_usb_set_utst(p_utr, (uint16_t) (g_usb_pstd_test_mode_select >> 8));
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
             break;
         }
 
@@ -496,12 +497,12 @@ void usb_pstd_set_stall_pipe0 (usb_utr_t * p_utr)
 uint8_t * usb_pstd_write_fifo (uint16_t count, uint16_t pipemode, uint8_t * write_p, usb_utr_t * p_utr)
 {
     uint16_t even;
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     uint16_t odd;
     uint16_t hs_flag = 1;
- #else                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #else                                 /* defined (USB_HIGH_SPEED_MODULE) */
     uint16_t hs_flag = 0;
- #endif /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif /* defined (USB_HIGH_SPEED_MODULE) */
 
  #if defined(BSP_MCU_GROUP_RA2A1)
 
@@ -555,7 +556,7 @@ uint8_t * usb_pstd_write_fifo (uint16_t count, uint16_t pipemode, uint8_t * writ
         }
     }
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     else
     {
         /* WAIT_LOOP */
@@ -599,7 +600,7 @@ uint8_t * usb_pstd_write_fifo (uint16_t count, uint16_t pipemode, uint8_t * writ
         /* Return FIFO access width */
         hw_usb_set_mbw(p_utr, pipemode, USB_MBW_32);
     }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
     return write_p;
 }
 
@@ -622,12 +623,12 @@ uint8_t * usb_pstd_read_fifo (uint16_t count, uint16_t pipemode, uint8_t * read_
  #if USB_CFG_ENDIAN == USB_CFG_BIG
     uint16_t i;
  #endif
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     uint16_t odd;
     uint16_t hs_flag = 1;
- #else                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #else                                 /* defined (USB_HIGH_SPEED_MODULE) */
     uint16_t hs_flag = 0;
- #endif /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif /* defined (USB_HIGH_SPEED_MODULE) */
 
  #if defined(BSP_MCU_GROUP_RA2A1)
 
@@ -680,7 +681,7 @@ uint8_t * usb_pstd_read_fifo (uint16_t count, uint16_t pipemode, uint8_t * read_
         }
     }
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     else
     {
         /* WAIT_LOOP */
@@ -729,7 +730,7 @@ uint8_t * usb_pstd_read_fifo (uint16_t count, uint16_t pipemode, uint8_t * read_
   #endif                               /* USB_CFG_ENDIAN == USB_CFG_LITTLE */
         }
     }
- #endif /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif /* defined (USB_HIGH_SPEED_MODULE) */
 
     return read_p;
 }
@@ -782,6 +783,9 @@ void usb_pstd_forced_termination (uint16_t pipe, uint16_t status, usb_utr_t * p_
     {
         /* Changes the FIFO port by the pipe. */
         usb_cstd_chg_curpipe(p_utr, (uint16_t) USB_PIPE0, (uint16_t) USB_D0USE, USB_FALSE);
+
+        /* DMA Transfer request disable */
+        hw_usb_clear_dreqe(p_utr, USB_D0USE);
     }
 
     /* Clear D1FIFO-port */
@@ -790,6 +794,9 @@ void usb_pstd_forced_termination (uint16_t pipe, uint16_t status, usb_utr_t * p_
     {
         /* Changes the FIFO port by the pipe. */
         usb_cstd_chg_curpipe(p_utr, (uint16_t) USB_PIPE0, (uint16_t) USB_D1USE, USB_FALSE);
+
+        /* DMA Transfer request disable */
+        hw_usb_clear_dreqe(p_utr, USB_D1USE);
     }
  #endif                                /* ((USB_CFG_DTC == USB_CFG_ENABLE) || (USB_CFG_DMA == USB_CFG_ENABLE)) */
 
@@ -821,7 +828,7 @@ void usb_pstd_forced_termination (uint16_t pipe, uint16_t status, usb_utr_t * p_
         vPortFree(g_p_usb_pstd_pipe[pipe]);
   #endif                               /* #if (BSP_CFG_RTOS == 1) */
         g_p_usb_pstd_pipe[pipe] = (usb_utr_t *) USB_NULL;
-        usb_cstd_pipe_msg_re_forward(USB_IP0, pipe);
+        usb_cstd_pipe_msg_re_forward(p_utr->ip, pipe);
  #endif                                /* (BSP_CFG_RTOS == 0) */
     }
 }
