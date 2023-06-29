@@ -119,10 +119,7 @@ BaseType_t xNetworkInterfaceInitialise (void)
         return pdFAIL;
     }
 
-    do
-    {
-        err = gp_freertos_ether->p_api->linkProcess(gp_freertos_ether->p_ctrl);
-    } while (FSP_SUCCESS != err);
+    gp_freertos_ether->p_api->linkProcess(gp_freertos_ether->p_ctrl);
 
     xReturn = xTaskCreate(prvRXHandlerTask,
                           "RXHandlerTask",
@@ -137,7 +134,7 @@ BaseType_t xNetworkInterfaceInitialise (void)
                               "CheckLinkStatusTask",
                               configMINIMAL_STACK_SIZE,
                               NULL,
-                              configMAX_PRIORITIES,
+                              configMAX_PRIORITIES - 1,
                               NULL);
     }
 

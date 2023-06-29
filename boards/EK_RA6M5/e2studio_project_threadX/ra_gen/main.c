@@ -34,36 +34,34 @@ tx_startup_err_callback_WEAK_ATTRIBUTE;
 
 void tx_application_define_internal(void *first_unused_memory);
 
-void tx_application_define_internal(void *first_unused_memory)
-{
-    /* Does nothing. Default implementation of tx_application_define_user(). */
-    FSP_PARAMETER_NOT_USED (first_unused_memory);
+void tx_application_define_internal(void *first_unused_memory) {
+	/* Does nothing. Default implementation of tx_application_define_user(). */
+	FSP_PARAMETER_NOT_USED(first_unused_memory);
 }
 
 void tx_application_define_internal(void *first_unused_memory);
 void tx_application_define_user(void *first_unused_memory)
 WEAK_REF_ATTRIBUTE;
 
-void tx_application_define(void *first_unused_memory)
-{
-    g_fsp_common_thread_count = 0;
-    g_fsp_common_initialized = false;
+void tx_application_define(void *first_unused_memory) {
+	g_fsp_common_thread_count = 0;
+	g_fsp_common_initialized = false;
 
-    /* Create semaphore to make sure common init is done before threads start running. */
-    UINT err;
-    err = tx_semaphore_create (&g_fsp_common_initialized_semaphore, "FSP Common Init Sem", 1);
-    if (TX_SUCCESS != err)
-    {
-        tx_startup_err_callback (&g_fsp_common_initialized_semaphore, 0);
-    }
+	/* Create semaphore to make sure common init is done before threads start running. */
+	UINT err;
+	err = tx_semaphore_create(&g_fsp_common_initialized_semaphore,
+			"FSP Common Init Sem", 1);
+	if (TX_SUCCESS != err) {
+		tx_startup_err_callback(&g_fsp_common_initialized_semaphore, 0);
+	}
 
-    thread_microros_create ();
+	thread_microros_create();
 
 #ifdef TX_USER_ENABLE_TRACE
 					TX_USER_ENABLE_TRACE;
 					#endif
 
-    tx_application_define_user (first_unused_memory);
+	tx_application_define_user(first_unused_memory);
 }
 
 /*********************************************************************************************************************
@@ -74,59 +72,53 @@ void tx_application_define(void *first_unused_memory)
  * @param[in]  p_instance arguments used to identify which instance caused the error and p_data Callback arguments used to identify what error caused the callback.
  **********************************************************************************************************************/
 void tx_startup_err_callback_internal(void *p_instance, void *p_data);
-void tx_startup_err_callback_internal(void *p_instance, void *p_data)
-{
-    /** Suppress compiler warning for not using parameters. */
-    FSP_PARAMETER_NOT_USED (p_instance);
-    FSP_PARAMETER_NOT_USED (p_data);
+void tx_startup_err_callback_internal(void *p_instance, void *p_data) {
+	/** Suppress compiler warning for not using parameters. */
+	FSP_PARAMETER_NOT_USED(p_instance);
+	FSP_PARAMETER_NOT_USED(p_data);
 
-    /** An error has occurred. Please check function arguments for more information. */
-    BSP_CFG_HANDLE_UNRECOVERABLE_ERROR (0);
+	/** An error has occurred. Please check function arguments for more information. */
+	BSP_CFG_HANDLE_UNRECOVERABLE_ERROR(0);
 }
 
 void tx_startup_common_init(void);
-void tx_startup_common_init(void)
-{
-    /* First thread will take care of common initialization. */
-    UINT err;
-    err = tx_semaphore_get (&g_fsp_common_initialized_semaphore, TX_WAIT_FOREVER);
+void tx_startup_common_init(void) {
+	/* First thread will take care of common initialization. */
+	UINT err;
+	err = tx_semaphore_get(&g_fsp_common_initialized_semaphore,
+			TX_WAIT_FOREVER);
 
-    if (TX_SUCCESS != err)
-    {
-        /* Check err, problem occurred. */
-        tx_startup_err_callback (&g_fsp_common_initialized_semaphore, 0);
-    }
+	if (TX_SUCCESS != err) {
+		/* Check err, problem occurred. */
+		tx_startup_err_callback(&g_fsp_common_initialized_semaphore, 0);
+	}
 
-    /* Only perform common initialization if this is the first thread to execute. */
-    if (false == g_fsp_common_initialized)
-    {
-        /* Later threads will not run this code. */
-        g_fsp_common_initialized = true;
+	/* Only perform common initialization if this is the first thread to execute. */
+	if (false == g_fsp_common_initialized) {
+		/* Later threads will not run this code. */
+		g_fsp_common_initialized = true;
 
-        /* Perform common module initialization. */
-        g_hal_init ();
+		/* Perform common module initialization. */
+		g_hal_init();
 
-        /* Now that common initialization is done, let other threads through. */
-        /* First decrement by 1 since 1 thread has already come through. */
-        g_fsp_common_thread_count--;
-        while (g_fsp_common_thread_count > 0)
-        {
-            err = tx_semaphore_put (&g_fsp_common_initialized_semaphore);
+		/* Now that common initialization is done, let other threads through. */
+		/* First decrement by 1 since 1 thread has already come through. */
+		g_fsp_common_thread_count--;
+		while (g_fsp_common_thread_count > 0) {
+			err = tx_semaphore_put(&g_fsp_common_initialized_semaphore);
 
-            if (TX_SUCCESS != err)
-            {
-                /* Check err, problem occurred. */
-                tx_startup_err_callback (&g_fsp_common_initialized_semaphore, 0);
-            }
+			if (TX_SUCCESS != err) {
+				/* Check err, problem occurred. */
+				tx_startup_err_callback(&g_fsp_common_initialized_semaphore, 0);
+			}
 
-            g_fsp_common_thread_count--;
-        }
-    }
+			g_fsp_common_thread_count--;
+		}
+	}
 }
 
-int main(void)
-{
-    tx_kernel_enter ();
+int main(void) {
+	tx_kernel_enter();
 
-    return 0;
+	return 0;
 }

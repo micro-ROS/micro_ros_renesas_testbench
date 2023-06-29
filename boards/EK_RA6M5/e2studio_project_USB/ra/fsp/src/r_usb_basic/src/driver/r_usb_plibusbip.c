@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -31,17 +31,32 @@
 #include "../hw/inc/r_usb_bitdefine.h"
 #include "../hw/inc/r_usb_reg_access.h"
 
-#if defined(USB_CFG_PMSC_USE)
+#if defined(USB_CFG_PMSC_USE) && !defined(USB_CFG_OTG_USE)
  #include "r_usb_pmsc_cfg.h"
 #endif                                 /* defined(USB_CFG_PMSC_USE) */
 
-#if defined(USB_CFG_PCDC_USE)
- #include "r_usb_pcdc_cfg.h"
-#endif                                 /* defined(USB_CFG_PCDC_USE) */
+#if defined(USB_CFG_OTG_USE)
+ #if defined(USB_CFG_PCDC_USE)
+  #include "r_usb_otg_cdc_cfg.h"
+ #endif                                /* (defined(USB_CFG_HCDC_USE) | defined(USB_CFG_PCDC_USE)) */
+ #if defined(USB_CFG_PHID_USE)
+  #include "r_usb_otg_hid_cfg.h"
+ #endif                                /* (defined(USB_CFG_HCDC_USE) | defined(USB_CFG_PCDC_USE)) */
+ #if defined(USB_CFG_PMSC_USE)
+  #include "r_usb_otg_msc_cfg.h"
+ #endif
+#else                                  /* defined(USB_CFG_OTG_USE) */
+ #if defined(USB_CFG_PCDC_USE)
+  #include "r_usb_pcdc_cfg.h"
+ #endif                                /* defined(USB_CFG_PCDC_USE) */
+ #if defined(USB_CFG_PHID_USE)
+  #include "r_usb_phid_cfg.h"
+ #endif                                /* defined(USB_CFG_PHID_USE) */
+#endif                                 /* defined(USB_CFG_OTG_USE) */
 
-#if defined(USB_CFG_PHID_USE)
- #include "r_usb_phid_cfg.h"
-#endif                                 /* defined(USB_CFG_PHID_USE) */
+#if defined(USB_CFG_PPRN_USE)
+ #include "r_usb_pprn_cfg.h"
+#endif                                 /* defined(USB_CFG_PPRN_USE) */
 
 #if (BSP_CFG_RTOS == 1)
  #if defined(USB_CFG_PAUD_USE)
@@ -53,6 +68,35 @@
 #endif                                 /* ((USB_CFG_DTC == USB_CFG_ENABLE) || (USB_CFG_DMA == USB_CFG_ENABLE)) */
 
 #if ((USB_CFG_MODE & USB_CFG_PERI) == USB_CFG_PERI)
+
+/******************************************************************************
+ * Macro definitions
+ ******************************************************************************/
+ #if defined(USB_CFG_PCDC_USE)
+  #if defined(USB_CFG_PMSC_USE) || defined(USB_CFG_PVND_USE) || defined(USB_CFG_PPRN_USE) || defined(USB_CFG_PAUD_USE)
+   #define USB_COMPOSITE_DEVICE
+  #else
+   #define USB_NO_COMPOSITE_DEVICE
+  #endif
+ #elif defined(USB_CFG_PMSC_USE)
+  #if defined(USB_CFG_PVND_USE) || defined(USB_CFG_PPRN_USE) || defined(USB_CFG_PAUD_USE)
+   #define USB_COMPOSITE_DEVICE
+  #else
+   #define USB_NO_COMPOSITE_DEVICE
+  #endif
+ #elif defined(USB_CFG_PPRN_USE)
+  #if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_PVND_USE)
+   #define USB_COMPOSITE_DEVICE
+  #else
+   #define USB_NO_COMPOSITE_DEVICE
+  #endif
+ #elif defined(USB_CFG_PAUD_USE)
+  #if defined(USB_CFG_PVND_USE)
+   #define USB_COMPOSITE_DEVICE
+  #else
+   #define USB_NO_COMPOSITE_DEVICE
+  #endif
+ #endif
 
 /******************************************************************************
  * Exported global variables (to be accessed by other files)
@@ -788,15 +832,15 @@ void usb_pstd_data_end (uint16_t pipe, uint16_t status, usb_utr_t * p_utr)
 
  #if (BSP_CFG_RTOS == 0)
         g_p_usb_pstd_pipe[pipe] = (usb_utr_t *) USB_NULL;
- #else                                               /* (BSP_CFG_RTOS == 0) */
+ #else                                                 /* (BSP_CFG_RTOS == 0) */
   #if (BSP_CFG_RTOS == 1)
         USB_REL_BLK(1, g_p_usb_pstd_pipe[pipe]);
-  #elif (BSP_CFG_RTOS == 2)                          /* #if (BSP_CFG_RTOS == 1) */
+  #elif (BSP_CFG_RTOS == 2)                            /* #if (BSP_CFG_RTOS == 1) */
         vPortFree(g_p_usb_pstd_pipe[pipe]);
-  #endif                                             /* #if (BSP_CFG_RTOS == 1) */
+  #endif                                               /* #if (BSP_CFG_RTOS == 1) */
         g_p_usb_pstd_pipe[pipe] = (usb_utr_t *) USB_NULL;
-        usb_cstd_pipe_msg_re_forward(USB_IP0, pipe); /* Get PIPE Transfer wait que and Message send to PCD */
- #endif                                              /* (BSP_CFG_RTOS == 0) */
+        usb_cstd_pipe_msg_re_forward(p_utr->ip, pipe); /* Get PIPE Transfer wait que and Message send to PCD */
+ #endif                                                /* (BSP_CFG_RTOS == 0) */
     }
 }
 
@@ -1059,9 +1103,9 @@ uint8_t usb_pstd_set_pipe_table (uint8_t * descriptor, usb_utr_t * p_utr, uint8_
     uint8_t  pipe_no;
     uint16_t pipe_cfg;
     uint16_t pipe_maxp;
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     uint16_t pipe_buf;
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
 
     /* Check Endpoint descriptor */
     if (USB_DT_ENDPOINT != descriptor[USB_DEV_B_DESCRIPTOR_TYPE])
@@ -1089,12 +1133,12 @@ uint8_t usb_pstd_set_pipe_table (uint8_t * descriptor, usb_utr_t * p_utr, uint8_
                 pipe_cfg = (uint16_t) (USB_TYPFIELD_BULK | USB_CFG_DBLB | USB_SHTNAKFIELD | USB_DIR_P_OUT);
             }
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
             if (USB_CFG_IP1 == p_utr->ip)
             {
                 pipe_cfg |= (uint16_t) (USB_CFG_CNTMD);
             }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
             break;
         }
 
@@ -1134,12 +1178,12 @@ uint8_t usb_pstd_set_pipe_table (uint8_t * descriptor, usb_utr_t * p_utr, uint8_
                 pipe_cfg = (uint16_t) (USB_TYPFIELD_ISO | USB_CFG_DBLB | USB_SHTNAKFIELD | USB_DIR_P_OUT);
             }
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
             if (USB_CFG_IP1 == p_utr->ip)
             {
                 pipe_cfg |= (uint16_t) (USB_CFG_CNTMD);
             }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
             break;
         }
 
@@ -1168,7 +1212,7 @@ uint8_t usb_pstd_set_pipe_table (uint8_t * descriptor, usb_utr_t * p_utr, uint8_
         g_usb_pipe_table[p_utr->ip][pipe_no].pipe_cfg  = pipe_cfg;
         g_usb_pipe_table[p_utr->ip][pipe_no].pipe_maxp = pipe_maxp;
         g_usb_pipe_table[p_utr->ip][pipe_no].pipe_peri = USB_NULL;
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
         if (USB_CFG_IP1 == p_utr->ip)
         {
             pipe_buf = usb_pstd_get_pipe_buf_value(pipe_no);
@@ -1178,7 +1222,7 @@ uint8_t usb_pstd_set_pipe_table (uint8_t * descriptor, usb_utr_t * p_utr, uint8_
         {
             (void) pipe_buf;
         }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
     }
     else
     {
@@ -1208,12 +1252,12 @@ void usb_pstd_clr_pipe_table (uint8_t usb_ip)
             /* Clear use block */
             g_usb_pipe_table[usb_ip][pipe_no].use_flag = USB_FALSE;
             g_usb_pipe_table[usb_ip][pipe_no].pipe_cfg = USB_NULL;
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
             if (USB_CFG_IP1 == usb_ip)
             {
                 g_usb_pipe_table[usb_ip][pipe_no].pipe_buf = USB_NULL;
             }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
             g_usb_pipe_table[usb_ip][pipe_no].pipe_maxp = USB_NULL;
             g_usb_pipe_table[usb_ip][pipe_no].pipe_peri = USB_NULL;
         }
@@ -1375,6 +1419,23 @@ uint8_t usb_pstd_get_pipe_no (uint8_t type, uint8_t dir, usb_utr_t * p_utr, uint
     }
  #endif                                /* defined(USB_CFG_PCDC_USE) */
 
+ #if defined(USB_CFG_PPRN_USE)
+    if (USB_IFCLS_PRN == class_info)
+    {
+        if (USB_EP_BULK == type)
+        {
+            if (USB_PIPE_DIR_IN == dir)
+            {
+                pipe_no = USB_CFG_PPRN_BULK_IN;
+            }
+            else
+            {
+                pipe_no = USB_CFG_PPRN_BULK_OUT;
+            }
+        }
+    }
+ #endif                                /* defined(USB_CFG_PPRN_USE) */
+
  #if defined(USB_CFG_PHID_USE)
     if (USB_IFCLS_HID == class_info)
     {
@@ -1382,13 +1443,39 @@ uint8_t usb_pstd_get_pipe_no (uint8_t type, uint8_t dir, usb_utr_t * p_utr, uint
         {
             if (USB_PIPE_DIR_IN == dir)
             {
-                pipe_no = USB_CFG_PHID_INT_IN;
+                if (USB_FALSE == g_usb_pipe_table[p_utr->ip][USB_CFG_PHID_INT_IN].use_flag)
+                {
+                    pipe_no = USB_CFG_PHID_INT_IN; /* Set Free pipe */
+                }
+
+  #if (USB_NULL != USB_CFG_PHID_INT_IN2)
+                else if (USB_FALSE == g_usb_pipe_table[p_utr->ip][USB_CFG_PHID_INT_IN2].use_flag)
+                {
+                    pipe_no = USB_CFG_PHID_INT_IN2; /* Set Free pipe */
+                }
+                else
+                {
+                    /* Error */
+                }
+  #endif                               /* #if (USB_NULL != USB_CFG_PCDC_INT_IN2) */
             }
             else
             {
-  #if (BSP_CFG_RTOS != 1)
-                pipe_no = USB_CFG_PHID_INT_OUT;
-  #endif                               /* #if (BSP_CFG_RTOS != 1) */
+                if (USB_FALSE == g_usb_pipe_table[p_utr->ip][USB_CFG_PHID_INT_OUT].use_flag)
+                {
+                    pipe_no = USB_CFG_PHID_INT_OUT; /* Set Free pipe */
+                }
+
+  #if ((USB_NULL != USB_CFG_PHID_INT_OUT2) && (BSP_CFG_RTOS != 1))
+                else if (USB_FALSE == g_usb_pipe_table[p_utr->ip][USB_CFG_PHID_INT_OUT2].use_flag)
+                {
+                    pipe_no = USB_CFG_PHID_INT_OUT2; /* Set Free pipe */
+                }
+                else
+                {
+                    /* Error */
+                }
+  #endif                               /* #if ((USB_NULL != USB_CFG_PHID_INT_OUT2) && (BSP_CFG_RTOS != 1)) */
             }
         }
     }
@@ -1488,7 +1575,11 @@ uint8_t usb_pstd_get_pipe_no (uint8_t type, uint8_t dir, usb_utr_t * p_utr, uint
         {
             /* Interrupt PIPE Loop */
             /* WAIT_LOOP */
+  #if defined(USB_NO_COMPOSITE_DEVICE)
             for (pipe = USB_INT_PIPE_START; pipe < (USB_INT_PIPE_END + 1); pipe++)
+  #else
+            for (pipe = USB_MAX_PIPE_NO; pipe >= USB_INT_PIPE_START; pipe--)
+  #endif
             {
                 /* Check Free pipe */
                 if (USB_FALSE == g_usb_pipe_table[p_utr->ip][pipe].use_flag)
@@ -1504,7 +1595,7 @@ uint8_t usb_pstd_get_pipe_no (uint8_t type, uint8_t dir, usb_utr_t * p_utr, uint
     return pipe_no;
 }
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
 
 /******************************************************************************
  * Function Name   : usb_pstd_get_pipe_buf_value
@@ -1518,51 +1609,74 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
 
     switch (pipe_no)
     {
-  #if defined(USB_CFG_PCDC_USE)
+  #if defined(USB_NO_COMPOSITE_DEVICE)
+   #if defined(USB_CFG_PCDC_USE)
         case USB_CFG_PCDC_BULK_IN:
         {
-   #if USB_CFG_DTC == USB_CFG_ENABLE
+    #if USB_CFG_DTC == USB_CFG_ENABLE
             pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(8U));
-   #else                               /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(8U));
-   #endif                              /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
             break;
         }
 
         case USB_CFG_PCDC_BULK_OUT:
         {
-   #if USB_CFG_DTC == USB_CFG_ENABLE
+    #if USB_CFG_DTC == USB_CFG_ENABLE
             pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(36U));
-   #else                               /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
-   #endif                              /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
             break;
         }
-  #endif /* defined(USB_CFG_PCDC_USE) */
+   #endif /* defined(USB_CFG_PCDC_USE) */
 
-  #if defined(USB_CFG_PMSC_USE)
+   #if defined(USB_CFG_PPRN_USE)
+        case USB_CFG_PPRN_BULK_IN:
+        {
+    #if USB_CFG_DTC == USB_CFG_ENABLE
+            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(8U));
+    #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
+            pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(8U));
+    #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
+            break;
+        }
+
+        case USB_CFG_PPRN_BULK_OUT:
+        {
+    #if USB_CFG_DTC == USB_CFG_ENABLE
+            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(36U));
+    #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
+            pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
+    #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
+            break;
+        }
+   #endif /* defined(USB_CFG_PPRN_USE) */
+
+   #if defined(USB_CFG_PMSC_USE)
         case USB_CFG_PMSC_BULK_IN:
         {
-   #if USB_CFG_DTC == USB_CFG_ENABLE
+    #if USB_CFG_DTC == USB_CFG_ENABLE
             pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(8U));
-   #else                               /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(8U));
-   #endif                              /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
             break;
         }
 
         case USB_CFG_PMSC_BULK_OUT:
         {
-   #if USB_CFG_DTC == USB_CFG_ENABLE
+    #if USB_CFG_DTC == USB_CFG_ENABLE
             pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(36U));
-   #else                               /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
-   #endif                              /* USB_CFG_DTC == USB_CFG_ENABLE */
+    #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
             break;
         }
-  #endif /* defined(USB_CFG_PMSC_USE) */
+   #endif /* defined(USB_CFG_PMSC_USE) */
 
-  #if defined(USB_CFG_PVND_USE)
+   #if defined(USB_CFG_PVND_USE)
         case USB_PIPE1:
         {
             pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(8U));
@@ -1592,9 +1706,9 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
             pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(72U));
             break;
         }
-  #endif                               /* defined(USB_CFG_PVND_USE) */
+   #endif                              /* defined(USB_CFG_PVND_USE) */
 
-  #if defined(USB_CFG_PAUD_USE)
+   #if defined(USB_CFG_PAUD_USE)
         case USB_CFG_PAUD_ISO_IN:
         {
             pipe_buf = (USB_BUF_SIZE(2048u) | USB_BUF_NUMB(8u));
@@ -1606,8 +1720,38 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
             pipe_buf = (USB_BUF_SIZE(2048u) | USB_BUF_NUMB(72u));
             break;
         }
-  #endif                               /* defined(USB_CFG_PAUD_USE) */
+   #endif                              /* defined(USB_CFG_PAUD_USE) */
+  #else /* defined(USB_NO_COMPOSITE_DEVICE) */
+        case USB_PIPE1:
+        {
+            pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(8U));
+            break;
+        }
 
+        case USB_PIPE2:
+        {
+            pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(24U));
+            break;
+        }
+
+        case USB_PIPE3:
+        {
+            pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(40U));
+            break;
+        }
+
+        case USB_PIPE4:
+        {
+            pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(56U));
+            break;
+        }
+
+        case USB_PIPE5:
+        {
+            pipe_buf = (USB_BUF_SIZE(512U) | USB_BUF_NUMB(72U));
+            break;
+        }
+  #endif                               /* defined(USB_NO_COMPOSITE_DEVICE) */
         default:
         {
             /* Error */
@@ -1618,7 +1762,7 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
     return pipe_buf;
 }                                      /* End of function usb_pstd_get_pipe_buf_value() */
 
- #endif /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif /* defined (USB_HIGH_SPEED_MODULE) */
 
 #endif                                 /* (USB_CFG_MODE & USB_CFG_PERI) == USB_CFG_PERI */
 

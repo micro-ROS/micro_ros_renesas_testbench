@@ -14,6 +14,9 @@
  *----------------------------------------------------------*/
 #include "bsp_api.h"
 
+/* Common macro for FSP header files. There is also a corresponding FSP_FOOTER macro at the end of this file. */
+FSP_HEADER
+
 #ifndef configUSE_PREEMPTION
 #define configUSE_PREEMPTION (1)
 #endif
@@ -218,4 +221,7 @@
 #ifndef configLOGGING_MAX_MESSAGE_LENGTH
 #define configLOGGING_MAX_MESSAGE_LENGTH           (192)
 #endif
+
+/* Common macro for FSP header files. There is also a corresponding FSP_HEADER macro at the top of this file. */
+FSP_FOOTER
 #endif /* FREERTOSCONFIG_H_ */
