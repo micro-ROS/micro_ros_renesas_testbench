@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -127,7 +127,31 @@
  ***********************************************************************************************************************/
 uint32_t ether_phy_read(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t reg_addr);
 void     ether_phy_write(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t reg_addr, uint32_t data);
-void     ether_phy_targets_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl) __attribute__((weak));
+
+#if (ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE)
+extern void ether_phy_target_ksz8091rnb_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+extern bool ether_phy_target_ksz8091rnb_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                                        uint32_t                    line_speed_duplex);
+
+#endif
+#if (ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE)
+extern void ether_phy_target_ksz8041_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+extern bool ether_phy_target_ksz8041_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                                     uint32_t                    line_speed_duplex);
+
+#endif
+#if (ETHER_PHY_CFG_TARGET_DP83620_ENABLE)
+extern void ether_phy_target_dp83620_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+extern bool ether_phy_target_dp83620_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                                     uint32_t                    line_speed_duplex);
+
+#endif
+#if (ETHER_PHY_CFG_TARGET_ICS1894_ENABLE)
+extern void ether_phy_target_ics1894_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+extern bool ether_phy_target_ics1894_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                                     uint32_t                    line_speed_duplex);
+
+#endif
 
 /***********************************************************************************************************************
  * Private global variables and functions
@@ -138,8 +162,13 @@ static void ether_phy_reg_read(ether_phy_instance_ctrl_t * p_instance_ctrl, uint
 static void ether_phy_reg_write(ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t data);
 static void ether_phy_trans_zto0(ether_phy_instance_ctrl_t * p_instance_ctrl);
 static void ether_phy_trans_1to0(ether_phy_instance_ctrl_t * p_instance_ctrl);
+static void ether_phy_trans_idle(ether_phy_instance_ctrl_t * p_instance_ctrl);
 static void ether_phy_mii_write1(ether_phy_instance_ctrl_t * p_instance_ctrl);
 static void ether_phy_mii_write0(ether_phy_instance_ctrl_t * p_instance_ctrl);
+static void ether_phy_mii_writez(ether_phy_instance_ctrl_t * p_instance_ctrl);
+static void ether_phy_targets_initialize(ether_phy_instance_ctrl_t * p_instance_ctrl);
+static bool ether_phy_targets_is_support_link_partner_ability(ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                              uint32_t                    line_speed_duplex);
 
 /** ETHER_PHY HAL API mapping for Ethernet PHY Controller interface */
 /*LDRA_INSPECTED 27 D This structure must be accessible in user code. It cannot be static. */
@@ -318,8 +347,10 @@ fsp_err_t R_ETHER_PHY_LinkPartnerAbilityGet (ether_phy_ctrl_t * const p_ctrl,
                                              uint32_t * const         p_local_pause,
                                              uint32_t * const         p_partner_pause)
 {
+    fsp_err_t err = FSP_SUCCESS;
     ether_phy_instance_ctrl_t * p_instance_ctrl = (ether_phy_instance_ctrl_t *) p_ctrl;
     uint32_t reg;
+    uint32_t line_speed_duplex = ETHER_PHY_LINK_SPEED_NO_LINK;
 
 #if (ETHER_PHY_CFG_PARAM_CHECKING_ENABLE)
     FSP_ASSERT(p_instance_ctrl);
@@ -366,27 +397,40 @@ fsp_err_t R_ETHER_PHY_LinkPartnerAbilityGet (ether_phy_ctrl_t * const p_ctrl,
     }
 
     /* Establish the line speed and the duplex */
-    if (ETHER_PHY_AN_LINK_PARTNER_10H == (reg & ETHER_PHY_AN_LINK_PARTNER_10H))
+    if ((ETHER_PHY_AN_LINK_PARTNER_10H == (reg & ETHER_PHY_AN_LINK_PARTNER_10H)) &&
+        ether_phy_targets_is_support_link_partner_ability(p_instance_ctrl, ETHER_PHY_LINK_SPEED_10H))
     {
-        (*p_line_speed_duplex) = ETHER_PHY_LINK_SPEED_10H;
+        line_speed_duplex = ETHER_PHY_LINK_SPEED_10H;
     }
 
-    if (ETHER_PHY_AN_LINK_PARTNER_10F == (reg & ETHER_PHY_AN_LINK_PARTNER_10F))
+    if ((ETHER_PHY_AN_LINK_PARTNER_10F == (reg & ETHER_PHY_AN_LINK_PARTNER_10F)) &&
+        ether_phy_targets_is_support_link_partner_ability(p_instance_ctrl, ETHER_PHY_LINK_SPEED_10F))
     {
-        (*p_line_speed_duplex) = ETHER_PHY_LINK_SPEED_10F;
+        line_speed_duplex = ETHER_PHY_LINK_SPEED_10F;
     }
 
-    if (ETHER_PHY_AN_LINK_PARTNER_100H == (reg & ETHER_PHY_AN_LINK_PARTNER_100H))
+    if ((ETHER_PHY_AN_LINK_PARTNER_100H == (reg & ETHER_PHY_AN_LINK_PARTNER_100H)) &&
+        ether_phy_targets_is_support_link_partner_ability(p_instance_ctrl, ETHER_PHY_LINK_SPEED_100H))
     {
-        (*p_line_speed_duplex) = ETHER_PHY_LINK_SPEED_100H;
+        line_speed_duplex = ETHER_PHY_LINK_SPEED_100H;
     }
 
-    if (ETHER_PHY_AN_LINK_PARTNER_100F == (reg & ETHER_PHY_AN_LINK_PARTNER_100F))
+    if ((ETHER_PHY_AN_LINK_PARTNER_100F == (reg & ETHER_PHY_AN_LINK_PARTNER_100F)) &&
+        ether_phy_targets_is_support_link_partner_ability(p_instance_ctrl, ETHER_PHY_LINK_SPEED_100F))
     {
-        (*p_line_speed_duplex) = ETHER_PHY_LINK_SPEED_100F;
+        line_speed_duplex = ETHER_PHY_LINK_SPEED_100F;
     }
 
-    return FSP_SUCCESS;
+    if (ETHER_PHY_LINK_SPEED_NO_LINK == line_speed_duplex)
+    {
+        err = FSP_ERR_ETHER_PHY_ERROR_LINK;
+    }
+    else
+    {
+        (*p_line_speed_duplex) = line_speed_duplex;
+    }
+
+    return err;
 }                                      /* End of function R_ETHER_PHY_LinkPartnerAbilityGet() */
 
 /********************************************************************************************************************//**
@@ -456,7 +500,7 @@ uint32_t ether_phy_read (ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t r
     ether_phy_reg_set(p_instance_ctrl, reg_addr, ETHER_PHY_MII_READ);
     ether_phy_trans_zto0(p_instance_ctrl);
     ether_phy_reg_read(p_instance_ctrl, &data);
-    ether_phy_trans_zto0(p_instance_ctrl);
+    ether_phy_trans_idle(p_instance_ctrl);
 
     return data;
 }                                      /* End of function ether_phy_read() */
@@ -482,7 +526,7 @@ void ether_phy_write (ether_phy_instance_ctrl_t * p_instance_ctrl, uint32_t reg_
     ether_phy_reg_set(p_instance_ctrl, reg_addr, ETHER_PHY_MII_WRITE);
     ether_phy_trans_1to0(p_instance_ctrl);
     ether_phy_reg_write(p_instance_ctrl, data);
-    ether_phy_trans_zto0(p_instance_ctrl);
+    ether_phy_trans_idle(p_instance_ctrl);
 }                                      /* End of function ether_phy_write() */
 
 /***********************************************************************************************************************
@@ -594,14 +638,13 @@ static void ether_phy_reg_read (ether_phy_instance_ctrl_t * p_instance_ctrl, uin
             (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_LOW);
         }
 
+        reg_data  = (reg_data << 1);
+        reg_data |= (uint32_t) (((*petherc_pir) & ETHER_PHY_PIR_MDI_MASK) >> 3); /* MDI read  */
+
         for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
         {
             (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_HIGH);
         }
-
-        reg_data = (reg_data << 1);
-
-        reg_data |= (uint32_t) (((*petherc_pir) & ETHER_PHY_PIR_MDI_MASK) >> 3); /* MDI read  */
 
         for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
         {
@@ -663,35 +706,11 @@ static void ether_phy_reg_write (ether_phy_instance_ctrl_t * p_instance_ctrl, ui
  ***********************************************************************************************************************/
 static void ether_phy_trans_zto0 (ether_phy_instance_ctrl_t * p_instance_ctrl)
 {
-    int32_t j;
+    /* Release the bus by writing z. */
+    ether_phy_mii_writez(p_instance_ctrl);
 
-    volatile uint32_t * petherc_pir;
-
-    petherc_pir = p_instance_ctrl->p_reg_pir;
-
-    /*
-     * The processing of TA (turnaround) about reading of the frame format of MII Management Interface which is
-     * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2".
-     */
-    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
-    {
-        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_LOW);
-    }
-
-    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
-    {
-        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_HIGH);
-    }
-
-    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
-    {
-        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_HIGH);
-    }
-
-    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
-    {
-        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_LOW);
-    }
+    /* The PHY will drive the bus to 0. */
+    ether_phy_mii_writez(p_instance_ctrl);
 }                                      /* End of function ether_phy_trans_zto0() */
 
 /***********************************************************************************************************************
@@ -711,6 +730,28 @@ static void ether_phy_trans_1to0 (ether_phy_instance_ctrl_t * p_instance_ctrl)
     ether_phy_mii_write1(p_instance_ctrl);
     ether_phy_mii_write0(p_instance_ctrl);
 }                                      /* End of function ether_phy_trans_1to0() */
+
+/***********************************************************************************************************************
+ * Function Name: ether_phy_trans_idle
+ * Description  : Switches data bus to IDLE state to prepare for the next transfer.
+ * Arguments    : ether_channel -
+ *                    Ethernet channel number
+ * Return Value : none
+ ***********************************************************************************************************************/
+static void ether_phy_trans_idle (ether_phy_instance_ctrl_t * p_instance_ctrl)
+{
+    volatile uint32_t * petherc_pir;
+
+    petherc_pir = p_instance_ctrl->p_reg_pir;
+
+    int64_t count = (int64_t) p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time * 4;
+
+    /* Release the bus for one MDC period. */
+    for (int64_t j = count; j > 0; j--)
+    {
+        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_LOW);
+    }
+}
 
 /***********************************************************************************************************************
  * Function Name: ether_phy_mii_write1
@@ -793,13 +834,160 @@ static void ether_phy_mii_write0 (ether_phy_instance_ctrl_t * p_instance_ctrl)
 }                                      /* End of function ether_phy_mii_write0() */
 
 /***********************************************************************************************************************
- * Function Name: ether_phy_targets_initialize
- * Description  : PHY-LSI specific initialization processing
- * Arguments    : p_ctrl -
+ * Function Name: ether_phy_mii_writez
+ * Description  : Outputs z to the MII interface
+ * Arguments    : ether_channel -
  *                    Ethernet channel number
  * Return Value : none
  ***********************************************************************************************************************/
-void ether_phy_targets_initialize (ether_phy_instance_ctrl_t * p_instance_ctrl)
+static void ether_phy_mii_writez (ether_phy_instance_ctrl_t * p_instance_ctrl)
 {
-    (void) p_instance_ctrl;
+    int32_t j;
+
+    volatile uint32_t * petherc_pir;
+
+    petherc_pir = p_instance_ctrl->p_reg_pir;
+
+    /*
+     * The processing of one bit about frame format of MII Management Interface which is
+     * provided by "Table 22-12" of "22.2.4.5" of "IEEE 802.3-2008_section2".
+     * The data that z is output.
+     */
+    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
+    {
+        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_LOW);
+    }
+
+    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
+    {
+        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_HIGH);
+    }
+
+    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
+    {
+        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_HIGH);
+    }
+
+    for (j = p_instance_ctrl->p_ether_phy_cfg->mii_bit_access_wait_time; j > 0; j--)
+    {
+        (*petherc_pir) = (ETHER_PHY_PIR_MDO_LOW | ETHER_PHY_PIR_MMD_READ | ETHER_PHY_PIR_MDC_LOW);
+    }
+}
+
+/***********************************************************************************************************************
+ * Function Name: ether_phy_targets_initialize
+ * Description  : PHY-LSI specific initialization processing
+ * Arguments    : p_instance_ctrl -
+ *                    Ethernet control block
+ * Return Value : none
+ ***********************************************************************************************************************/
+static void ether_phy_targets_initialize (ether_phy_instance_ctrl_t * p_instance_ctrl)
+{
+    switch (p_instance_ctrl->p_ether_phy_cfg->phy_lsi_type)
+    {
+        /* Use KSZ8091RNB */
+#if (ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE)
+        case ETHER_PHY_LSI_TYPE_KSZ8091RNB:
+        {
+            ether_phy_target_ksz8091rnb_initialize(p_instance_ctrl);
+            break;
+        }
+#endif
+
+        /* Use KSZ8041 */
+#if (ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE)
+        case ETHER_PHY_LSI_TYPE_KSZ8041:
+        {
+            ether_phy_target_ksz8041_initialize(p_instance_ctrl);
+            break;
+        }
+#endif
+
+        /* Use DP83620 */
+#if (ETHER_PHY_CFG_TARGET_DP83620_ENABLE)
+        case ETHER_PHY_LSI_TYPE_DP83620:
+        {
+            ether_phy_target_dp83620_initialize(p_instance_ctrl);
+            break;
+        }
+#endif
+
+        /* Use ICS1894 */
+#if (ETHER_PHY_CFG_TARGET_ICS1894_ENABLE)
+        case ETHER_PHY_LSI_TYPE_ICS1894:
+        {
+            ether_phy_target_ics1894_initialize(p_instance_ctrl);
+            break;
+        }
+#endif
+
+        /* If module is configured for default LSI */
+        default:
+        {
+            break;
+        }
+    }
 }                                      /* End of function ether_phy_targets_initialize() */
+
+/***********************************************************************************************************************
+ * Function Name: ether_phy_targets_is_support_link_partner_ability
+ * Description  : Check if the PHY-LSI connected Ethernet controller supports link ability
+ * Arguments    : p_instance_ctrl -
+ *                    Ethernet control block
+ *                line_speed_duplex -
+ *                    Line speed duplex of link partner PHY-LSI
+ * Return Value : bool
+ ***********************************************************************************************************************/
+static bool ether_phy_targets_is_support_link_partner_ability (ether_phy_instance_ctrl_t * p_instance_ctrl,
+                                                               uint32_t                    line_speed_duplex)
+{
+    bool result = false;
+    FSP_PARAMETER_NOT_USED(line_speed_duplex);
+    switch (p_instance_ctrl->p_ether_phy_cfg->phy_lsi_type)
+    {
+        /* Use KSZ8091RNB */
+#if (ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE)
+        case ETHER_PHY_LSI_TYPE_KSZ8091RNB:
+        {
+            result = ether_phy_target_ksz8091rnb_is_support_link_partner_ability(p_instance_ctrl, line_speed_duplex);
+            break;
+        }
+#endif
+
+        /* Use KSZ8041 */
+#if (ETHER_PHY_CFG_TARGET_KSZ8041_ENABLE)
+        case ETHER_PHY_LSI_TYPE_KSZ8041:
+        {
+            result = ether_phy_target_ksz8041_is_support_link_partner_ability(p_instance_ctrl, line_speed_duplex);
+            break;
+        }
+#endif
+
+        /* Use DP83620 */
+#if (ETHER_PHY_CFG_TARGET_DP83620_ENABLE)
+        case ETHER_PHY_LSI_TYPE_DP83620:
+        {
+            result = ether_phy_target_dp83620_is_support_link_partner_ability(p_instance_ctrl, line_speed_duplex);
+            break;
+        }
+#endif
+
+        /* Use ICS1894 */
+#if (ETHER_PHY_CFG_TARGET_ICS1894_ENABLE)
+        case ETHER_PHY_LSI_TYPE_ICS1894:
+        {
+            result = ether_phy_target_ics1894_is_support_link_partner_ability(p_instance_ctrl, line_speed_duplex);
+            break;
+        }
+#endif
+
+        /* If module is configured for default LSI, always return true */
+        default:
+        {
+            result = true;
+            break;
+        }
+    }
+
+    return result;
+}                                      /* End of function ether_phy_targets_is_support_link_partner_ability() */

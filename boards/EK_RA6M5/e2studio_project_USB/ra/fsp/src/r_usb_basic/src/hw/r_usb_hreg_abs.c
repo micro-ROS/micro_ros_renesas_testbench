@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -47,17 +47,17 @@
  ******************************************************************************/
 void usb_hstd_set_hub_port (usb_utr_t * ptr, uint16_t addr, uint16_t upphub, uint16_t hubport)
 {
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     if (USB_IP1 == ptr->ip)
     {
         hw_usb_hrmw_devadd(ptr, addr, (upphub | hubport), (uint16_t) (USB_UPPHUB | USB_HUBPORT));
     }
- #else                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #else                                 /* defined (USB_HIGH_SPEED_MODULE) */
     FSP_PARAMETER_NOT_USED(*ptr);
     FSP_PARAMETER_NOT_USED(addr);
     FSP_PARAMETER_NOT_USED(upphub);
     FSP_PARAMETER_NOT_USED(hubport);
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
 }
 
 /******************************************************************************
@@ -169,6 +169,12 @@ void usb_hstd_interrupt_handler (usb_utr_t * ptr)
         /* DTCH  interrupt disable */
         usb_hstd_bus_int_disable(ptr);
         ptr->keyword = USB_INT_ATTCH0;
+ #if defined(USB_CFG_OTG_USE)
+        if (USB_YES == g_usb_otg_hnp_process[ptr->ip])
+        {
+            g_usb_is_otg_attach_interrupt[ptr->ip] = USB_YES;
+        }
+ #endif                                          /* defined(USB_CFG_OTG_USE) */
     }
     else if (USB_EOFERR == (ists1 & USB_EOFERR)) /***** EOFERR INT *****/
     {
@@ -245,18 +251,22 @@ uint16_t usb_hstd_chk_attach (usb_utr_t * ptr)
         {
             /* High/Full speed device */
             USB_PRINTF0(" Detect FS-J\n");
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if !defined(USB_CFG_OTG_USE)
+  #if defined(USB_HIGH_SPEED_MODULE)
             usb_hstd_set_hse(ptr, g_usb_hstd_hs_enable[ptr->ip]);
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+  #endif                               /* defined (USB_HIGH_SPEED_MODULE) */
+ #endif                                /* !defined(USB_CFG_OTG_USE) */
             result = USB_ATTACHF;
         }
         else if (USB_LS_JSTS == (buf[0] & USB_LNST))
         {
             /* Low speed device */
             USB_PRINTF0(" Attach LS device\n");
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if !defined(USB_CFG_OTG_USE)
+  #if defined(USB_HIGH_SPEED_MODULE)
             usb_hstd_set_hse(ptr, USB_HS_DISABLE);
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+  #endif                               /* defined (USB_HIGH_SPEED_MODULE) */
+ #endif                                /* !defined(USB_CFG_OTG_USE) */
             result = USB_ATTACHL;
         }
         else if (USB_SE0 == (buf[0] & USB_LNST))
@@ -346,8 +356,7 @@ void usb_hstd_detach_process (usb_utr_t * ptr)
                 /* Agreement device address */
                 if (usb_hstd_get_devsel(ptr, i) == addr)
                 {
-                    /* PID=BUF ? */
-                    if (USB_PID_BUF == usb_cstd_get_pid(ptr, i))
+                    if (USB_NULL != g_p_usb_hstd_pipe[ptr->ip][i])
                     {
                         /* End of data transfer (IN/OUT) */
                         usb_hstd_forced_termination(ptr, i, (uint16_t) USB_DATA_STOP);
@@ -384,8 +393,11 @@ void usb_hstd_detach_process (usb_utr_t * ptr)
             /* USB detach */
             usb_hstd_detach(ptr);
 
+ #if !defined(USB_CFG_OTG_USE)
+
             /* Check clock */
             usb_hstd_chk_clk(ptr, (uint16_t) USB_DETACHED);
+ #endif                                /* !defined (USB_CFG_OTG_USE) */
             break;
         }
 
@@ -537,6 +549,10 @@ void usb_hstd_bus_reset (usb_utr_t * ptr)
         usb_cpu_delay_1us(USB_VALUE_300);      /* for UTMI */
     }
 
+ #if defined(USB_CFG_OTG_USE)
+    hw_usb_clear_hnpbtoa(ptr);
+ #endif                                /* defined (USB_CFG_OTG_USE) */
+
     /* USBRST=0, RESUME=0, UACT=1 */
     usb_hstd_set_uact(ptr);
 
@@ -665,11 +681,11 @@ uint16_t usb_hstd_support_speed_check (usb_utr_t * ptr)
 uint8_t * usb_hstd_write_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemode, uint8_t * write_p)
 {
     uint16_t even;
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     uint16_t odd;
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     if (USB_IP0 == ptr->ip)
     {
         /* WAIT_LOOP */
@@ -746,7 +762,7 @@ uint8_t * usb_hstd_write_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemod
     {
         /* Non */
     }
- #else                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #else                                 /* defined (USB_HIGH_SPEED_MODULE) */
     /* WAIT_LOOP */
     for (even = (uint16_t) (count >> 1); (0 != even); --even)
     {
@@ -773,7 +789,7 @@ uint8_t * usb_hstd_write_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemod
         /* Renewal write pointer */
         write_p++;
     }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
     return write_p;
 }
 
@@ -793,18 +809,18 @@ uint8_t * usb_hstd_write_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemod
 uint8_t * usb_hstd_read_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemode, uint8_t * read_p)
 {
     uint16_t even;
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     uint16_t odd;
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
     uint32_t odd_byte_data_temp;
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
   #if USB_CFG_ENDIAN == USB_CFG_BIG
     uint16_t i;
   #endif                               /* USB_CFG_ENDIAN == USB_CFG_LITTLE */
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
 
- #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+ #if defined(USB_HIGH_SPEED_MODULE)
     if (USB_IP0 == ptr->ip)
     {
         /* WAIT_LOOP */
@@ -885,7 +901,7 @@ uint8_t * usb_hstd_read_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemode
     {
         /* None */
     }
- #else                                 /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #else                                 /* defined (USB_HIGH_SPEED_MODULE) */
     /* WAIT_LOOP */
     for (even = (uint16_t) (count >> 1); (0 != even); --even)
     {
@@ -911,7 +927,7 @@ uint8_t * usb_hstd_read_fifo (usb_utr_t * ptr, uint16_t count, uint16_t pipemode
         /* Renewal read pointer */
         read_p += sizeof(uint8_t);
     }
- #endif                                /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+ #endif                                /* defined (USB_HIGH_SPEED_MODULE) */
     return read_p;
 }
 
@@ -1040,9 +1056,9 @@ usb_regadr_t usb_hstd_get_usb_ip_adr (uint16_t ipnum)
  #if USB_NUM_USBIP == 2
     else if (USB_IP1 == ipnum)
     {
-  #if defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5)
+  #if defined(USB_HIGH_SPEED_MODULE)
         ptr = (usb_regadr_t) R_USB_HS0;
-  #endif                               /* defined(BSP_MCU_GROUP_RA6M3) || defined(BSP_MCU_GROUP_RA6M5) */
+  #endif                               /* defined (USB_HIGH_SPEED_MODULE) */
     }
  #endif                                /* USB_NUM_USBIP == 2 */
     else

@@ -12,13 +12,17 @@
 #include "r_ioport.h"
 #include "bsp_pin_cfg.h"
 FSP_HEADER
+#ifndef ETHER_PHY_LSI_TYPE_KIT_COMPONENT
+#define ETHER_PHY_LSI_TYPE_KIT_COMPONENT ETHER_PHY_LSI_TYPE_DEFAULT
+#endif
+
 /** ether_phy on ether_phy Instance. */
 extern const ether_phy_instance_t g_ether_phy0;
 
 /** Access the Ethernet PHY instance using these structures when calling API functions directly (::p_api is not used). */
 extern ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
 extern const ether_phy_cfg_t g_ether_phy0_cfg;
-#if (BSP_FEATURE_TZ_HAS_TRUSTZONE == 1) && (BSP_TZ_SECURE_BUILD != 1) && (BSP_TZ_NONSECURE_BUILD != 1)
+#if (BSP_FEATURE_TZ_HAS_TRUSTZONE == 1) && (BSP_TZ_SECURE_BUILD != 1) && (BSP_TZ_NONSECURE_BUILD != 1) && (BSP_FEATURE_ETHER_SUPPORTS_TZ_SECURE == 0)
 #define ETHER_BUFFER_PLACE_IN_SECTION BSP_PLACE_IN_SECTION(".ns_buffer.eth")
 #else
 #define ETHER_BUFFER_PLACE_IN_SECTION
@@ -42,7 +46,8 @@ extern rm_netxduo_ether_instance_t g_netxduo_ether_0_instance;
 #define G_PACKET_POOL0_PACKET_SIZE (1568)
 #define G_PACKET_POOL0_PACKET_NUM  (16)
 extern NX_PACKET_POOL g_packet_pool0;
-extern uint8_t g_packet_pool0_pool_memory[(G_PACKET_POOL0_PACKET_NUM * (G_PACKET_POOL0_PACKET_SIZE + sizeof(NX_PACKET)))];
+extern uint8_t g_packet_pool0_pool_memory[(G_PACKET_POOL0_PACKET_NUM
+		* (G_PACKET_POOL0_PACKET_SIZE + sizeof(NX_PACKET)))];
 
 /* Quick Setup for g_packet_pool0 instance. */
 void g_packet_pool0_quick_setup();
@@ -56,8 +61,10 @@ void g_packet_pool0_quick_setup();
 #define RA_NOT_DEFINED 0xFFFFFFFF
 #if (RA_NOT_DEFINED != g_netxduo_ether_0)
 #define G_IP0_NETWORK_DRIVER g_netxduo_ether_0
-#else
+#elif (RA_NOT_DEFINED != RA_NOT_DEFINED)
 #define G_IP0_NETWORK_DRIVER rm_netxduo_wifi
+#else
+#define G_IP0_NETWORK_DRIVER nx_driver_ewf_adapter
 #endif
 #undef RA_NOT_DEFINED
 

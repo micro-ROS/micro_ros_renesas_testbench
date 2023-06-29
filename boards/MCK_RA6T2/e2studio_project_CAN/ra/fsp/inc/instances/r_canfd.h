@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -243,6 +243,8 @@ typedef enum e_canfd_frame_option
 /* CAN Instance Control Block   */
 typedef struct st_canfd_instance_ctrl
 {
+    R_CANFD_Type       * p_reg;                 // Pointer to register base address
+
     /* Parameters to control CAN peripheral device */
     can_cfg_t const    * p_cfg;                 // Pointer to the configuration structure
     uint32_t             open;                  // Open status of channel.

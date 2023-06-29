@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -157,7 +157,7 @@ FSP_HEADER
 #define USB_IFCLS_CDCD             (0x0AU)   ///< CDC-Data Class
 #define USB_IFCLS_CHIP             (0x0BU)   ///< Chip/Smart Card Class
 #define USB_IFCLS_CNT              (0x0CU)   ///< Content-Security Class
-#define USB_IFCLS_VID              (0x0DU)   ///< Video Class
+#define USB_IFCLS_VID              (0x0EU)   ///< Video Class
 #define USB_IFCLS_DIAG             (0xDCU)   ///< Diagnostic Device
 #define USB_IFCLS_WIRE             (0xE0U)   ///< Wireless Controller
 #define USB_IFCLS_APL              (0xFEU)   ///< Application-Specific
@@ -231,7 +231,10 @@ typedef enum e_usb_class
     USB_CLASS_PCDC2,                   ///< PCDC2 Class
     USB_CLASS_PCDCC2,                  ///< PCDCC2 Class
     USB_CLASS_PHID,                    ///< PHID Class
+    USB_CLASS_PHID2,                   ///< PHID2 Class
     USB_CLASS_PAUD,                    ///< PAUD Class
+    USB_CLASS_PPRN,                    ///< PPRN Class
+    USB_CLASS_DFU,                     ///< DFU Class
     USB_CLASS_PVND,                    ///< PVND Class
     USB_CLASS_HCDC,                    ///< HCDC Class
     USB_CLASS_HCDCC,                   ///< HCDCC Class
@@ -239,6 +242,8 @@ typedef enum e_usb_class
     USB_CLASS_HVND,                    ///< HVND Class
     USB_CLASS_HMSC,                    ///< HMSC Class
     USB_CLASS_PMSC,                    ///< PMSC Class
+    USB_CLASS_HPRN,                    ///< HPRN Class
+    USB_CLASS_HUVC,                    ///< HUVC Class
     USB_CLASS_REQUEST,                 ///< USB Class Request
     USB_CLASS_END                      ///< USB Class End Code
 } usb_class_t;
@@ -375,6 +380,12 @@ typedef void        (usb_callback_t)(usb_event_info_t *, usb_hdl_t, usb_onoff_t)
 typedef TaskHandle_t usb_hdl_t;
 typedef void         (usb_callback_t)(usb_event_info_t *, usb_hdl_t, usb_onoff_t);
 #endif                                 /* #if (BSP_CFG_RTOS == 2) */
+
+#if (BSP_CFG_RTOS != 1)
+typedef uint32_t ULONG;
+#endif
+
+typedef void (usb_otg_callback_t)(ULONG);
 
 /** USB configuration. */
 typedef struct st_usb_cfg
@@ -680,6 +691,23 @@ typedef struct st_usb_api
      * @param[out] setup            Setup type to get.
      */
     fsp_err_t (* setupGet)(usb_ctrl_t * const p_api_ctrl, usb_setup_t * setup);
+
+    /** This API sets the callback function for OTG.
+     * @par Implemented as
+     * - @ref R_USB_OtgCallbackSet()
+     *
+     * @param[in]  p_api_ctrl       USB control structure.
+     * @param[in]  p_callback       Pointer to the callback function for OTG.
+     */
+    fsp_err_t (* otgCallbackSet)(usb_ctrl_t * const p_api_ctrl, usb_otg_callback_t * p_callback);
+
+    /** This API starts SRP processing for OTG.
+     * @par Implemented as
+     * - @ref R_USB_OtgSRP()
+     *
+     * @param[in]  p_api_ctrl       USB control structure.
+     */
+    fsp_err_t (* otgSRP)(usb_ctrl_t * const p_api_ctrl);
 } usb_api_t;
 
 /** This structure encompasses everything that is needed to use an instance of this interface. */

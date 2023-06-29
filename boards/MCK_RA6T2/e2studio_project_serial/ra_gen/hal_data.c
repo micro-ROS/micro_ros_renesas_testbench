@@ -3,8 +3,10 @@
 sci_b_uart_instance_ctrl_t g_uart0_ctrl;
 
 sci_b_baud_setting_t g_uart0_baud_setting = {
-/* Baud rate calculated with 0.160% error. */.abcse = 0, .abcs = 0, .bgdm = 1,
-		.cks = 0, .brr = 64, .mddr = (uint8_t) 256, .brme = false };
+/* Baud rate calculated with 0.160% error. */.baudrate_bits_b.abcse = 0,
+		.baudrate_bits_b.abcs = 0, .baudrate_bits_b.bgdm = 1,
+		.baudrate_bits_b.cks = 0, .baudrate_bits_b.brr = 64,
+		.baudrate_bits_b.mddr = (uint8_t) 256, .baudrate_bits_b.brme = false };
 
 /** UART extended configuration for UARTonSCI HAL driver */
 const sci_b_uart_extended_cfg_t g_uart0_cfg_extend = { .clock =
@@ -19,7 +21,9 @@ const sci_b_uart_extended_cfg_t g_uart0_cfg_extend = { .clock =
                 #else
 		.flow_control_pin = (bsp_io_port_pin_t) UINT16_MAX,
 #endif
-		};
+		.rs485_setting = { .enable = SCI_B_UART_RS485_DISABLE, .polarity =
+				SCI_B_UART_RS485_DE_POLARITY_HIGH, .assertion_time = 1,
+				.negation_time = 1, } };
 
 /** UART interface configuration */
 const uart_cfg_t g_uart0_cfg = { .channel = 0, .data_bits = UART_DATA_BITS_8,
@@ -67,7 +71,8 @@ const uart_instance_t g_uart0 = { .p_ctrl = &g_uart0_ctrl,
 agt_instance_ctrl_t g_timer0_ctrl;
 const agt_extended_cfg_t g_timer0_extend =
 		{ .count_source = AGT_CLOCK_PCLKB, .agto = AGT_PIN_CFG_DISABLED,
-				.agtoa = AGT_PIN_CFG_DISABLED, .agtob = AGT_PIN_CFG_DISABLED,
+				.agtoab_settings_b.agtoa = AGT_PIN_CFG_DISABLED,
+				.agtoab_settings_b.agtob = AGT_PIN_CFG_DISABLED,
 				.measurement_mode = AGT_MEASURE_DISABLED, .agtio_filter =
 						AGT_AGTIO_FILTER_NONE, .enable_pin =
 						AGT_ENABLE_PIN_NOT_USED, .trigger_edge =

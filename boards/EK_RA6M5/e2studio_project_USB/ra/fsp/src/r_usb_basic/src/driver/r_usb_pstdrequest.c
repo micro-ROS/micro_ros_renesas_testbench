@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -50,16 +50,18 @@
 #define FSP_SETUP_REQUEST          (1)
 #define FSP_SETUP_VALUE            (2)
 #define FSP_SETUP_LENGTH           (6)
-#if defined(USB_CFG_PAUD_USE)
+#if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_DFU_USE)
  #define FSP_SETUP_REQUEST_TYPE    (0)
  #define FSP_SETUP_INDEX_L         (4)
  #define FSP_SETUP_INDEX_H         (5)
-#endif                                 /* #if defined(USB_CFG_PAUD_USE) */
+#endif                                 /* #if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_DFU_USE)*/
 
 /******************************************************************************
  * Exported global variables (to be accessed by other files)
  ******************************************************************************/
 extern void usb_peri_usbx_set_control_length(usb_setup_t * p_req);
+
+extern uint8_t g_usb_peri_usbx_is_configured[USB_NUM_USBIP];
 
 #if ((USB_CFG_MODE & USB_CFG_PERI) == USB_CFG_PERI)
 
@@ -447,7 +449,11 @@ static void usb_pstd_get_status1 (usb_utr_t * p_utr)
     uint16_t       buffer;
     uint16_t       pipe;
 
+ #if defined(USB_CFG_OTG_USE)
+    if ((0 == g_usb_pstd_req_value) && (1 == g_usb_pstd_req_length))
+ #else
     if ((0 == g_usb_pstd_req_value) && (2 == g_usb_pstd_req_length))
+ #endif
     {
         tbl[0] = 0;
         tbl[1] = 0;
@@ -471,6 +477,16 @@ static void usb_pstd_get_status1 (usb_utr_t * p_utr)
                     /* Control read start */
                     usb_pstd_ctrl_read((uint32_t) 2, tbl, p_utr);
                 }
+
+ #if defined(USB_CFG_OTG_USE)
+                else if (USB_OTG_SELECTOR == g_usb_pstd_req_index)
+                {
+                    tbl[0] = (uint8_t) _ux_system_otg->ux_system_otg_slave_role_swap_flag;
+
+                    /* Control read start */
+                    usb_pstd_ctrl_read((uint32_t) 1, tbl, p_utr);
+                }
+ #endif                                /* defined(USB_CFG_OTG_USE) */
                 else
                 {
                     /* Request error */
@@ -1198,6 +1214,23 @@ static void usb_pstd_set_feature3 (usb_utr_t * p_utr)
                         break;
                     }
 
+ #ifdef  USB_CFG_OTG_USE
+                    case B_HNP_ENABLE:
+                    {
+                        g_usb_otg_hnp_process[p_utr->ip] = USB_ON;
+                        hw_usb_set_hnpbtoa(p_utr);
+                        usb_cstd_set_buf(p_utr, (uint16_t) USB_PIPE0);
+
+                        break;
+                    }
+
+                    case A_HNP_SUPPORT:
+                    {
+                        usb_cstd_set_buf(p_utr, (uint16_t) USB_PIPE0);
+                        break;
+                    }
+ #endif                                /* USB_CFG_OTG_USE */
+
                     default:
                     {
                         usb_pstd_set_feature_function(p_utr);
@@ -1383,6 +1416,7 @@ static void usb_pstd_set_configuration0 (usb_utr_t * p_utr)
   #if defined(USB_CFG_PHID_USE)
             _ux_system_slave->ux_system_slave_remote_wakeup_enabled = UX_FALSE;
   #endif                               /* #if defined(USB_CFG_PHID_USE) */
+            g_usb_peri_usbx_is_configured[p_utr->ip] = USB_YES;
             _ux_device_stack_configuration_set((uint32_t) g_usb_pstd_config_num);
  #endif                                /* #if (BSP_CFG_RTOS == 1) */
         }
@@ -1508,24 +1542,33 @@ static void usb_pstd_set_interface3 (usb_utr_t * p_utr)
     if ((USB_TRUE == usb_pstd_chk_configured(p_utr)) &&
         (USB_INTERFACE == (g_usb_pstd_req_type & USB_BMREQUESTTYPERECIP)))
     {
+ #if defined(USB_CFG_PPRN_USE)
+        if (((1 == usb_pstd_get_interface_num()) && (0 == usb_pstd_get_alternate_num(0))) &&
+            ((0 == g_usb_pstd_req_index) && (0 == g_usb_pstd_req_value)))
+        {
+            /* Do nothing about alternate setting */
+            usb_cstd_set_buf(p_utr, (uint16_t) USB_PIPE0);
+        }
+
+ #else                                 /* defined(USB_CFG_PPRN_USE) */
         if ((g_usb_pstd_req_index <= usb_pstd_get_interface_num()) && (0 == g_usb_pstd_req_length))
         {
             if (g_usb_pstd_req_value <= usb_pstd_get_alternate_num(g_usb_pstd_req_index))
             {
- #ifdef  USB_CFG_PAUD_USE
+  #ifdef  USB_CFG_PAUD_USE
                 current_alt_value = g_usb_pstd_alt_num[g_usb_pstd_req_index];
- #endif                                // USB_CFG_PAUD_USE
+  #endif                               // USB_CFG_PAUD_USE
                 g_usb_pstd_alt_num[g_usb_pstd_req_index] = (uint16_t) (g_usb_pstd_req_value & USB_ALT_SET);
                 usb_cstd_set_buf(p_utr, (uint16_t) USB_PIPE0);
                 usb_pstd_clr_eptbl_index();
 
                 /* Search endpoint setting */
                 usb_pstd_set_eptbl_index(g_usb_pstd_req_index, g_usb_pstd_alt_num[g_usb_pstd_req_index]);
- #ifndef USB_CFG_PAUD_USE
+  #if !defined(USB_CFG_PAUD_USE) && !defined(USB_CFG_DFU_USE)
                 usb_pstd_set_pipe_reg(p_utr);
- #endif /* USB_CFG_PAUD_USE */
- #if BSP_CFG_RTOS == 1
-  #ifdef  USB_CFG_PAUD_USE
+  #endif                               /* #if !defined(USB_CFG_PAUD_USE) && !defined(USB_CFG_DFU_USE) */
+  #if BSP_CFG_RTOS == 1
+   #ifdef  USB_CFG_PAUD_USE
                 if (0 == (g_usb_pstd_req_value & USB_ALT_SET))
                 {
                     if (current_alt_value == 1)
@@ -1535,9 +1578,9 @@ static void usb_pstd_set_interface3 (usb_utr_t * p_utr)
                         tx_semaphore_put(&g_usb_peri_usbx_sem[pipe]);
                     }
                 }
-  #endif                                                                  // USB_CFG_PAUD_USE
+   #endif                                                                 // USB_CFG_PAUD_USE
                 _ux_device_stack_alternate_setting_set((ULONG) g_usb_pstd_req_index, (ULONG) g_usb_pstd_req_value);
- #endif
+  #endif
             }
             else
             {
@@ -1545,6 +1588,7 @@ static void usb_pstd_set_interface3 (usb_utr_t * p_utr)
                 usb_pstd_set_stall_pipe0(p_utr);
             }
         }
+ #endif                                /* defined(USB_CFG_PPRN_USE) */
         else
         {
             /* Request error */
@@ -1629,14 +1673,14 @@ static void usb_peri_class_request_usbx (usb_setup_t * p_req)
                                FSP_SETUP_VALUE) = p_req->request_value;
                 *(uint16_t *) (transfer_request->ux_slave_transfer_request_setup +
                                FSP_SETUP_LENGTH) = p_req->request_length;
-  #if defined(USB_CFG_PAUD_USE)
+  #if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_DFU_USE)
                 *(transfer_request->ux_slave_transfer_request_setup +
                   FSP_SETUP_REQUEST_TYPE) = (uint8_t) (p_req->request_type & VALUE_FFH);
                 *(transfer_request->ux_slave_transfer_request_setup +
                   FSP_SETUP_INDEX_L) = (uint8_t) (p_req->request_index & VALUE_FFH);
                 *(transfer_request->ux_slave_transfer_request_setup +
                   FSP_SETUP_INDEX_H) = (uint8_t) (p_req->request_index >> 8);
-  #endif                               /* #if defined(USB_CFG_PAUD_USE) */
+  #endif                               /* #if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_DFU_USE)*/
                 class_command.ux_slave_class_command_class_ptr = class;
                 status = class->ux_slave_class_entry_function(&class_command);
                 if (status == UX_SUCCESS)
@@ -1674,9 +1718,8 @@ static void usb_peri_class_reqeust_usbx_get_data (usb_setup_t * p_req, usb_utr_t
     }
 
     g_usb_pstd_std_request = USB_YES;
-    usb_pstd_ctrl_write(transfer_request->ux_slave_transfer_request_requested_length,
-                        transfer_request->ux_slave_transfer_request_data_pointer,
-                        &tran_data);
+
+    usb_pstd_ctrl_write(p_req->request_length, transfer_request->ux_slave_transfer_request_data_pointer, &tran_data);
 }                                      /* End of function usb_peri_class_reqeust_usbx_get_data */
 
  #endif /* #if (BSP_CFG_RTOS == 1) */
@@ -2013,9 +2056,9 @@ void usb_peri_class_request_wss (usb_setup_t * req, usb_utr_t * p_utr)
 
     usb_pstd_ctrl_end((uint16_t) USB_CTRL_END, p_utr);
  #if (BSP_CFG_RTOS == 1)
-  #if defined(USB_CFG_PAUD_USE)
+  #if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_DFU_USE)
     usb_peri_usbx_set_control_length(req);
-  #endif                               /* #if defined(USB_CFG_PAUD_USE) */
+  #endif                               /* #if defined(USB_CFG_PAUD_USE) || defined(USB_CFG_DFU_USE)*/
     usb_peri_class_request_usbx(req);
  #endif                                /* #if (BSP_CFG_RTOS == 1) */
 }                                      /* End of function usb_peri_class_request_wss */
