@@ -36,10 +36,6 @@ const ioport_pin_cfg_t g_bsp_pin_cfg_data[] =
                   | (uint32_t) IOPORT_PERIPHERAL_GPT1) },
           { .pin = BSP_IO_PORT_11_PIN_09, .pin_cfg = ((uint32_t) IOPORT_CFG_PERIPHERAL_PIN
                   | (uint32_t) IOPORT_PERIPHERAL_GPT1) },
-          { .pin = BSP_IO_PORT_11_PIN_12, .pin_cfg = ((uint32_t) IOPORT_CFG_PERIPHERAL_PIN
-                  | (uint32_t) IOPORT_PERIPHERAL_CAN) },
-          { .pin = BSP_IO_PORT_11_PIN_13, .pin_cfg = ((uint32_t) IOPORT_CFG_PERIPHERAL_PIN
-                  | (uint32_t) IOPORT_PERIPHERAL_CAN) },
           { .pin = BSP_IO_PORT_12_PIN_00, .pin_cfg = ((uint32_t) IOPORT_CFG_PORT_DIRECTION_INPUT) },
           { .pin = BSP_IO_PORT_12_PIN_01, .pin_cfg = ((uint32_t) IOPORT_CFG_PORT_DIRECTION_INPUT) },
           { .pin = BSP_IO_PORT_12_PIN_04, .pin_cfg = ((uint32_t) IOPORT_CFG_IRQ_ENABLE

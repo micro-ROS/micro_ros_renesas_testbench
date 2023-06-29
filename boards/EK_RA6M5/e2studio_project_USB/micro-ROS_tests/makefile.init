@@ -3,8 +3,8 @@
 ################################################################################
 
 arg1 = $(1)
-export PATH=/home/username/Downloads/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux/gcc-arm-none-eabi-10.3-2021.10/bin/:/home/username/.eclipse/com.renesas.platform_725534088/Utilities:/home/username/.local/bin:/home/username/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-export TCINSTALL=/home/username/Downloads/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux/gcc-arm-none-eabi-10.3-2021.10/
+export PATH=/home/username/renesas/ra/e2studio_v2023-04_fsp_v4.4.0/toolchains/gcc_arm/gcc-arm-none-eabi-10.3-2021.10/bin/:/home/username/renesas/ra/e2studio_v2023-04_fsp_v4.4.0/eclipse/plugins/com.renesas.ide.exttools.gnumake.linux.x86_64_1.0.0.v20220121-1024/mk/:/home/username/.local/bin:/home/username/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+export TCINSTALL=/home/username/renesas/ra/e2studio_v2023-04_fsp_v4.4.0/toolchains/gcc_arm/gcc-arm-none-eabi-10.3-2021.10/
 export CWD=$(CURDIR)
 export TC_VERSION=10.3.1.20210824
 export PWD=$(CURDIR)

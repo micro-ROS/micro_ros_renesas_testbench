@@ -2,6 +2,10 @@
 #ifndef TX_USER_H_
 #define TX_USER_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef TX_TIMER_TICKS_PER_SECOND
 #define TX_TIMER_TICKS_PER_SECOND (1000)
 #endif
@@ -54,4 +58,7 @@
 #define TX_SINGLE_MODE_SECURE
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* TX_USER_H_ */

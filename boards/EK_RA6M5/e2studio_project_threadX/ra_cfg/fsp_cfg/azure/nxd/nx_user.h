@@ -1,7 +1,18 @@
 /* generated configuration header file - do not edit */
 #ifndef NX_USER_H_
 #define NX_USER_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* NXD Source Common Configuration */
+
+/* Definition of the NX_CRYPTO_ECDH_MAX_KEY_SIZE is provided in both rm_netx_secure_crypto_cfg.h and nx_user.h
+ to support larger buffer size to hold the wrapped keys, irrespective of whether NX_CRYPTO_STANDALONE_ENABLE
+ is defined. */
+#ifndef NX_CRYPTO_ECDH_MAX_KEY_SIZE
+#define NX_CRYPTO_ECDH_MAX_KEY_SIZE    80 
+#endif 
 
 #ifdef NX_DISABLE_ERROR_CHECKING
 #define NX_SMTP_DISABLE_ERROR_CHECKING  /* SMTP does not use the common error checking macro */
@@ -160,8 +171,14 @@
 #define NX_PACKET_ALIGNMENT      
 #endif
 
+int rand(void);
+#define NX_RAND rand
+
+void srand(unsigned int);
+#define NX_SRAND srand
+
 /* Azure IoT Configuration */
-#define NX_AZURE_DISABLE_IOT_SECURITY_MODULE /* The Azure IoT Security Module redefines a reserved symbol and cannot be supported at this time. */
+#define NX_AZURE_DISABLE_IOT_SECURITY_MODULE
 
 /* DHCP Common Configuration. */
 #define NX_DHCP_TYPE_OF_SERVICE                    (NX_IP_NORMAL)
@@ -495,4 +512,8 @@
 #define NXD_POP3_CLIENT_TCP_WINDOW_SIZE             (1460)
 #define NX_POP3_MAX_USERNAME                       (40)
 #define NX_POP3_MAX_PASSWORD                       (20)
+
+#ifdef __cplusplus
+}
+#endif
 #endif /* NX_USER_H_ */
