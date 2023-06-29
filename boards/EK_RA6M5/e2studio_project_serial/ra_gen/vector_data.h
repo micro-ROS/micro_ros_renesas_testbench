@@ -1,6 +1,9 @@
 /* generated vector header file - do not edit */
 #ifndef VECTOR_DATA_H
 #define VECTOR_DATA_H
+#ifdef __cplusplus
+        extern "C" {
+        #endif
 /* Number of interrupts allocated */
 #ifndef VECTOR_DATA_IRQ_COUNT
 #define VECTOR_DATA_IRQ_COUNT    (5)
@@ -23,4 +26,7 @@ void agt_int_isr(void);
 #define SCI0_ERI_IRQn          ((IRQn_Type) 3) /* SCI0 ERI (Receive error) */
 #define VECTOR_NUMBER_AGT0_INT ((IRQn_Type) 4) /* AGT0 INT (AGT interrupt) */
 #define AGT0_INT_IRQn          ((IRQn_Type) 4) /* AGT0 INT (AGT interrupt) */
+#ifdef __cplusplus
+        }
+        #endif
 #endif /* VECTOR_DATA_H */

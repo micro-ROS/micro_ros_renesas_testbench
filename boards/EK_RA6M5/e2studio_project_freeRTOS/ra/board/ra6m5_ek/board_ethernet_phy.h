@@ -1,5 +1,5 @@
 /***********************************************************************************************************************
- * Copyright [2020-2021] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
+ * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
  *
  * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
  * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
@@ -37,8 +37,10 @@ FSP_HEADER
 /***********************************************************************************************************************
  * Macro definitions
  **********************************************************************************************************************/
-#define BOARD_PHY_TYPE       (1)
-#define BOARD_PHY_REF_CLK    (1)
+#define BOARD_PHY_TYPE                            (1) // DEPRECATED
+#define ETHER_PHY_CFG_TARGET_KSZ8091RNB_ENABLE    (1)
+#define ETHER_PHY_LSI_TYPE_KIT_COMPONENT          ETHER_PHY_LSI_TYPE_KSZ8091RNB
+#define BOARD_PHY_REF_CLK                         (1)
 
 /***********************************************************************************************************************
  * Typedef definitions
