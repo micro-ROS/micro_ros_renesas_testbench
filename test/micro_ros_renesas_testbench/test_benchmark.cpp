@@ -86,7 +86,7 @@ TEST_P(ThroughputTest, Throughput)
     };
 
     auto qos = rclcpp::SensorDataQoS();
-    qos.keep_last(0);
+    qos.keep_last(1);
 
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::String>(
       "test_throughput", qos, callback);
@@ -131,7 +131,7 @@ TEST_P(BenchmarkTestAllTransports, RTT)
     };
 
     auto qos = rclcpp::SensorDataQoS();
-    qos.keep_last(0);
+    qos.keep_last(1);
 
     rclcpp::Subscription<std_msgs::msg::Int64>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int64>(
       "test_RTT_pub", qos, callback);
