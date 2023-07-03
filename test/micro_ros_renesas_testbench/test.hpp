@@ -170,8 +170,7 @@ public:
         {
             case TestAgent::Transport::TCP_FREERTOS_TRANSPORT:
             {
-                std::replace(ip_address.begin(), ip_address.end(), '.', ',');
-                addDefineToClient("AGENT_IP_ADDRESS", "SOCKETS_inet_addr_quick(" + ip_address+ ")");
+                addDefineToClient("AGENT_IP_ADDRESS", "\"" + ip_address + "\"");
                 addDefineToClient("AGENT_IP_PORT", std::to_string(agent_port));
                 break;
             }

@@ -33,7 +33,8 @@ jobs:
     - name: Download dependencies
       run: |
         cd ros_ws
-        rm -rf src/*Agent
+        rm -rf src/Micro-XRCE-DDS-Agent
+        rm -rf src/micro-ROS-Agent
         rm -rf src/micro_ros_msgs
         vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS agent
