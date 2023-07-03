@@ -651,7 +651,7 @@ TEST_P(PublisherRateTest, PublisherRate)
     };
 
     auto qos = rclcpp::SensorDataQoS();
-    qos.keep_last(0);
+    qos.keep_last(1);
 
     rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr subscription_ = node->create_subscription<std_msgs::msg::Int32>(
       "test_publisher", qos, callback);

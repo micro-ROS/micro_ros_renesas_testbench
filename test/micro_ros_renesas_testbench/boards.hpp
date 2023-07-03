@@ -10,12 +10,13 @@
 class Board
 {
 public:
-    Board(std::string device_name, std::string folder, std::string serial_port, std::string usb_port, std::vector<TestAgent::Transport> transports)
+    Board(std::string device_name, std::string folder, std::string serial_port, std::string usb_port, std::vector<TestAgent::Transport> transports, std::vector<std::string> skipped_tests)
         : device_name_(device_name)
         , folder_(folder)
         , serial_port_(serial_port)
         , usb_port_(usb_port)
-        , transports_(transports) {}
+        , transports_(transports) 
+        , skipped_tests_(skipped_tests) {}
 
     Board() {
         getDevice();
@@ -23,6 +24,10 @@ public:
 
     bool check_board_transport(TestAgent::Transport test_transport) {
         return std::find(transports_.begin(), transports_.end(), test_transport) != std::end(transports_);
+    };
+
+    bool check_skip_test(std::string test_name) {
+        return std::find(skipped_tests_.begin(), skipped_tests_.end(), test_name) != std::end(skipped_tests_);
     };
 
     bool device_found() {
@@ -38,6 +43,7 @@ public:
     std::string serial_port_;
     std::string usb_port_;
     std::vector<TestAgent::Transport> transports_;
+    std::vector<std::string> skipped_tests_;
 };
 
 extern const std::vector<Board> testbench_boards;

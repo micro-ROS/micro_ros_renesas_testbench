@@ -19,6 +19,9 @@ const std::vector<Board> testbench_boards =
             TestAgent::Transport::UDP_THREADX_TRANSPORT,
             TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
             TestAgent::Transport::TCP_FREERTOS_TRANSPORT
+        },
+        // skipped_tests_
+        {
         }
     },
     {
@@ -34,6 +37,12 @@ const std::vector<Board> testbench_boards =
         {
             TestAgent::Transport::CAN_TRANSPORT,
             TestAgent::Transport::SERIAL_TRANSPORT
+        },
+        // skipped_tests_
+        {
+            "Parameters",
+            "ComplexSubscriber",
+            "CustomTypeIntrospection"
         }
     }
 };
@@ -63,6 +72,7 @@ void Board::getDevice() {
             serial_port_ = device.serial_port_;
             usb_port_ = device.usb_port_;
             transports_ = device.transports_;
+            skipped_tests_ = device.skipped_tests_;
             break;
         }
     }
