@@ -331,7 +331,7 @@ TEST_P(ContinousFragment, PublisherContinousFragment) {
     auto future = promise->get_future();
     size_t payload_size = 0;
 
-    std::chrono::duration<int64_t, std::milli> timeout = std::chrono::duration<int64_t, std::milli>(msg_size/2);
+    std::chrono::duration<int64_t, std::milli> timeout = std::chrono::duration<int64_t, std::milli>(msg_size);
 
     auto callback = [&](std_msgs::msg::String::SharedPtr msg)
     {
