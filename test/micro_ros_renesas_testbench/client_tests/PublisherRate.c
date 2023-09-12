@@ -54,11 +54,12 @@ void microros_app(void)
 
     // create timer,
     rcl_timer_t timer;
-    rclc_timer_init_default(
+    rclc_timer_init_default2(
         &timer,
         &support,
         RCL_MS_TO_NS(PUBLISH_PERIOD_MS),
-        timer_callback);
+        timer_callback,
+        true);
 
     // create executor
     rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
