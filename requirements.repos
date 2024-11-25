@@ -3,11 +3,11 @@ repositories:
   micro_ros_msgs:
     type: git
     url: https://github.com/micro-ROS/micro_ros_msgs.git
-    version: rolling
+    version: jazzy
   micro-ROS-Agent:
     type: git
     url: https://github.com/micro-ROS/micro-ROS-Agent.git
-    version: rolling
+    version: jazzy
   Micro-XRCE-DDS-Agent:
     type: git
     url: https://github.com/eProsima/Micro-XRCE-DDS-Agent.git
