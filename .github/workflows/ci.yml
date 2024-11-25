@@ -29,7 +29,7 @@ jobs:
       run: |
         rm -rf ros_ws/src ros_ws/log
         mkdir -p ros_ws/src
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
@@ -57,7 +57,7 @@ jobs:
         rm -rf *.txt
         RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=HardwareTestMemoryProfiling*:*ThroughputTest*:*BenchmarkTestAllTransports*
     - name: Upload artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: benchmark-results-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
         path: ros_ws/*.txt
