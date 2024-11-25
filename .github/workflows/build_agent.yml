@@ -25,7 +25,7 @@ jobs:
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
         submodules: recursive
