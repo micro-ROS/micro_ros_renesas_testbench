@@ -104,6 +104,8 @@ microros_testbench.srec: microros_testbench.elf
 	arm-none-eabi-objcopy -O srec "microros_testbench.elf"  "microros_testbench.srec"
 microros_testbench.siz: microros_testbench.elf
 	arm-none-eabi-size --format=berkeley "microros_testbench.elf"
+microros_testbench.hex: microros_testbench.elf
+	arm-none-eabi-objcopy -O ihex "microros_testbench.elf"  "microros_testbench.hex"
 # Other Targets
 clean:
 	-$(file > clean_file.tmp,  $(JMP_DEPS)  $(FSY_DEPS)  $(C_UPPER_DEPS)  $(SECONDARY_SIZE)  $(SRC_UPPER_DEPS)  $(P_UPPER_DEPS)  $(S_DEPS)  $(PP_UPPER_DEPS)  $(P_DEPS)  $(FSY_UPPER_DEPS)  $(C_DEPS)  $(SRC_DEPS)  $(JMP_UPPER_DEPS)  $(PP_DEPS)  $(SX_DEPS)  $(ASM_UPPER_DEPS)  $(SX_UPPER_DEPS)  $(OBJS)  $(SECONDARY_FLASH)  $(ASM_DEPS)  $(SREC)  $(S_UPPER_DEPS)  $(MAP) )
