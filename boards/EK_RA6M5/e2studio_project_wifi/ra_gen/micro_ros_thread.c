@@ -16,38 +16,35 @@ void rtos_startup_err_callback(void *p_instance, void *p_data);
 void rtos_startup_common_init(void);
 extern uint32_t g_fsp_common_thread_count;
 
-const rm_freertos_port_parameters_t micro_ros_thread_parameters =
-{ .p_context = (void*) NULL, };
+const rm_freertos_port_parameters_t micro_ros_thread_parameters = { .p_context =
+		(void*) NULL, };
 
-void micro_ros_thread_create(void)
-{
-    /* Increment count so we will know the number of threads created in the RA Configuration editor. */
-    g_fsp_common_thread_count++;
+void micro_ros_thread_create(void) {
+	/* Increment count so we will know the number of threads created in the RA Configuration editor. */
+	g_fsp_common_thread_count++;
 
-    /* Initialize each kernel object. */
+	/* Initialize each kernel object. */
 
 #if 1
-    micro_ros_thread = xTaskCreateStatic (
+	micro_ros_thread = xTaskCreateStatic(
 #else
                     BaseType_t micro_ros_thread_create_err = xTaskCreate(
                     #endif
-                                          micro_ros_thread_func,
-                                          (const char*) "micro-ROS Thread", 5000 / 4, // In words, not bytes
-                                          (void*) &micro_ros_thread_parameters, //pvParameters
-                                          1,
+			micro_ros_thread_func, (const char*) "micro-ROS Thread", 5000 / 4, // In words, not bytes
+			(void*) &micro_ros_thread_parameters, //pvParameters
+			1,
 #if 1
-                                          (StackType_t*) &micro_ros_thread_stack,
-                                          (StaticTask_t*) &micro_ros_thread_memory
+			(StackType_t*) &micro_ros_thread_stack,
+			(StaticTask_t*) &micro_ros_thread_memory
 #else
                         & micro_ros_thread
                         #endif
-                                          );
+			);
 
 #if 1
-    if (NULL == micro_ros_thread)
-    {
-        rtos_startup_err_callback (micro_ros_thread, 0);
-    }
+	if (NULL == micro_ros_thread) {
+		rtos_startup_err_callback(micro_ros_thread, 0);
+	}
 #else
                     if (pdPASS != micro_ros_thread_create_err)
                     {
@@ -55,12 +52,11 @@ void micro_ros_thread_create(void)
                     }
                     #endif
 }
-static void micro_ros_thread_func(void *pvParameters)
-{
-    /* Initialize common components */
-    rtos_startup_common_init ();
+static void micro_ros_thread_func(void *pvParameters) {
+	/* Initialize common components */
+	rtos_startup_common_init();
 
-    /* Initialize each module instance. */
+	/* Initialize each module instance. */
 
 #if (1 == BSP_TZ_NONSECURE_BUILD) && (1 == 1)
                     /* When FreeRTOS is used in a non-secure TrustZone application, portALLOCATE_SECURE_CONTEXT must be called prior
@@ -74,6 +70,6 @@ static void micro_ros_thread_func(void *pvParameters)
                      portALLOCATE_SECURE_CONTEXT(0);
                     #endif
 
-    /* Enter user code for this thread. Pass task handle. */
-    micro_ros_thread_entry (pvParameters);
+	/* Enter user code for this thread. Pass task handle. */
+	micro_ros_thread_entry(pvParameters);
 }
