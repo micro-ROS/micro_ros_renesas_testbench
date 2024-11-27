@@ -3,13 +3,19 @@
 
 ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
 
+const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg = { .p_target_init =
+		NULL, .p_target_link_partner_ability_get = NULL
+
+};
+
 const ether_phy_cfg_t g_ether_phy0_cfg = {
 
 .channel = 0, .phy_lsi_address = 0, .phy_reset_wait_time = 0x00020000,
 		.mii_bit_access_wait_time = 8, .phy_lsi_type =
 				ETHER_PHY_LSI_TYPE_KIT_COMPONENT, .flow_control =
 				ETHER_PHY_FLOW_CONTROL_DISABLE, .mii_type =
-				ETHER_PHY_MII_TYPE_RMII, .p_context = NULL, .p_extend = NULL,
+				ETHER_PHY_MII_TYPE_RMII, .p_context = NULL, .p_extend =
+				&g_ether_phy0_extended_cfg,
 
 };
 /* Instance structure to use this module. */
@@ -23,7 +29,11 @@ __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_tx_descrip
 __attribute__((__aligned__(16))) ether_instance_descriptor_t g_ether0_rx_descriptors[4] ETHER_BUFFER_PLACE_IN_SECTION;
 
 const ether_extended_cfg_t g_ether0_extended_cfg_t = { .p_rx_descriptors =
-		g_ether0_rx_descriptors, .p_tx_descriptors = g_ether0_tx_descriptors, };
+		g_ether0_rx_descriptors, .p_tx_descriptors = g_ether0_tx_descriptors,
+		.eesr_event_filter = (ETHER_EESR_EVENT_MASK_RFOF
+				| ETHER_EESR_EVENT_MASK_RDE | ETHER_EESR_EVENT_MASK_FR
+				| ETHER_EESR_EVENT_MASK_TFUF | ETHER_EESR_EVENT_MASK_TDE
+				| ETHER_EESR_EVENT_MASK_TC | 0U), .ecsr_event_filter = (0U), };
 
 const ether_cfg_t g_ether0_cfg = { .channel = 0, .zerocopy =
 		ETHER_ZEROCOPY_ENABLE, .multicast = ETHER_MULTICAST_ENABLE,

@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /***********************************************************************************************************************
  * Includes
@@ -90,13 +76,13 @@ void rm_netxduo_ether (NX_IP_DRIVER * driver_req_ptr, rm_netxduo_ether_instance_
             /* The nx_interface_ip_mtu_size should be the MTU for the IP payload.
              * For regular Ethernet, the IP MTU is 1500. */
             nx_ip_interface_mtu_set(driver_req_ptr->nx_ip_driver_ptr,
-                                    p_ether_instance->p_cfg->channel,
+                                    interface_ptr->nx_interface_index,
                                     p_netxduo_ether_instance->p_cfg->mtu);
 
             /* Set the physical address (MAC address) of this IP instance.  */
             uint8_t * p_mac_address = p_ether_instance->p_cfg->p_mac_address;
             nx_ip_interface_physical_address_set(driver_req_ptr->nx_ip_driver_ptr,
-                                                 p_ether_instance->p_cfg->channel,
+                                                 interface_ptr->nx_interface_index,
                                                  (ULONG) ((p_mac_address[0] << 8) | (p_mac_address[1] << 0)),
                                                  (ULONG) ((p_mac_address[2] << 24) | (p_mac_address[3] << 16) |
                                                           (p_mac_address[4] << 8) |
@@ -105,7 +91,7 @@ void rm_netxduo_ether (NX_IP_DRIVER * driver_req_ptr, rm_netxduo_ether_instance_
 
             /* Indicate to the IP software that IP to physical mapping is required.  */
             nx_ip_interface_address_mapping_configure(driver_req_ptr->nx_ip_driver_ptr,
-                                                      p_ether_instance->p_cfg->channel,
+                                                      interface_ptr->nx_interface_index,
                                                       NX_TRUE);
             break;
         }
@@ -345,8 +331,7 @@ void rm_netxduo_ether (NX_IP_DRIVER * driver_req_ptr, rm_netxduo_ether_instance_
         case NX_LINK_GET_STATUS:
         {
             /* Return the link status in the supplied return pointer.  */
-            *(driver_req_ptr->nx_ip_driver_return_ptr) =
-                driver_req_ptr->nx_ip_driver_ptr->nx_ip_interface[p_ether_instance->p_cfg->channel].nx_interface_link_up;
+            *(driver_req_ptr->nx_ip_driver_return_ptr) = interface_ptr->nx_interface_link_up;
             break;
         }
 
@@ -506,6 +491,8 @@ void rm_netxduo_ether_receive_packet (rm_netxduo_ether_instance_t * p_netxduo_et
              */
             p_nx_packet->nx_packet_prepend_ptr =
                 (UCHAR *) (((uint32_t) p_nx_packet->nx_packet_prepend_ptr + 31U) & ~(31U));
+
+            p_nx_packet->nx_packet_address.nx_packet_interface_ptr = p_netxduo_ether_instance->p_ctrl->p_interface;
 
             /* Update the buffer pointer in the buffer descriptor. */
             if (FSP_SUCCESS !=
@@ -797,7 +784,8 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
 
             /* Notify NetX that the link is up. */
             p_netxduo_ether_instance->p_ctrl->p_interface->nx_interface_link_up = NX_TRUE;
-            _nx_ip_driver_link_status_event(p_netxduo_ether_instance->p_ctrl->p_ip, p_args->channel);
+            _nx_ip_driver_link_status_event(p_netxduo_ether_instance->p_ctrl->p_ip,
+                                            p_netxduo_ether_instance->p_ctrl->p_interface->nx_interface_index);
             break;
         }
 
@@ -842,7 +830,8 @@ void rm_netxduo_ether_callback (ether_callback_args_t * p_args)
 
             /* Notify NetX that the link is down. */
             p_netxduo_ether_instance->p_ctrl->p_interface->nx_interface_link_up = NX_FALSE;
-            _nx_ip_driver_link_status_event(p_netxduo_ether_instance->p_ctrl->p_ip, p_args->channel);
+            _nx_ip_driver_link_status_event(p_netxduo_ether_instance->p_ctrl->p_ip,
+                                            p_netxduo_ether_instance->p_ctrl->p_interface->nx_interface_index);
             break;
         }
 

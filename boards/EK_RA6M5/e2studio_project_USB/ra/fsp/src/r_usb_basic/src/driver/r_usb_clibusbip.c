@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /******************************************************************************
  * Includes   <System Includes> , "Project Includes"
@@ -70,6 +56,15 @@
 /******************************************************************************
  * Macro definitions
  *****************************************************************************/
+
+/***********************************************************************************************************************
+ * Typedef definitions
+ **********************************************************************************************************************/
+#if defined(__ARMCC_VERSION) || defined(__ICCARM__)
+typedef void (BSP_CMSE_NONSECURE_CALL * usb_prv_ns_callback)(usb_callback_args_t * p_args);
+#elif defined(__GNUC__)
+typedef BSP_CMSE_NONSECURE_CALL void (*volatile usb_prv_ns_callback)(usb_callback_args_t * p_args);
+#endif
 
 /******************************************************************************
  * Exported global variables (to be accessed by other files)
@@ -371,6 +366,60 @@ uint16_t usb_cstd_port_speed (usb_utr_t * ptr)
 
 #if (!(USB_UT_MODE == 1 && BSP_CFG_RTOS != 0))
 
+ #if (BSP_CFG_RTOS == 0)
+
+/******************************************************************************
+ * Function Name   : usb_call_callback
+ * Description     : Call callback functiont.
+ * Arguments       : usb_instance_ctrl_t   *p_ctrl     : control structure for USB API.
+ * Return value    : none
+ ******************************************************************************/
+static void usb_call_callback (usb_instance_ctrl_t * p_ctrl)
+{
+    usb_callback_args_t args;
+
+    /* Store callback arguments in memory provided by user if available.  This allows callback arguments to be
+     * stored in non-secure memory so they can be accessed by a non-secure callback function. */
+    usb_callback_args_t * p_args = g_usb_apl_callback_memory[p_ctrl->module_number];
+    if (NULL == p_args)
+    {
+        /* Store on stack */
+        p_args = &args;
+    }
+    else
+    {
+        /* Save current arguments on the stack in case this is a nested interrupt. */
+        args = *p_args;
+    }
+
+    *p_args = *p_ctrl;
+
+  #if BSP_TZ_SECURE_BUILD
+
+    /* g_usb_apl_callback can point to a secure function or a non-secure function. */
+    if (!cmse_is_nsfptr(g_usb_apl_callback[p_ctrl->module_number]))
+    {
+        /* If p_callback is secure, then the project does not need to change security state. */
+        (*g_usb_apl_callback[p_ctrl->module_number])(p_args);
+    }
+    else
+    {
+        /* If g_usb_apl_callback is Non-secure, then the project must change to Non-secure state in order to call the callback. */
+        usb_prv_ns_callback p_callback = (usb_prv_ns_callback) (g_usb_apl_callback[p_ctrl->module_number]);
+
+        p_callback(p_args);
+    }
+
+  #else                                /* BSP_TZ_SECURE_BUILD */
+    /* If the project is not Trustzone Secure, then it will never need to change security state in order to call the callback. */
+
+    // p_ctrl->p_callback(p_args);
+    (*g_usb_apl_callback[p_ctrl->module_number])(p_args);
+  #endif                               /* BSP_TZ_SECURE_BUILD */
+}
+
+ #endif /* (BSP_CFG_RTOS == 0) */
+
 /******************************************************************************
  * Function Name   : usb_set_event
  * Description     : Set event.
@@ -479,6 +528,12 @@ void usb_set_event (usb_status_t event, usb_instance_ctrl_t * p_ctrl)
     if (g_usb_cstd_event.write_pointer >= USB_EVENT_MAX)
     {
         g_usb_cstd_event.write_pointer = 0;
+    }
+
+    if (NULL != g_usb_apl_callback[p_ctrl->module_number])
+    {
+        p_ctrl->event = event;
+        usb_call_callback(p_ctrl);
     }
  #endif                                /* #if (BSP_CFG_RTOS != 0) */
     } /* End of function usb_set_event() */
