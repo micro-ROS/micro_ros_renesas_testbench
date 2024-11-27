@@ -8,7 +8,7 @@
 #include "r_sci_uart.h"
 #include "r_uart_api.h"
 #include "rm_wifi_onchip_silex.h"
-#include "sockets_wrapper.h"
+#include "tcp_sockets_wrapper.h"
 #include "r_ioport.h"
 #include "bsp_pin_cfg.h"
 FSP_HEADER
@@ -37,6 +37,10 @@ void rm_wifi_onchip_silex_uart_callback(uart_callback_args_t *p_args);
 #endif
 extern const wifi_onchip_silex_cfg_t g_wifi_onchip_silex_cfg;
 extern const char *g_wifi_onchip_silex_uart_cmd_baud;
+#define IOPORT_CFG_NAME g_bsp_pin_cfg
+#define IOPORT_CFG_OPEN R_IOPORT_Open
+#define IOPORT_CFG_CTRL g_ioport_ctrl
+
 /* IOPORT Instance */
 extern const ioport_instance_t g_ioport;
 

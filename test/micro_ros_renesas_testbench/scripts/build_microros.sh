@@ -28,7 +28,7 @@ else
 fi
 
 echo "Device connected: ${BOARD_FOLDER}."
-PROJECTS_PATH=ros_ws/src/micro_ros_renesas_testbench/boards/${BOARD_FOLDER}
+PROJECTS_PATH=${SCRIPTS_DIR}/../../../boards/${BOARD_FOLDER}
 
 # Compile CAN library
 pushd ${PROJECTS_PATH}/e2studio_project_CAN/micro-ROS_tests

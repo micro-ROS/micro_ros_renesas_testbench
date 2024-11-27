@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /***********************************************************************************************************************
  * Includes
@@ -139,9 +125,16 @@ usb_event_t g_usb_cstd_event;
 uint16_t    g_usb_change_device_state[USB_NUM_USBIP];
 #else                                  /*(BSP_CFG_RTOS == 0)*/
 usb_instance_ctrl_t g_usb_cstd_event[USB_EVENT_MAX];
-usb_callback_t    * g_usb_apl_callback[USB_NUM_USBIP];
 
 #endif                                 /*(BSP_CFG_RTOS == 0)*/
+usb_callback_t      * g_usb_apl_callback[USB_NUM_USBIP];
+usb_callback_args_t * g_usb_apl_callback_memory[USB_NUM_USBIP] =
+{
+    NULL,
+#if 2 == USB_NUM_USBIP
+    NULL,
+#endif                                 /* 2 == USB_NUM_USBIP */
+};
 
 #if defined(USB_CFG_OTG_USE)
 usb_cfg_t * g_p_usb_otg_cfg;
@@ -279,6 +272,8 @@ const usb_api_t g_usb_on_usb =
     .periControlDataSet   = R_USB_PeriControlDataSet,
     .periControlStatusSet = R_USB_PeriControlStatusSet,
     .remoteWakeup         = R_USB_RemoteWakeup,
+    .driverActivate       = R_USB_DriverActivate,
+    .callbackMemorySet    = R_USB_CallbackMemorySet,
     .moduleNumberGet      = R_USB_ModuleNumberGet,
     .classTypeGet         = R_USB_ClassTypeGet,
     .deviceAddressGet     = R_USB_DeviceAddressGet,
@@ -288,6 +283,7 @@ const usb_api_t g_usb_on_usb =
     .setupGet             = R_USB_SetupGet,
     .otgCallbackSet       = R_USB_OtgCallbackSet,
     .otgSRP               = R_USB_OtgSRP,
+    .typecInfoGet         = R_USB_TypeCInfoGet,
 };
 
 /***********************************************************************************************************************
@@ -351,25 +347,33 @@ fsp_err_t R_USB_EventGet (usb_ctrl_t * const p_api_ctrl, usb_status_t * event)
  * If this function is called in the OS-less execution environment, a failure is returned.
  *
  * @retval FSP_SUCCESS        Successfully completed.
- * @retval FSP_ERR_USB_FAILED If this function is called in the OS-less execution environment, a failure is returned.
  * @retval FSP_ERR_ASSERTION  Parameter is NULL error.
  * @note Do not call this API in the interrupt function.
  ******************************************************************************/
 fsp_err_t R_USB_Callback (usb_callback_t * p_callback)
 {
-    fsp_err_t err;
-#if (BSP_CFG_RTOS != 0)
- #if USB_CFG_PARAM_CHECKING_ENABLE
+#if USB_CFG_PARAM_CHECKING_ENABLE
     FSP_ASSERT(p_callback)
- #endif                                /* USB_CFG_PARAM_CHECKING_ENABLE */
-    g_usb_apl_callback[0] = p_callback;
-    err = FSP_SUCCESS;
-#else /* #if (BSP_CFG_RTOS != 0) */
-    FSP_PARAMETER_NOT_USED(*p_callback);
-    err = FSP_ERR_USB_FAILED;
-#endif                                 /* #if (BSP_CFG_RTOS != 0) */
+#endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
 
-    return err;
+    /* Store callback and context */
+#if BSP_TZ_SECURE_BUILD
+
+    /* Get security state of p_callback */
+    bool callback_is_secure =
+        (NULL == cmse_check_address_range((void *) p_callback, sizeof(void *), CMSE_AU_NONSECURE));
+
+    g_usb_apl_callback[0] = callback_is_secure ? p_callback :
+                            (void (*)(usb_callback_args_t *))cmse_nsfptr_create(p_callback);
+#else                                  /* BSP_TZ_SECURE_BUILD */
+    g_usb_apl_callback[0] = p_callback;
+#endif  /* BSP_TZ_SECURE_BUILD */
+
+#if USB_NUM_USBIP == 2
+    g_usb_apl_callback[1] = g_usb_apl_callback[0];
+#endif                                 /* USB_NUM_USBIP == 2 */
+
+    return FSP_SUCCESS;
 } /* End of function R_USB_Callback() */
 
 /**************************************************************************//**
@@ -406,6 +410,9 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
 #if USB_CFG_PARAM_CHECKING_ENABLE
     FSP_ASSERT(p_api_ctrl)
     FSP_ASSERT(p_cfg)
+
+    /* Check if the module number is valid */
+    FSP_ERROR_RETURN(!((USB_IP0 != p_cfg->module_number) && (USB_IP1 != p_cfg->module_number)), FSP_ERR_USB_PARAMETER)
 #endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
 
 #if defined(USB_CFG_OTG_USE)
@@ -413,13 +420,16 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
     p_ctrl->module_number = p_cfg->module_number;
     p_ctrl->type          = (usb_class_t) (p_cfg->type & USB_VALUE_7FH);
     p_ctrl->p_context     = (void *) p_cfg->p_context;
-#if (BSP_CFG_RTOS != 0)
- #if (BSP_CFG_RTOS == 1)
+#if (BSP_CFG_RTOS == 1)
     g_usb_apl_callback[p_ctrl->module_number] = usb_cstd_usbx_callback;
- #else                                 /* #if (BSP_CFG_RTOS == 1)*/
+#else                                  /* #if (BSP_CFG_RTOS == 1) */
+ #if defined(USB_CFG_HCDC_USE) && defined(USB_CFG_HMSC_USE)
+
+    /* Callback registration is not done yet. */
+ #else
     g_usb_apl_callback[p_ctrl->module_number] = p_cfg->p_usb_apl_callback;
- #endif                                /* #if (BSP_CFG_RTOS == 1)*/
-#endif                                 /* #if (BSP_CFG_RTOS != 0) */
+ #endif
+#endif                                 /* #if (BSP_CFG_RTOS == 1) */
 
 #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST)
  #if USB_CFG_COMPLIANCE == USB_CFG_ENABLE
@@ -430,16 +440,14 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
 #if USB_CFG_PARAM_CHECKING_ENABLE
 
     /* Argument Checking */
-    FSP_ERROR_RETURN(!((USB_IP0 != p_ctrl->module_number) && (USB_IP1 != p_ctrl->module_number)), FSP_ERR_USB_PARAMETER)
-
     FSP_ERROR_RETURN(!(((USB_SPEED_HS != p_cfg->usb_speed) && (USB_SPEED_FS != p_cfg->usb_speed)) &&
                        (USB_SPEED_LS != p_cfg->usb_speed) &&
                        (USB_MODE_HOST != p_cfg->usb_mode)),
                      FSP_ERR_USB_PARAMETER)
 
- #if defined(BSP_MCU_GROUP_RA2A1)
+ #if (USB_NUM_USBIP == 1)
     FSP_ERROR_RETURN(USB_IP1 != p_ctrl->module_number, FSP_ERR_USB_PARAMETER)
- #endif                                /* defined(BSP_MCU_GROUP_RA2A1) */
+ #endif                                /* USB_NUM_USBIP == 1 */
 
     switch ((usb_class_internal_t) p_ctrl->type)
     {
@@ -480,10 +488,10 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
         case USB_CLASS_INTERNAL_HPRN:
         case USB_CLASS_INTERNAL_HUVC:
         {
- #if defined(BSP_MCU_GROUP_RA2A1)
+ #if defined(USB_NOT_SUPPORT_HOST)
 
-            return FSP_ERR_ASSERTION;
- #else                                 /* defined(BSP_MCU_GROUP_RA2A1) */
+            return FSP_ERR_USB_PARAMETER;
+ #else                                 /* defined(USB_NOT_SUPPORT_HOST) */
             FSP_ERROR_RETURN(USB_MODE_HOST == p_cfg->usb_mode, FSP_ERR_USB_PARAMETER)
   #if defined(USB_HIGH_SPEED_MODULE)
             FSP_ERROR_RETURN(!((USB_SPEED_HS == p_cfg->usb_speed) && (USB_IP1 != p_ctrl->module_number)),
@@ -491,7 +499,7 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
   #else                                /* defined (USB_HIGH_SPEED_MODULE) */
             FSP_ERROR_RETURN(USB_SPEED_HS != p_cfg->usb_speed, FSP_ERR_USB_PARAMETER)
   #endif /* defined (USB_HIGH_SPEED_MODULE) */
- #endif /* defined(BSP_MCU_GROUP_RA2A1) */
+ #endif /* defined(USB_NOT_SUPPORT_HOST) */
             break;
         }
 
@@ -625,6 +633,10 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
 #if defined(USB_CFG_OTG_USE)
     g_p_usb_otg_cfg = (usb_cfg_t *) p_cfg;
 #endif /* defined (USB_CFG_OTG_USE) */
+
+#if (USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE)
+    hw_usb_typec_module_init();
+#endif                                 /* USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE */
 
     if (USB_MODE_HOST == p_cfg->usb_mode)
     {
@@ -853,10 +865,16 @@ fsp_err_t R_USB_Open (usb_ctrl_t * const p_api_ctrl, usb_cfg_t const * const p_c
         {
 #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST)
             g_usb_open_class[p_ctrl->module_number] |= (uint16_t) (1 << p_ctrl->type);      /* Set USB Open device class */
+ /* Check if both HCDC class and HMSC class are enabled */
+ #if (defined(USB_CFG_HCDC_USE) && defined(USB_CFG_HMSC_USE))
+            /* Set USB Open device class for HCDC Class and HCDCC Class */
+            g_usb_open_class[p_ctrl->module_number] |= ((1 << USB_CLASS_INTERNAL_HCDC) | (1 << USB_CLASS_INTERNAL_HCDCC));
+ #else
             if (USB_CLASS_INTERNAL_HCDC == (usb_class_internal_t) p_ctrl->type)
             {
                 g_usb_open_class[p_ctrl->module_number] |= (1 << USB_CLASS_INTERNAL_HCDCC); /* Set USB Open device class */
             }
+ #endif                                /* defined(USB_CFG_HCDC_USE) && defined(USB_CFG_HMSC_USE) */
 
  #if defined(USB_CFG_OTG_USE)
             g_is_A_device[p_ctrl->module_number]      = USB_YES;
@@ -1420,6 +1438,10 @@ fsp_err_t R_USB_Close (usb_ctrl_t * const p_api_ctrl)
     g_usb_pmsc_usbip = USB_VALUE_FFH;
  #endif                                /* defined(USB_CFG_PMSC_USE) */
 
+ #if (USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE)
+    hw_usb_typec_module_uninit();
+ #endif /* USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE */
+
     return ret_code;
 #endif                                 /* defined(USB_CFG_OTG_USE) */
 }
@@ -1488,6 +1510,13 @@ fsp_err_t R_USB_Read (usb_ctrl_t * const p_api_ctrl, uint8_t * p_buf, uint32_t s
     {
 #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST)
         p_ctrl->device_address = destination;
+ #if defined(USB_CFG_HCDC_USE)
+
+        /* Add the following code. */
+        /* Because the value of "type" member change to "USB_CLASS_INTERNAL_HCDCC" */
+        /* when calling R_USB_HCDC_ControlDataRead function. */
+        p_ctrl->type = (usb_class_t) USB_CLASS_INTERNAL_HCDC;
+ #endif                                /* defined(USB_CFG_HCDC_USE) */
 #endif                                 /* #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST) */
     }
 
@@ -1614,6 +1643,13 @@ fsp_err_t R_USB_Write (usb_ctrl_t * const p_api_ctrl, uint8_t const * const p_bu
     {
 #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST)
         p_ctrl->device_address = destination;
+ #if defined(USB_CFG_HCDC_USE)
+
+        /* Add the following code. */
+        /* Because the value of "type" member change to "USB_CLASS_INTERNAL_HCDCC" */
+        /* when calling R_USB_HCDC_ControlDataRead function. */
+        p_ctrl->type = (usb_class_t) USB_CLASS_INTERNAL_HCDC;
+ #endif                                /* defined(USB_CFG_HCDC_USE) */
 #endif                                 /* USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST */
     }
 
@@ -2780,9 +2816,9 @@ fsp_err_t R_USB_PipeStop (usb_ctrl_t * const p_api_ctrl, uint8_t pipe_number)
     FSP_ASSERT(p_api_ctrl)
  #endif                                /* USB_CFG_PARAM_CHECKING_ENABLE */
 
- #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST)
-    utr.ip = p_ctrl->module_number;
+    utr.ip = p_ctrl->module_number;    /* Update USB module number */
 
+ #if ((USB_CFG_MODE & USB_CFG_HOST) == USB_CFG_HOST)
     if (USB_MODE_HOST == g_usb_usbmode[p_ctrl->module_number])
     {
         utr.ipp                = usb_hstd_get_usb_ip_adr(utr.ip);
@@ -3131,14 +3167,7 @@ fsp_err_t R_USB_HostControlTransfer (usb_ctrl_t * const p_api_ctrl,
 #endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
 
     result = R_USB_InfoGet(p_ctrl, &info, device_address);
-    if (FSP_SUCCESS == result)
-    {
-        if (USB_STATUS_CONFIGURED != info.device_status)
-        {
-            return FSP_ERR_USB_FAILED;
-        }
-    }
-    else
+    if (FSP_SUCCESS != result)
     {
         return FSP_ERR_USB_FAILED;
     }
@@ -3200,14 +3229,7 @@ fsp_err_t R_USB_PeriControlDataGet (usb_ctrl_t * const p_api_ctrl, uint8_t * p_b
 #endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
 
     result = R_USB_InfoGet(p_ctrl, &info, p_ctrl->device_address);
-    if (FSP_SUCCESS == result)
-    {
-        if (USB_STATUS_CONFIGURED != info.device_status)
-        {
-            return FSP_ERR_USB_FAILED;
-        }
-    }
-    else
+    if (FSP_SUCCESS != result)
     {
         return FSP_ERR_USB_FAILED;
     }
@@ -3255,14 +3277,7 @@ fsp_err_t R_USB_PeriControlDataSet (usb_ctrl_t * const p_api_ctrl, uint8_t * p_b
 #endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
 
     result = R_USB_InfoGet(p_ctrl, &info, p_ctrl->device_address);
-    if (FSP_SUCCESS == result)
-    {
-        if (USB_STATUS_CONFIGURED != info.device_status)
-        {
-            return FSP_ERR_USB_FAILED;
-        }
-    }
-    else
+    if (FSP_SUCCESS != result)
     {
         return FSP_ERR_USB_FAILED;
     }
@@ -3313,14 +3328,7 @@ fsp_err_t R_USB_PeriControlStatusSet (usb_ctrl_t * const p_api_ctrl, usb_setup_s
  #endif                                /* USB_CFG_PARAM_CHECKING_ENABLE */
 
     result = R_USB_InfoGet(p_ctrl, &info, p_ctrl->device_address);
-    if (FSP_SUCCESS == result)
-    {
-        if (USB_STATUS_CONFIGURED != info.device_status)
-        {
-            return FSP_ERR_USB_FAILED;
-        }
-    }
-    else
+    if (FSP_SUCCESS != result)
     {
         return FSP_ERR_USB_FAILED;
     }
@@ -3430,6 +3438,70 @@ fsp_err_t R_USB_RemoteWakeup (usb_ctrl_t * const p_api_ctrl)
 }
 
 /**************************************************************************//**
+ * @brief Activate USB Driver for USB Peripheral BareMetal.
+ *
+ * @retval FSP_SUCCESS              Successful completion.
+ * @retval FSP_ERR_USB_FAILED       The function could not be completed successfully.
+ * @retval FSP_ERR_ASSERTION        Parameter is NULL error.
+ * @note Call this API in the in the infinite loop of the application program or a timer interrupt.
+ ******************************************************************************/
+fsp_err_t R_USB_DriverActivate (usb_ctrl_t * const p_api_ctrl)
+{
+    fsp_err_t err = FSP_ERR_USB_FAILED;
+#if USB_CFG_PARAM_CHECKING_ENABLE
+    FSP_ASSERT(p_api_ctrl)
+#endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
+
+#if (BSP_CFG_RTOS == 0)
+    usb_instance_ctrl_t * p_ctrl = (usb_instance_ctrl_t *) p_api_ctrl;
+
+    if (USB_MODE_PERI == g_usb_usbmode[p_ctrl->module_number])
+    {
+        usb_cstd_usb_task();
+        err = FSP_SUCCESS;
+    }
+
+#else                                  /* (BSP_CFG_RTOS == 0) */
+    FSP_PARAMETER_NOT_USED(p_api_ctrl);
+    err = FSP_ERR_USB_FAILED;
+#endif /* (BSP_CFG_RTOS == 0) */
+    return err;
+}
+
+/**************************************************************************//**
+ * @brief Set callback memory to USB Driver for USB Peripheral BareMetal.
+ *
+ * @retval FSP_SUCCESS              Successful completion.
+ * @retval FSP_ERR_USB_FAILED       The function could not be completed successfully.
+ * @retval FSP_ERR_ASSERTION        Parameter is NULL error.
+ * @note Call this API after calling R_USB_Open function.
+ ******************************************************************************/
+fsp_err_t R_USB_CallbackMemorySet (usb_ctrl_t * const p_api_ctrl, usb_callback_args_t * p_callback_memory)
+{
+    fsp_err_t err = FSP_ERR_USB_FAILED;
+
+#if USB_CFG_PARAM_CHECKING_ENABLE
+    FSP_ASSERT(p_api_ctrl)
+    FSP_ASSERT(p_callback_memory)
+#endif                                 /* USB_CFG_PARAM_CHECKING_ENABLE */
+
+#if (BSP_CFG_RTOS == 0)
+    usb_instance_ctrl_t * p_ctrl = (usb_instance_ctrl_t *) p_api_ctrl;
+
+    if (USB_MODE_PERI == g_usb_usbmode[p_ctrl->module_number])
+    {
+        g_usb_apl_callback_memory[p_ctrl->module_number] = p_callback_memory;
+        err = FSP_SUCCESS;
+    }
+
+#else                                  /* (BSP_CFG_RTOS == 0) */
+    FSP_PARAMETER_NOT_USED(p_api_ctrl);
+    FSP_PARAMETER_NOT_USED(p_callback_memory);
+#endif  /* (BSP_CFG_RTOS == 0) */
+    return err;
+}
+
+/**************************************************************************//**
  * @brief This API gets the module number.
  *
  * @retval FSP_SUCCESS              Successful completion.
@@ -3457,7 +3529,7 @@ fsp_err_t R_USB_ClassTypeGet (usb_ctrl_t * const p_api_ctrl, usb_class_t * class
 {
     usb_instance_ctrl_t * p_ctrl = (usb_instance_ctrl_t *) p_api_ctrl;
 
-    *class_type = p_ctrl->type;
+    *class_type = (usb_class_t) (p_ctrl->type | USB_VALUE_80H);
 
     return FSP_SUCCESS;
 }
@@ -3740,6 +3812,59 @@ fsp_err_t R_USB_OtgSRP (usb_ctrl_t * const p_api_ctrl)
 
     return FSP_ERR_USB_FAILED;
 #endif  /* (BSP_CFG_RTOS == 1) */
+}
+
+/**************************************************************************//**
+ * @brief USB Type-C connect Information get.
+ *
+ * @retval FSP_SUCCESS              Successful completion.
+ * @retval FSP_ERR_USB_FAILED       The function could not be completed successfully.
+ ******************************************************************************/
+fsp_err_t R_USB_TypeCInfoGet (usb_ctrl_t * const p_api_ctrl, usb_typec_info_t * p_info)
+{
+    FSP_PARAMETER_NOT_USED(p_api_ctrl);
+
+#if (USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE)
+
+    /* Set Connection State Mode */
+    if (USB_TYPEC_MEC_MODE == (R_USBCC->MEC & USB_TYPEC_MEC_MODE))
+    {
+        p_info->operation_mode = USB_TYPEC_MODE_USB20_ONLY_SINK; /* USB 2.0 Only Sink Mode */
+    }
+    else
+    {
+        p_info->operation_mode = USB_TYPEC_MODE_SINK;            /* Sink Only Mode */
+    }
+
+    /* Set Connection of Plug Orientation */
+    if (USB_TYPEC_TCS_PLUG == (g_usb_typec_reg_tcs & USB_TYPEC_TCS_PLUG))
+    {
+        p_info->plug = USB_TYPEC_PLUG_CC2_CONNECTED; /* CC2 connected */
+    }
+    else
+    {
+        p_info->plug = USB_TYPEC_PLUG_CC1_CONNECTED; /* CC1 connected */
+    }
+
+    /* Set Status of VBUS */
+    if (USB_TYPEC_TCS_VBUSS == (g_usb_typec_reg_tcs & USB_TYPEC_TCS_VBUSS))
+    {
+        p_info->vbus_status = USB_TYPEC_VBUS_STATUS_ON;  /* VBUS On State */
+    }
+    else
+    {
+        p_info->vbus_status = USB_TYPEC_VBUS_STATUS_OFF; /* VBUS Off State */
+    }
+
+    /* Set Status of Connection State Machine */
+    p_info->connection_status = (g_usb_typec_reg_tcs & USB_TYPEC_TCS_CNS_MASK) >> 4;
+
+    return FSP_SUCCESS;
+#else                                  /* USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE */
+    FSP_PARAMETER_NOT_USED(p_info);
+
+    return FSP_ERR_USB_FAILED;
+#endif /* USB_CFG_TYPEC_FEATURE == USB_CFG_ENABLE */
 }
 
 /*******************************************************************************************************************//**
