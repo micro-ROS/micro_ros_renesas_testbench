@@ -8,7 +8,7 @@ on:
     - cron:  '0 6 * * *'
 
 jobs:
-  micro_ros_arduino_generate:
+  micro_ros_component_update:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
