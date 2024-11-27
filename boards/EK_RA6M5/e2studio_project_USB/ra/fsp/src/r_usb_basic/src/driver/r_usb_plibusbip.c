@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /******************************************************************************
  * Includes   <System Includes> , "Project Includes"
@@ -76,7 +62,11 @@
   #if defined(USB_CFG_PMSC_USE) || defined(USB_CFG_PVND_USE) || defined(USB_CFG_PPRN_USE) || defined(USB_CFG_PAUD_USE)
    #define USB_COMPOSITE_DEVICE
   #else
-   #define USB_NO_COMPOSITE_DEVICE
+   #if ((USB_NULL != USB_CFG_PCDC_BULK_IN2) || (USB_NULL != USB_CFG_PCDC_BULK_OUT2))
+    #define USB_COMPOSITE_DEVICE
+   #else
+    #define USB_NO_COMPOSITE_DEVICE
+   #endif
   #endif
  #elif defined(USB_CFG_PMSC_USE)
   #if defined(USB_CFG_PVND_USE) || defined(USB_CFG_PPRN_USE) || defined(USB_CFG_PAUD_USE)
@@ -1624,7 +1614,7 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
         case USB_CFG_PCDC_BULK_OUT:
         {
     #if USB_CFG_DTC == USB_CFG_ENABLE
-            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(36U));
+            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(40U));
     #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
     #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
@@ -1646,7 +1636,7 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
         case USB_CFG_PPRN_BULK_OUT:
         {
     #if USB_CFG_DTC == USB_CFG_ENABLE
-            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(36U));
+            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(40U));
     #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
     #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
@@ -1668,7 +1658,7 @@ uint16_t usb_pstd_get_pipe_buf_value (uint16_t pipe_no)
         case USB_CFG_PMSC_BULK_OUT:
         {
     #if USB_CFG_DTC == USB_CFG_ENABLE
-            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(36U));
+            pipe_buf = (USB_BUF_SIZE(1024U) | USB_BUF_NUMB(40U));
     #else                              /* USB_CFG_DTC == USB_CFG_ENABLE */
             pipe_buf = (USB_BUF_SIZE(2048U) | USB_BUF_NUMB(72U));
     #endif                             /* USB_CFG_DTC == USB_CFG_ENABLE */
