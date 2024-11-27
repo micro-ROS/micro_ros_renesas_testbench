@@ -67,11 +67,11 @@ endif
 ifneq ($(strip $(PP_DEPS)),)
 -include $(PP_DEPS)
 endif
-ifneq ($(strip $(ASM_UPPER_DEPS)),)
--include $(ASM_UPPER_DEPS)
-endif
 ifneq ($(strip $(SX_DEPS)),)
 -include $(SX_DEPS)
+endif
+ifneq ($(strip $(ASM_UPPER_DEPS)),)
+-include $(ASM_UPPER_DEPS)
 endif
 ifneq ($(strip $(SX_UPPER_DEPS)),)
 -include $(SX_UPPER_DEPS)
@@ -86,9 +86,9 @@ endif
 
 -include ../makefile.defs
 
-# Add inputs and outputs from these tool invocations to the build variables 
+# Add inputs and outputs from these tool invocations to the build variables
 SECONDARY_FLASH += \
-microros_testbench.hex \
+microros_testbench.srec \
 
 SECONDARY_SIZE += \
 microros_testbench.siz \
@@ -104,25 +104,22 @@ main-build: microros_testbench.elf secondary-outputs
 
 # Tool invocations
 microros_testbench.elf: $(OBJS) $(USER_OBJS) $(LINKER_SCRIPT)
-	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g -T "fsp.ld" -Xlinker --gc-sections -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
+	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g -T "fsp.ld" -Xlinker --gc-sections -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
 	@echo Building target: $@ && arm-none-eabi-gcc @"microros_testbench.elf.in"
-
-microros_testbench.hex: microros_testbench.elf
-	arm-none-eabi-objcopy -O ihex "microros_testbench.elf"  "microros_testbench.hex"
-
+microros_testbench.srec: microros_testbench.elf
+	arm-none-eabi-objcopy -O srec "microros_testbench.elf"  "microros_testbench.srec"
 microros_testbench.siz: microros_testbench.elf
 	arm-none-eabi-size --format=berkeley "microros_testbench.elf"
-
 # Other Targets
 clean:
-	-$(file > clean_file.tmp,  $(JMP_DEPS)  $(FSY_DEPS)  $(C_UPPER_DEPS)  $(SECONDARY_SIZE)  $(SRC_UPPER_DEPS)  $(P_UPPER_DEPS)  $(S_DEPS)  $(PP_UPPER_DEPS)  $(P_DEPS)  $(FSY_UPPER_DEPS)  $(C_DEPS)  $(SRC_DEPS)  $(JMP_UPPER_DEPS)  $(PP_DEPS)  $(ASM_UPPER_DEPS)  $(SX_DEPS)  $(SX_UPPER_DEPS)  $(OBJS)  $(SECONDARY_FLASH)  $(ASM_DEPS)  $(SREC)  $(S_UPPER_DEPS)  $(MAP) )
+	-$(file > clean_file.tmp,  $(JMP_DEPS)  $(FSY_DEPS)  $(C_UPPER_DEPS)  $(SECONDARY_SIZE)  $(SRC_UPPER_DEPS)  $(P_UPPER_DEPS)  $(S_DEPS)  $(PP_UPPER_DEPS)  $(P_DEPS)  $(FSY_UPPER_DEPS)  $(C_DEPS)  $(SRC_DEPS)  $(JMP_UPPER_DEPS)  $(PP_DEPS)  $(SX_DEPS)  $(ASM_UPPER_DEPS)  $(SX_UPPER_DEPS)  $(OBJS)  $(SECONDARY_FLASH)  $(ASM_DEPS)  $(SREC)  $(S_UPPER_DEPS)  $(MAP) )
 	-@ xargs -P 2 -s 32000 -t -a clean_file.tmp $(RM)
 	-@$(RM) clean_file.tmp
 	-$(RM)  microros_testbench.elf
 	-@echo ' '
 
 pre-build:
-	-cd ../micro_ros_renesas2estudio_component/library_generation && ./library_generation.sh "-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g"
+	-cd ../micro_ros_renesas2estudio_component/library_generation && ./library_generation.sh "-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -O2 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g"
 	-@echo ' '
 
 secondary-outputs: $(SECONDARY_FLASH) $(SECONDARY_SIZE)
