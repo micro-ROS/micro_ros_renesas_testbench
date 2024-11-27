@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /***********************************************************************************************************************
  * Includes
@@ -358,7 +344,7 @@ fsp_err_t R_SCI_B_UART_Open (uart_ctrl_t * const p_api_ctrl, uart_cfg_t const * 
 
     uint32_t ccr0 = R_SCI_B0_CCR0_IDSEL_Msk;
 
-    /* Enable the SCI channel and reset the registers to their initial state. */
+    /* Enable the SCI channel */
     R_BSP_MODULE_START(FSP_IP_SCI, p_cfg->channel);
 
     /* Initialize registers as defined in section 26.3.7 "SCI Initialization in Asynchronous Mode" in the RA6T2 manual
@@ -963,10 +949,14 @@ fsp_err_t R_SCI_B_UART_BaudCalculate (uint32_t                     baudrate,
      *  BRR = (PCLK / (div_coefficient * baud)) - 1
      */
     int32_t  hit_bit_err = SCI_B_UART_100_PERCENT_X_1000;
-    uint32_t hit_mddr    = 0U;
+    uint8_t  hit_mddr    = 0U;
     uint32_t divisor     = 0U;
 
+#if (BSP_FEATURE_BSP_HAS_SCISPI_CLOCK)
     uint32_t freq_hz = R_FSP_SciSpiClockHzGet();
+#else
+    uint32_t freq_hz = R_FSP_SciClockHzGet();
+#endif
 
     for (uint32_t select_16_base_clk_cycles = 0U;
          select_16_base_clk_cycles <= 1U && (hit_bit_err > ((int32_t) baud_rate_error_x_1000));
@@ -1017,17 +1007,16 @@ fsp_err_t R_SCI_B_UART_BaudCalculate (uint32_t                     baudrate,
                     int32_t bit_err = (int32_t) (((((int64_t) freq_hz) * SCI_B_UART_100_PERCENT_X_1000) /
                                                   err_divisor) - SCI_B_UART_100_PERCENT_X_1000);
 
-                    uint32_t mddr = 0U;
+                    uint8_t mddr = 0U;
                     if (bitrate_modulation)
                     {
                         /* Calculate the MDDR (M) value if bit rate modulation is enabled,
                          * The formula to calculate MBBR (from the M and N relationship given in the hardware manual) is as follows
-                         * and it must be between 128 and 256.
+                         * and it must be between 128 and 255.
                          * MDDR = ((div_coefficient * baud * 256) * (BRR + 1)) / PCLK */
-                        mddr = (uint32_t) err_divisor / (freq_hz / SCI_B_UART_MDDR_MAX);
+                        mddr = (uint8_t) ((uint32_t) err_divisor / (freq_hz / SCI_B_UART_MDDR_MAX));
 
-                        /* The maximum value that could result from the calculation above is 256, which is a valid MDDR
-                         * value, so only the lower bound is checked. */
+                        /* MDDR value must be greater than or equal to SCI_B_UART_MDDR_MIN. */
                         if (mddr < SCI_B_UART_MDDR_MIN)
                         {
                             break;
@@ -1063,7 +1052,7 @@ fsp_err_t R_SCI_B_UART_BaudCalculate (uint32_t                     baudrate,
                     if (bitrate_modulation)
                     {
                         p_baud_setting->baudrate_bits_b.brme = 1U;
-                        p_baud_setting->baudrate_bits_b.mddr = (uint8_t) hit_mddr;
+                        p_baud_setting->baudrate_bits_b.mddr = hit_mddr;
                     }
                     else
                     {

@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /*******************************************************************************************************************//**
  * @addtogroup BSP_MCU_RA6T2
@@ -28,6 +14,8 @@
 #ifndef BSP_OVERRIDE_H
 #define BSP_OVERRIDE_H
 
+#include "bsp_elc.h"
+
 /***********************************************************************************************************************
  * Includes   <System Includes> , "Project Includes"
  **********************************************************************************************************************/
@@ -37,42 +25,21 @@
  **********************************************************************************************************************/
 
 /* Define overrides required for this MCU. */
-#define BSP_OVERRIDE_ELC_PERIPHERAL_T
 #define BSP_OVERRIDE_ADC_CHANNEL_T
-
-/* Override definitions. */
-#define ELC_PERIPHERAL_NUM    (30U)
+#define BSP_OVERRIDE_LPM_SNOOZE_CANCEL_T
 
 /***********************************************************************************************************************
  * Typedef definitions
  **********************************************************************************************************************/
 
-/** Possible peripherals to be linked to event signals (not all available on all MCUs) */
-typedef enum e_elc_peripheral
+/** Snooze cancel control */
+typedef enum e_lpm_snooze_cancel
 {
-    ELC_PERIPHERAL_GPT_A   = (0),
-    ELC_PERIPHERAL_GPT_B   = (1),
-    ELC_PERIPHERAL_GPT_C   = (2),
-    ELC_PERIPHERAL_GPT_D   = (3),
-    ELC_PERIPHERAL_GPT_E   = (4),
-    ELC_PERIPHERAL_GPT_F   = (5),
-    ELC_PERIPHERAL_GPT_G   = (6),
-    ELC_PERIPHERAL_GPT_H   = (7),
-    ELC_PERIPHERAL_DAC0    = (12),
-    ELC_PERIPHERAL_DAC1    = (13),
-    ELC_PERIPHERAL_IOPORTB = (14),
-    ELC_PERIPHERAL_IOPORTC = (15),
-    ELC_PERIPHERAL_IOPORTD = (16),
-    ELC_PERIPHERAL_IOPORTE = (17),
-    ELC_PERIPHERAL_ADC0    = (19),
-    ELC_PERIPHERAL_ADC0_B  = (20),
-    ELC_PERIPHERAL_ADC0_C  = (21),
-    ELC_PERIPHERAL_ADC1    = (22),
-    ELC_PERIPHERAL_ADC1_B  = (23),
-    ELC_PERIPHERAL_ADC1_C  = (24),
-    ELC_PERIPHERAL_DAC2    = (28),
-    ELC_PERIPHERAL_DAC3    = (29),
-} elc_peripheral_t;
+    LPM_SNOOZE_CANCEL_SOURCE_NONE         = ELC_EVENT_NONE,         ///< No snooze cancel source
+    LPM_SNOOZE_CANCEL_SOURCE_SCI0_AM      = ELC_EVENT_SCI0_AM,      ///< SCI0 address match event
+    LPM_SNOOZE_CANCEL_SOURCE_DTC_COMPLETE = ELC_EVENT_DTC_COMPLETE, ///< DTC transfer completion
+    LPM_SNOOZE_CANCEL_SOURCE_DOC_DOPCI    = ELC_EVENT_DOC_INT,      ///< Data operation circuit interrupt
+} lpm_snooze_cancel_t;
 
 /*==============================================
  * ADC Overrides
