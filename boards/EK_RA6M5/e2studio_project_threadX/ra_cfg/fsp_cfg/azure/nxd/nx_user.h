@@ -11,8 +11,8 @@ extern "C" {
  to support larger buffer size to hold the wrapped keys, irrespective of whether NX_CRYPTO_STANDALONE_ENABLE
  is defined. */
 #ifndef NX_CRYPTO_ECDH_MAX_KEY_SIZE
-#define NX_CRYPTO_ECDH_MAX_KEY_SIZE    80 
-#endif 
+#define NX_CRYPTO_ECDH_MAX_KEY_SIZE    80
+#endif
 
 #ifdef NX_DISABLE_ERROR_CHECKING
 #define NX_SMTP_DISABLE_ERROR_CHECKING  /* SMTP does not use the common error checking macro */
@@ -176,9 +176,6 @@ int rand(void);
 
 void srand(unsigned int);
 #define NX_SRAND srand
-
-/* Azure IoT Configuration */
-#define NX_AZURE_DISABLE_IOT_SECURITY_MODULE
 
 /* DHCP Common Configuration. */
 #define NX_DHCP_TYPE_OF_SERVICE                    (NX_IP_NORMAL)

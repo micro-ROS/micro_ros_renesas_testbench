@@ -2,7 +2,7 @@
 # Automatically-generated file. Do not edit!
 ################################################################################
 
-# Add inputs and outputs from these tool invocations to the build variables 
+# Add inputs and outputs from these tool invocations to the build variables
 C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_arp_announce_send.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_arp_dynamic_entries_invalidate.c \
@@ -166,6 +166,7 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_process_hop_by_hop_option.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_process_routing_option.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_util.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nx_link.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_md5.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_nd_cache_add.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_nd_cache_add_entry.c \
@@ -191,6 +192,7 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_pool_low_watermark_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_release.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_transmit_release.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_vlan_priority_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_ram_network_driver.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_rarp_disable.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_rarp_enable.c \
@@ -274,6 +276,7 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_timed_wait_callback.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_transmit_configure.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_transmit_queue_flush.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_vlan_priority_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_window_update_notify_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_transmit_cleanup.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_window_scaling_option_get.c \
@@ -302,6 +305,7 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_send.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_source_send.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_unbind.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_vlan_priority_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_source_extract.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nx_utility.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxd_icmp_enable.c \
@@ -455,6 +459,7 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_pool_low_watermark_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_release.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_transmit_release.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_vlan_priority_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_disable.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_enable.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_info_get.c \
@@ -489,6 +494,7 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_state_wait.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_timed_wait_callback.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_transmit_configure.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_vlan_priority_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_window_update_notify_set.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_enable.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_free_port_find.c \
@@ -507,7 +513,8 @@ C_SRCS += \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_send.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_source_send.c \
 ../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_unbind.c \
-../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_source_extract.c 
+../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_vlan_priority_set.c \
+../ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_source_extract.c
 
 C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_arp_announce_send.d \
@@ -672,6 +679,7 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_process_hop_by_hop_option.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_process_routing_option.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_util.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_link.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_md5.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_nd_cache_add.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_nd_cache_add_entry.d \
@@ -697,6 +705,7 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_pool_low_watermark_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_release.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_transmit_release.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_vlan_priority_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ram_network_driver.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_rarp_disable.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_rarp_enable.d \
@@ -780,6 +789,7 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_timed_wait_callback.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_transmit_configure.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_transmit_queue_flush.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_vlan_priority_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_window_update_notify_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_transmit_cleanup.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_window_scaling_option_get.d \
@@ -808,6 +818,7 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_send.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_source_send.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_unbind.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_vlan_priority_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_source_extract.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_utility.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxd_icmp_enable.d \
@@ -961,6 +972,7 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_pool_low_watermark_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_release.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_transmit_release.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_vlan_priority_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_disable.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_enable.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_info_get.d \
@@ -995,6 +1007,7 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_state_wait.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_timed_wait_callback.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_transmit_configure.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_vlan_priority_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_window_update_notify_set.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_enable.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_free_port_find.d \
@@ -1013,7 +1026,8 @@ C_DEPS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_send.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_source_send.d \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_unbind.d \
-./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_source_extract.d 
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_vlan_priority_set.d \
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_source_extract.d
 
 OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_arp_announce_send.o \
@@ -1178,6 +1192,7 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_process_hop_by_hop_option.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_process_routing_option.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ipv6_util.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_link.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_md5.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_nd_cache_add.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_nd_cache_add_entry.o \
@@ -1203,6 +1218,7 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_pool_low_watermark_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_release.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_transmit_release.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_packet_vlan_priority_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_ram_network_driver.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_rarp_disable.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_rarp_enable.o \
@@ -1286,6 +1302,7 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_timed_wait_callback.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_transmit_configure.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_transmit_queue_flush.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_vlan_priority_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_socket_window_update_notify_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_transmit_cleanup.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_tcp_window_scaling_option_get.o \
@@ -1314,6 +1331,7 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_send.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_source_send.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_unbind.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_socket_vlan_priority_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_udp_source_extract.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nx_utility.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxd_icmp_enable.o \
@@ -1467,6 +1485,7 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_pool_low_watermark_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_release.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_transmit_release.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_packet_vlan_priority_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_disable.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_enable.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_rarp_info_get.o \
@@ -1501,6 +1520,7 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_state_wait.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_timed_wait_callback.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_transmit_configure.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_vlan_priority_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_tcp_socket_window_update_notify_set.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_enable.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_free_port_find.o \
@@ -1519,17 +1539,18 @@ OBJS += \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_send.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_source_send.o \
 ./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_unbind.o \
-./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_source_extract.o 
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_socket_vlan_priority_set.o \
+./ra/microsoft/azure-rtos/netxduo/common/src/nxe_udp_source_extract.o
 
 SREC += \
-microros_testbench.srec 
+microros_testbench.srec
 
 MAP += \
-microros_testbench.map 
+microros_testbench.map
 
 
 # Each subdirectory must supply rules for building sources it contributes
 ra/microsoft/azure-rtos/netxduo/common/src/%.o: ../ra/microsoft/azure-rtos/netxduo/common/src/%.c
-	$(file > $@.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal  -g -D_RENESAS_RA_ -D_RA_CORE=CM33 -I"../src" -I"../micro_ros_renesas2estudio_component/libmicroros/include" -I"../ra/fsp/inc" -I"../ra/fsp/inc/api" -I"../ra/fsp/inc/instances" -I"../ra/arm/CMSIS_5/CMSIS/Core/Include" -I"../ra/fsp/src/rm_threadx_port" -I"../ra/microsoft/azure-rtos/threadx/common/inc" -I"../ra_gen" -I"../ra_cfg/fsp_cfg/bsp" -I"../ra_cfg/fsp_cfg" -I"../ra_cfg/fsp_cfg/azure/tx" -I"../ra/microsoft/azure-rtos/netxduo/addons/pop3" -I"../ra/microsoft/azure-rtos/netxduo/addons/snmp" -I"../ra/microsoft/azure-rtos/netxduo/addons/nat" -I"../ra/microsoft/azure-rtos/netxduo/addons/mqtt" -I"../ra/microsoft/azure-rtos/netxduo/addons/ftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/tftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/sntp" -I"../ra/microsoft/azure-rtos/netxduo/addons/smtp" -I"../ra/microsoft/azure-rtos/netxduo/addons/web" -I"../ra/microsoft/azure-rtos/netxduo/addons/auto_ip" -I"../ra/microsoft/azure-rtos/netxduo/addons/telnet" -I"../ra/microsoft/azure-rtos/netxduo/addons/dns" -I"../ra/microsoft/azure-rtos/netxduo/addons/dhcp" -I"../ra/microsoft/azure-rtos/netxduo/addons/http" -I"../ra/microsoft/azure-rtos/netxduo/common/inc" -I"../ra/microsoft/azure-rtos/netxduo/ports/cortex_m4" -I"../ra/fsp/src/rm_netxduo_ether" -I"../ra_cfg/fsp_cfg/middleware" -I"../ra_cfg/fsp_cfg/azure/nxd" -I"../ra/fsp/src/rm_threadx_port" -I"../ra/microsoft/azure-rtos/threadx/common/inc" -I"../src" -I"../ra/fsp/inc" -I"../ra/fsp/inc/api" -I"../ra/fsp/inc/instances" -I"../ra/fsp/src/rm_netxduo_ether" -I"../ra/microsoft/azure-rtos/netxduo/addons/pop3" -I"../ra/microsoft/azure-rtos/netxduo/addons/snmp" -I"../ra/microsoft/azure-rtos/netxduo/addons/nat" -I"../ra/microsoft/azure-rtos/netxduo/addons/mqtt" -I"../ra/microsoft/azure-rtos/netxduo/addons/ftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/tftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/sntp" -I"../ra/microsoft/azure-rtos/netxduo/addons/smtp" -I"../ra/microsoft/azure-rtos/netxduo/addons/web" -I"../ra/microsoft/azure-rtos/netxduo/addons/auto_ip" -I"../ra/microsoft/azure-rtos/netxduo/addons/telnet" -I"../ra/microsoft/azure-rtos/netxduo/addons/dns" -I"../ra/microsoft/azure-rtos/netxduo/addons/dhcp" -I"../ra/microsoft/azure-rtos/netxduo/addons/http" -I"../ra/microsoft/azure-rtos/netxduo/common/inc" -I"../ra/microsoft/azure-rtos/netxduo/ports/cortex_m4" -I"../ra/microsoft/azure-rtos/netxduo/addons/cloud" -I"../ra/arm/CMSIS_5/CMSIS/Core/Include" -I"../ra_gen" -I"../ra_cfg/fsp_cfg/bsp" -I"../ra_cfg/fsp_cfg" -I"../ra_cfg/fsp_cfg/middleware" -I"../ra_cfg/fsp_cfg/azure/nxd" -I"../ra_cfg/fsp_cfg/azure/tx" -std=c99 -Wall -Werror -Wno-aggregate-return -Wno-unused-result -w -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -c -o "$@" -x c "$<")
+	$(file > $@.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g -D_RENESAS_RA_ -D_RA_CORE=CM33 -D_RA_ORDINAL=1 -I"../src" -I"../micro_ros_renesas2estudio_component/libmicroros/include" -I"../ra/fsp/inc" -I"../ra/fsp/inc/api" -I"../ra/fsp/inc/instances" -I"../ra/arm/CMSIS_5/CMSIS/Core/Include" -I"../ra/fsp/src/rm_threadx_port" -I"../ra/microsoft/azure-rtos/threadx/common/inc" -I"../ra_gen" -I"../ra_cfg/fsp_cfg/bsp" -I"../ra_cfg/fsp_cfg" -I"../ra_cfg/fsp_cfg/azure/tx" -I"../ra/microsoft/azure-rtos/netxduo/addons/pop3" -I"../ra/microsoft/azure-rtos/netxduo/addons/snmp" -I"../ra/microsoft/azure-rtos/netxduo/addons/nat" -I"../ra/microsoft/azure-rtos/netxduo/addons/mqtt" -I"../ra/microsoft/azure-rtos/netxduo/addons/ftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/tftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/sntp" -I"../ra/microsoft/azure-rtos/netxduo/addons/smtp" -I"../ra/microsoft/azure-rtos/netxduo/addons/web" -I"../ra/microsoft/azure-rtos/netxduo/addons/auto_ip" -I"../ra/microsoft/azure-rtos/netxduo/addons/telnet" -I"../ra/microsoft/azure-rtos/netxduo/addons/dns" -I"../ra/microsoft/azure-rtos/netxduo/addons/dhcp" -I"../ra/microsoft/azure-rtos/netxduo/addons/http" -I"../ra/microsoft/azure-rtos/netxduo/common/inc" -I"../ra/microsoft/azure-rtos/netxduo/ports/cortex_m4" -I"../ra/fsp/src/rm_netxduo_ether" -I"../ra_cfg/fsp_cfg/middleware" -I"../ra_cfg/fsp_cfg/azure/nxd" -I"../ra/fsp/src/rm_threadx_port" -I"../ra/microsoft/azure-rtos/threadx/common/inc" -I"../src" -I"../ra/fsp/inc" -I"../ra/fsp/inc/api" -I"../ra/fsp/inc/instances" -I"../ra/fsp/src/rm_netxduo_ether" -I"../ra/microsoft/azure-rtos/netxduo/addons/pop3" -I"../ra/microsoft/azure-rtos/netxduo/addons/snmp" -I"../ra/microsoft/azure-rtos/netxduo/addons/nat" -I"../ra/microsoft/azure-rtos/netxduo/addons/mqtt" -I"../ra/microsoft/azure-rtos/netxduo/addons/ftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/tftp" -I"../ra/microsoft/azure-rtos/netxduo/addons/sntp" -I"../ra/microsoft/azure-rtos/netxduo/addons/smtp" -I"../ra/microsoft/azure-rtos/netxduo/addons/web" -I"../ra/microsoft/azure-rtos/netxduo/addons/auto_ip" -I"../ra/microsoft/azure-rtos/netxduo/addons/telnet" -I"../ra/microsoft/azure-rtos/netxduo/addons/dns" -I"../ra/microsoft/azure-rtos/netxduo/addons/dhcp" -I"../ra/microsoft/azure-rtos/netxduo/addons/http" -I"../ra/microsoft/azure-rtos/netxduo/common/inc" -I"../ra/microsoft/azure-rtos/netxduo/ports/cortex_m4" -I"../ra/microsoft/azure-rtos/netxduo/addons/cloud" -I"../ra_gen" -I"../ra_cfg/fsp_cfg/bsp" -I"../ra_cfg/fsp_cfg" -I"../ra_cfg/fsp_cfg/middleware" -I"../ra_cfg/fsp_cfg/azure/nxd" -I"../ra_cfg/fsp_cfg/azure/tx" -I"." -I"../ra/arm/CMSIS_6/CMSIS/Core/Include" -std=c99 -Wall -Werror -Wno-aggregate-return -Wno-unused-result -w -MMD -MP -MF"$(@:%.o=%.d)" -MT"$@" -c -o "$@" -x c "$<")
 	@echo Building file: $< && arm-none-eabi-gcc @"$@.in"
 

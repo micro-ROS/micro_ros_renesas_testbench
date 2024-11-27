@@ -1,28 +1,14 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 #ifndef R_CAN_API_H
 #define R_CAN_API_H
 
 /*******************************************************************************************************************//**
- * @ingroup RENESAS_INTERFACES
+ * @ingroup RENESAS_CONNECTIVITY_INTERFACES
  * @defgroup CAN_API CAN Interface
  * @brief Interface for CAN peripheral
  *
@@ -33,10 +19,6 @@
  * - Interrupt driven transmit/receive processing
  * - Callback function support with returning event code
  * - Hardware resource locking during a transaction
- *
- * Implemented by:
- * - @ref CAN
- * - @ref CANFD
  *
  * @{
  **********************************************************************************************************************/
@@ -106,6 +88,8 @@ typedef enum e_can_test_mode
     CAN_TEST_MODE_INTERNAL_BUS      = 0x80 ///< CANFD Internal CAN Bus Communication Test Mode.
 } can_test_mode_t;
 
+#ifndef BSP_OVERRIDE_CAN_INFO_T
+
 /** CAN status info */
 typedef struct st_can_info
 {
@@ -116,6 +100,8 @@ typedef struct st_can_info
     uint8_t  error_count_receive;      ///< Receive error count.
     uint32_t error_code;               ///< Error code, cleared after reading.
 } can_info_t;
+
+#endif
 
 /** CAN ID modes */
 typedef enum e_can_id_mode
@@ -151,6 +137,8 @@ typedef struct st_can_frame
     uint8_t          data[CAN_DATA_BUFFER_LENGTH]; ///< CAN data.
 } can_frame_t;
 
+#ifndef BSP_OVERRIDE_CAN_CALLBACK_ARGS_T
+
 /** CAN callback parameter definition */
 typedef struct st_can_callback_args
 {
@@ -165,6 +153,8 @@ typedef struct st_can_callback_args
     void const * p_context;            ///< Context provided to user during callback.
     can_frame_t  frame;                ///< Received frame data.
 } can_callback_args_t;
+
+#endif
 
 /** CAN Configuration */
 typedef struct st_can_cfg
@@ -186,9 +176,6 @@ typedef struct st_can_cfg
 } can_cfg_t;
 
 /** CAN control block.  Allocate an instance specific control block to pass into the CAN API calls.
- * @par Implemented as
- * - can_instance_ctrl_t
- * - canfd_instance_ctrl_t
  */
 typedef void can_ctrl_t;
 
@@ -196,20 +183,14 @@ typedef void can_ctrl_t;
 typedef struct st_can_api
 {
     /** Open function for CAN device
-     * @par Implemented as
-     * - R_CAN_Open()
-     * - R_CANFD_Open()
      *
      * @param[in,out]  p_ctrl     Pointer to the CAN control block. Must be declared by user. Value set here.
-     * @param[in]      can_cfg_t  Pointer to CAN configuration structure. All elements of this structure must be set by
+     * @param[in]      p_cfg      Pointer to CAN configuration structure. All elements of this structure must be set by
      *                            user.
      */
     fsp_err_t (* open)(can_ctrl_t * const p_ctrl, can_cfg_t const * const p_cfg);
 
     /** Write function for CAN device
-     * @par Implemented as
-     * - R_CAN_Write()
-     * - R_CANFD_Write()
      * @param[in]   p_ctrl          Pointer to the CAN control block.
      * @param[in]   buffer          Buffer number (mailbox or message buffer) to write to.
      * @param[in]   p_frame         Pointer for frame of CAN ID, DLC, data and frame type to write.
@@ -217,8 +198,6 @@ typedef struct st_can_api
     fsp_err_t (* write)(can_ctrl_t * const p_ctrl, uint32_t buffer_number, can_frame_t * const p_frame);
 
     /** Read function for CAN device
-     * @par Implemented as
-     * - R_CANFD_Read()
      * @param[in]   p_ctrl          Pointer to the CAN control block.
      * @param[in]   buffer          Message buffer (number) to read from.
      * @param[in]   p_frame         Pointer to store the CAN ID, DLC, data and frame type.
@@ -226,27 +205,19 @@ typedef struct st_can_api
     fsp_err_t (* read)(can_ctrl_t * const p_ctrl, uint32_t buffer_number, can_frame_t * const p_frame);
 
     /** Close function for CAN device
-     * @par Implemented as
-     * - R_CAN_Close()
      * @param[in]   p_ctrl     Pointer to the CAN control block.
      */
     fsp_err_t (* close)(can_ctrl_t * const p_ctrl);
 
     /** Mode Transition function for CAN device
-     * @par Implemented as
-     * - R_CAN_ModeTransition()
-     * - R_CANFD_ModeTransition()
      * @param[in]   p_ctrl               Pointer to the CAN control block.
      * @param[in]   operation_mode       Destination CAN operation state.
      * @param[in]   test_mode            Destination CAN test state.
      */
-    fsp_err_t (* modeTransition)(can_ctrl_t * const p_api_ctrl, can_operation_mode_t operation_mode,
+    fsp_err_t (* modeTransition)(can_ctrl_t * const p_ctrl, can_operation_mode_t operation_mode,
                                  can_test_mode_t test_mode);
 
     /** Get CAN channel info.
-     * @par Implemented as
-     * - R_CAN_InfoGet()
-     * - R_CANFD_InfoGet()
      *
      * @param[in]   p_ctrl  Handle for channel (pointer to channel control block)
      * @param[out]  p_info  Memory address to return channel specific data to.
@@ -254,9 +225,6 @@ typedef struct st_can_api
     fsp_err_t (* infoGet)(can_ctrl_t * const p_ctrl, can_info_t * const p_info);
 
     /** Specify callback function and optional context pointer and working memory pointer.
-     * @par Implemented as
-     * - R_CAN_CallbackSet()
-     * - R_CANFD_CallbackSet()
      *
      * @param[in]   p_ctrl                   Control block set in @ref can_api_t::open call.
      * @param[in]   p_callback               Callback function to register
@@ -264,7 +232,7 @@ typedef struct st_can_api
      * @param[in]   p_working_memory         Pointer to volatile memory where callback structure can be allocated.
      *                                       Callback arguments allocated here are only valid during the callback.
      */
-    fsp_err_t (* callbackSet)(can_ctrl_t * const p_api_ctrl, void (* p_callback)(can_callback_args_t *),
+    fsp_err_t (* callbackSet)(can_ctrl_t * const p_ctrl, void (* p_callback)(can_callback_args_t *),
                               void const * const p_context, can_callback_args_t * const p_callback_memory);
 } can_api_t;
 
@@ -277,7 +245,7 @@ typedef struct st_can_instance
 } can_instance_t;
 
 /*******************************************************************************************************************//**
- * @} (end addtogroup CAN_API)
+ * @} (end defgroup CAN_API)
  **********************************************************************************************************************/
 
 /* Common macro for FSP header files. There is also a corresponding FSP_HEADER macro at the top of this file. */

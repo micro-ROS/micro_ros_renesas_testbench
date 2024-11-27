@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /***********************************************************************************************************************
  * Includes   <System Includes> , "Project Includes"
@@ -30,6 +16,11 @@
  **********************************************************************************************************************/
 #define BSP_IRQ_UINT32_MAX       (0xFFFFFFFFU)
 #define BSP_PRV_BITS_PER_WORD    (32)
+
+#if BSP_ALT_BUILD
+ #define BSP_EVENT_NUM_TO_INTSELR(x)         (x >> 5)        // Convert event number to INTSELR register number
+ #define BSP_EVENT_NUM_TO_INTSELR_MASK(x)    (1 << (x % 32)) // Convert event number to INTSELR bit mask
+#endif
 
 /***********************************************************************************************************************
  * Typedef definitions
@@ -55,6 +46,154 @@ const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_MAX_ENT
  *
  * @{
  **********************************************************************************************************************/
+#if 0 == BSP_CFG_INLINE_IRQ_FUNCTIONS
+ #if BSP_FEATURE_ICU_HAS_IELSR
+
+/*******************************************************************************************************************//**
+ * Clear the interrupt status flag (IR) for a given interrupt. When an interrupt is triggered the IR bit
+ * is set. If it is not cleared in the ISR then the interrupt will trigger again immediately.
+ *
+ * @param[in] irq            Interrupt for which to clear the IR bit. Note that the enums listed for IRQn_Type are
+ *                           only those for the Cortex Processor Exceptions Numbers.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+void R_BSP_IrqStatusClear (IRQn_Type irq)
+{
+    /* Clear the IR bit in the selected IELSR register. */
+    R_ICU->IELSR_b[irq].IR = 0U;
+
+    /* Read back the IELSR register to ensure that the IR bit is cleared.
+     * See section "13.5.1 Operations During an Interrupt" in the RA8M1 manual R01UH0994EJ0100. */
+    FSP_REGISTER_READ(R_ICU->IELSR[irq]);
+}
+
+ #endif
+
+/*******************************************************************************************************************//**
+ * Clear the interrupt status flag (IR) for a given interrupt and clear the NVIC pending interrupt.
+ *
+ * @param[in] irq            Interrupt for which to clear the IR bit. Note that the enums listed for IRQn_Type are
+ *                           only those for the Cortex Processor Exceptions Numbers.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+BSP_SECTION_FLASH_GAP void R_BSP_IrqClearPending (IRQn_Type irq)
+{
+ #if BSP_FEATURE_ICU_HAS_IELSR
+
+    /* Clear the IR bit in the selected IELSR register. */
+    R_BSP_IrqStatusClear(irq);
+
+    /* Flush memory transactions to ensure that the IR bit is cleared before clearing the pending bit in the NVIC. */
+    __DMB();
+ #endif
+
+    /* The following statement is used in place of NVIC_ClearPendingIRQ to avoid including a branch for system
+     * exceptions every time an interrupt is cleared in the NVIC. */
+    uint32_t _irq = (uint32_t) irq;
+    NVIC->ICPR[(((uint32_t) irq) >> 5UL)] = (uint32_t) (1UL << (_irq & 0x1FUL));
+}
+
+/*******************************************************************************************************************//**
+ * Sets the interrupt priority and context.
+ *
+ * @param[in] irq            The IRQ to configure.
+ * @param[in] priority       NVIC priority of the interrupt
+ * @param[in] p_context      The interrupt context is a pointer to data required in the ISR.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+BSP_SECTION_FLASH_GAP void R_BSP_IrqCfg (IRQn_Type const irq, uint32_t priority, void * p_context)
+{
+    /* The following statement is used in place of NVIC_SetPriority to avoid including a branch for system exceptions
+     * every time a priority is configured in the NVIC. */
+ #if (4U == __CORTEX_M)
+    NVIC->IPR[((uint32_t) irq)] = (uint8_t) ((priority << (8U - __NVIC_PRIO_BITS)) & (uint32_t) UINT8_MAX);
+ #elif (33 == __CORTEX_M)
+    NVIC->IPR[((uint32_t) irq)] = (uint8_t) ((priority << (8U - __NVIC_PRIO_BITS)) & (uint32_t) UINT8_MAX);
+ #elif (23 == __CORTEX_M)
+    NVIC->IPR[_IP_IDX(irq)] = ((uint32_t) (NVIC->IPR[_IP_IDX(irq)] & ~((uint32_t) UINT8_MAX << _BIT_SHIFT(irq))) |
+                               (((priority << (8U - __NVIC_PRIO_BITS)) & (uint32_t) UINT8_MAX) << _BIT_SHIFT(irq)));
+ #else
+    NVIC_SetPriority(irq, priority);
+ #endif
+
+    /* Store the context. The context is recovered in the ISR. */
+    R_FSP_IsrContextSet(irq, p_context);
+}
+
+/*******************************************************************************************************************//**
+ * Enable the IRQ in the NVIC (Without clearing the pending bit).
+ *
+ * @param[in] irq            The IRQ to enable. Note that the enums listed for IRQn_Type are only those for the Cortex
+ *                           Processor Exceptions Numbers.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+BSP_SECTION_FLASH_GAP void R_BSP_IrqEnableNoClear (IRQn_Type const irq)
+{
+    /* The following statement is used in place of NVIC_EnableIRQ to avoid including a branch for system exceptions
+     * every time an interrupt is enabled in the NVIC. */
+    uint32_t _irq = (uint32_t) irq;
+
+    __COMPILER_BARRIER();
+    NVIC->ISER[(_irq >> 5UL)] = (uint32_t) (1UL << (_irq & 0x1FUL));
+    __COMPILER_BARRIER();
+}
+
+/*******************************************************************************************************************//**
+ * Clears pending interrupts in both ICU and NVIC, then enables the interrupt.
+ *
+ * @param[in] irq            Interrupt for which to clear the IR bit and enable in the NVIC. Note that the enums listed
+ *                           for IRQn_Type are only those for the Cortex Processor Exceptions Numbers.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+BSP_SECTION_FLASH_GAP void R_BSP_IrqEnable (IRQn_Type const irq)
+{
+    /* Clear pending interrupts in the ICU and NVIC. */
+    R_BSP_IrqClearPending(irq);
+
+    /* Enable the IRQ in the NVIC. */
+    R_BSP_IrqEnableNoClear(irq);
+}
+
+/*******************************************************************************************************************//**
+ * Disables interrupts in the NVIC.
+ *
+ * @param[in] irq            The IRQ to disable in the NVIC. Note that the enums listed for IRQn_Type are
+ *                           only those for the Cortex Processor Exceptions Numbers.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+BSP_SECTION_FLASH_GAP void R_BSP_IrqDisable (IRQn_Type const irq)
+{
+    /* The following statements is used in place of NVIC_DisableIRQ to avoid including a branch for system
+     * exceptions every time an interrupt is cleared in the NVIC. */
+    uint32_t _irq = (uint32_t) irq;
+    NVIC->ICER[(((uint32_t) irq) >> 5UL)] = (uint32_t) (1UL << (_irq & 0x1FUL));
+
+    __DSB();
+    __ISB();
+}
+
+/*******************************************************************************************************************//**
+ * Sets the interrupt priority and context, clears pending interrupts, then enables the interrupt.
+ *
+ * @param[in] irq            Interrupt number.
+ * @param[in] priority       NVIC priority of the interrupt
+ * @param[in] p_context      The interrupt context is a pointer to data required in the ISR.
+ *
+ * @warning Do not call this function for system exceptions where the IRQn_Type value is < 0.
+ **********************************************************************************************************************/
+BSP_SECTION_FLASH_GAP void R_BSP_IrqCfgEnable (IRQn_Type const irq, uint32_t priority, void * p_context)
+{
+    R_BSP_IrqCfg(irq, priority, p_context);
+    R_BSP_IrqEnable(irq);
+}
+
+#endif                                 // 0 == BSP_CFG_INLINE_IRQ_FUNCTIONS
 
 /** @} (end addtogroup BSP_MCU) */
 
@@ -64,23 +203,25 @@ const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_MAX_ENT
  * in the NVIC.
  *
  **********************************************************************************************************************/
-void bsp_irq_cfg (void)
+BSP_SECTION_FLASH_GAP void bsp_irq_cfg (void)
 {
 #if FSP_PRIV_TZ_USE_SECURE_REGS
+ #if (BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_SECURE_BUILD == 0)
+
+    /* On MCUs with this implementation of TrustZone, IRQ security attribution is set to secure by default.
+     * This means that flat projects do not need to set security attribution to secure. */
+ #else
 
     /* Unprotect security registers. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_SAR);
 
- #if !BSP_TZ_SECURE_BUILD
+  #if !BSP_TZ_SECURE_BUILD
 
     /* Set the DMAC channels to secure access. */
-  #ifdef BSP_TZ_CFG_ICUSARC
+   #ifdef BSP_TZ_CFG_ICUSARC
     R_CPSCU->ICUSARC = ~R_CPSCU_ICUSARC_SADMACn_Msk;
+   #endif
   #endif
-  #ifdef BSP_TZ_CFG_DMASARA
-    R_CPSCU->DMASARA = ~R_CPSCU_DMASARA_DMASARAn_Msk;
-  #endif
- #endif
 
     /* Place all vectors in non-secure state unless they are used in the secure project. */
     uint32_t interrupt_security_state[BSP_ICU_VECTOR_MAX_ENTRIES / BSP_PRV_BITS_PER_WORD];
@@ -108,10 +249,26 @@ void bsp_irq_cfg (void)
 
     /* Protect security registers. */
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
+ #endif
 #endif
 
+#if BSP_FEATURE_ICU_HAS_IELSR
     for (uint32_t i = 0U; i < (BSP_ICU_VECTOR_MAX_ENTRIES - BSP_FEATURE_ICU_FIXED_IELSR_COUNT); i++)
     {
-        R_ICU->IELSR[i] = (uint32_t) g_interrupt_event_link_select[i];
+        if (0U != g_interrupt_event_link_select[i])
+        {
+            R_ICU->IELSR[i] = (uint32_t) g_interrupt_event_link_select[i];
+
+ #if BSP_ALT_BUILD
+
+            /* Set INTSELR for selected events. */
+            uint32_t intselr_num = BSP_EVENT_NUM_TO_INTSELR((uint32_t) g_interrupt_event_link_select[i]);
+            uint32_t intselr     = R_ICU->INTSELR[intselr_num];
+
+            intselr |= BSP_EVENT_NUM_TO_INTSELR_MASK((uint32_t) g_interrupt_event_link_select[i]);
+            R_ICU->INTSELR[intselr_num] = intselr;
+ #endif
+        }
     }
+#endif
 }
