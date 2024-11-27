@@ -1,14 +1,14 @@
 /* generated HAL source file - do not edit */
 #include "hal_data.h"
 agt_instance_ctrl_t g_timer0_ctrl;
-const agt_extended_cfg_t g_timer0_extend =
-		{ .count_source = AGT_CLOCK_PCLKB, .agto = AGT_PIN_CFG_DISABLED,
-				.agtoab_settings_b.agtoa = AGT_PIN_CFG_DISABLED,
-				.agtoab_settings_b.agtob = AGT_PIN_CFG_DISABLED,
-				.measurement_mode = AGT_MEASURE_DISABLED, .agtio_filter =
-						AGT_AGTIO_FILTER_NONE, .enable_pin =
-						AGT_ENABLE_PIN_NOT_USED, .trigger_edge =
-						AGT_TRIGGER_EDGE_RISING, };
+const agt_extended_cfg_t g_timer0_extend = { .count_source = AGT_CLOCK_PCLKB,
+		.agto = AGT_PIN_CFG_DISABLED, .agtoab_settings_b.agtoa =
+				AGT_PIN_CFG_DISABLED, .agtoab_settings_b.agtob =
+				AGT_PIN_CFG_DISABLED, .measurement_mode = AGT_MEASURE_DISABLED,
+		.agtio_filter = AGT_AGTIO_FILTER_NONE, .enable_pin =
+				AGT_ENABLE_PIN_NOT_USED,
+		.trigger_edge = AGT_TRIGGER_EDGE_RISING, .counter_bit_width =
+				AGT_COUNTER_BIT_WIDTH_16, };
 const timer_cfg_t g_timer0_cfg = { .mode = TIMER_MODE_PERIODIC,
 /* Actual period: 0.0001 seconds. Actual duty: 50%. */.period_counts =
 		(uint32_t) 0x1388, .duty_cycle_counts = 0x9c4, .source_div =
@@ -57,7 +57,8 @@ const sci_uart_extended_cfg_t g_uart0_cfg_extend = {
                 #else
 				.de_control_pin = (bsp_io_port_pin_t) UINT16_MAX,
 #endif
-				}, };
+				}, .irda_setting = { .ircr_bits_b.ire = 0,
+				.ircr_bits_b.irrxinv = 0, .ircr_bits_b.irtxinv = 0, }, };
 
 /** UART interface configuration */
 const uart_cfg_t g_uart0_cfg = { .channel = 0, .data_bits = UART_DATA_BITS_8,
