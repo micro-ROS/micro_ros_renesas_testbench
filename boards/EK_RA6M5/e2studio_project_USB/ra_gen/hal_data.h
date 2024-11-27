@@ -31,6 +31,12 @@ extern const usb_cfg_t g_basic0_cfg;
 void NULL(void*);
 #endif
 
+#if 0 == BSP_CFG_RTOS
+#ifndef NULL
+void NULL(usb_callback_args_t*);
+#endif
+#endif
+
 #if 2 == BSP_CFG_RTOS
 #ifndef NULL
 void NULL(usb_event_info_t *, usb_hdl_t, usb_onoff_t);
