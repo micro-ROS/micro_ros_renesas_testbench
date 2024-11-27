@@ -3,9 +3,9 @@
 ################################################################################
 
 arg1 = $(1)
-export PATH=/home/ubuntu/toolchain/gcc-arm-none-eabi-10.3-2021.10/bin/:/home/username/Downloads/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux/gcc-arm-none-eabi-10.3-2021.10/bin/:/home/username/.eclipse/com.renesas.platform_725534088/Utilities:/home/username/.local/bin:/home/username/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
-export TCINSTALL=/home/username/Downloads/gcc-arm-none-eabi-10.3-2021.10-x86_64-linux/gcc-arm-none-eabi-10.3-2021.10/
+export PATH=/home/ubuntu/toolchain/gcc-arm-none-eabi-10.3-2021.10/bin/:/home/pgarrido/renesas/ra/e2studio_v2024-10_fsp_v5.6.0/toolchains/gcc_arm/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi/bin/:/home/pgarrido/renesas/ra/e2studio_v2024-10_fsp_v5.6.0/eclipse/plugins/com.renesas.ide.exttools.gnumake.linux.x86_64_1.0.1.v20240909-0854/mk/:/home/pgarrido/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin
+export TCINSTALL=/home/pgarrido/renesas/ra/e2studio_v2024-10_fsp_v5.6.0/toolchains/gcc_arm/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi/
 export CWD=$(CURDIR)
-export TC_VERSION=10.3.1.20210824
+export TC_VERSION=13.2.1.arm-13-7
 export PWD=$(CURDIR)
-export GCC_VERSION=10.3.1
+export GCC_VERSION=13.2.1
