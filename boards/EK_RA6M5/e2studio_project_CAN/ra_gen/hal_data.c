@@ -22,13 +22,19 @@ extern const canfd_afl_entry_t p_canfd0_afl[CANFD_CFG_AFL_CH1_RULE_NUM];
 #ifndef CANFD_PRV_GLOBAL_CFG
 #define CANFD_PRV_GLOBAL_CFG
 
+#ifdef RA_NOT_DEFINED
+#undef RA_NOT_DEFINED
+#endif
+#define RA_NOT_DEFINED (0)
+
 /* Buffer RAM used: RA_NOT_DEFINED bytes */
 canfd_global_cfg_t g_canfd_global_cfg = { .global_interrupts =
 		CANFD_CFG_GLOBAL_ERR_SOURCES, .global_config = (CANFD_CFG_TX_PRIORITY
 		| CANFD_CFG_DLC_CHECK
 		| (BSP_CFG_CANFDCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC ?
-				R_CANFD_CFDGCFG_DCS_Msk : 0U) | CANFD_CFG_FD_OVERFLOW),
-		.rx_mb_config = (CANFD_CFG_RXMB_NUMBER
+				R_CANFD_CFDGCFG_DCS_Msk : 0U) | CANFD_CFG_FD_OVERFLOW
+		| ((RA_NOT_DEFINED) << R_CANFD_CFDGCFG_ITRCP_Pos)), .rx_mb_config =
+		(CANFD_CFG_RXMB_NUMBER
 				| (CANFD_CFG_RXMB_SIZE << R_CANFD_CFDRMNB_RMPLS_Pos)),
 		.global_err_ipl = CANFD_CFG_GLOBAL_ERR_IPL, .rx_fifo_ipl =
 				CANFD_CFG_RX_FIFO_IPL, .rx_fifo_config = {
@@ -82,7 +88,15 @@ canfd_global_cfg_t g_canfd_global_cfg = { .global_interrupts =
 						| (CANFD_CFG_RXFIFO7_INT_MODE)
 						| (CANFD_CFG_RXFIFO7_ENABLE)),
 #endif
-				}, };
+				}, .common_fifo_config = { CANFD_CFG_COMMONFIFO0,
+#if !BSP_FEATURE_CANFD_LITE
+				CANFD_CFG_COMMONFIFO1, CANFD_CFG_COMMONFIFO2,
+				CANFD_CFG_COMMONFIFO3, CANFD_CFG_COMMONFIFO4,
+				CANFD_CFG_COMMONFIFO5,
+#endif
+				} };
+#undef RA_NOT_DEFINED
+
 #endif
 
 canfd_extended_cfg_t g_canfd0_extended_cfg = { .p_afl = p_canfd0_afl,
@@ -102,6 +116,11 @@ canfd_instance_ctrl_t g_canfd0_ctrl;
 const can_cfg_t g_canfd0_cfg = { .channel = 1, .p_bit_timing =
 		&g_canfd0_bit_timing_cfg, .p_callback = canfd0_callback, .p_extend =
 		&g_canfd0_extended_cfg, .p_context = NULL, .ipl = (3),
+#if defined(VECTOR_NUMBER_CAN1_COMFRX)
+    .rx_irq             = VECTOR_NUMBER_CAN1_COMFRX,
+#else
+		.rx_irq = FSP_INVALID_VECTOR,
+#endif
 #if defined(VECTOR_NUMBER_CAN1_TX)
     .tx_irq             = VECTOR_NUMBER_CAN1_TX,
 #else
@@ -117,14 +136,14 @@ const can_cfg_t g_canfd0_cfg = { .channel = 1, .p_bit_timing =
 const can_instance_t g_canfd0 = { .p_ctrl = &g_canfd0_ctrl, .p_cfg =
 		&g_canfd0_cfg, .p_api = &g_canfd_on_canfd };
 agt_instance_ctrl_t g_timer0_ctrl;
-const agt_extended_cfg_t g_timer0_extend =
-		{ .count_source = AGT_CLOCK_PCLKB, .agto = AGT_PIN_CFG_DISABLED,
-				.agtoab_settings_b.agtoa = AGT_PIN_CFG_DISABLED,
-				.agtoab_settings_b.agtob = AGT_PIN_CFG_DISABLED,
-				.measurement_mode = AGT_MEASURE_DISABLED, .agtio_filter =
-						AGT_AGTIO_FILTER_NONE, .enable_pin =
-						AGT_ENABLE_PIN_NOT_USED, .trigger_edge =
-						AGT_TRIGGER_EDGE_RISING, };
+const agt_extended_cfg_t g_timer0_extend = { .count_source = AGT_CLOCK_PCLKB,
+		.agto = AGT_PIN_CFG_DISABLED, .agtoab_settings_b.agtoa =
+				AGT_PIN_CFG_DISABLED, .agtoab_settings_b.agtob =
+				AGT_PIN_CFG_DISABLED, .measurement_mode = AGT_MEASURE_DISABLED,
+		.agtio_filter = AGT_AGTIO_FILTER_NONE, .enable_pin =
+				AGT_ENABLE_PIN_NOT_USED,
+		.trigger_edge = AGT_TRIGGER_EDGE_RISING, .counter_bit_width =
+				AGT_COUNTER_BIT_WIDTH_16, };
 const timer_cfg_t g_timer0_cfg = { .mode = TIMER_MODE_PERIODIC,
 /* Actual period: 0.0001 seconds. Actual duty: 50%. */.period_counts =
 		(uint32_t) 0x1388, .duty_cycle_counts = 0x9c4, .source_div =

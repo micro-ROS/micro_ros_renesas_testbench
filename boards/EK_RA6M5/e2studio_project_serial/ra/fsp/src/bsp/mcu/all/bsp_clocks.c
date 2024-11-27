@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /***********************************************************************************************************************
  * Includes   <System Includes> , "Project Includes"
@@ -36,10 +22,15 @@
 #define BSP_PRV_PRCR_UNLOCK                     ((BSP_PRV_PRCR_KEY) | 0x3U)
 #define BSP_PRV_PRCR_LOCK                       ((BSP_PRV_PRCR_KEY) | 0x0U)
 
+/* Key code for writing LSMRWDIS register. */
+#define BSP_PRV_LSMRDIS_KEY                     (0xA500U)
+
 /* Wait state definitions for MEMWAIT. */
 #define BSP_PRV_MEMWAIT_ZERO_WAIT_CYCLES        (0U)
-#define BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES         (1U)
+#define BSP_PRV_MEMWAIT_ONE_WAIT_CYCLES         (1U)
+#define BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES         (2U)
 #define BSP_PRV_MEMWAIT_MAX_ZERO_WAIT_FREQ      (32000000U)
+#define BSP_PRV_MEMWAIT_MAX_ONE_WAIT_FREQ       (48000000U)
 
 /* Wait state definitions for FLDWAITR. */
 #define BSP_PRV_FLDWAITR_ONE_WAIT_CYCLES        (0U)
@@ -62,13 +53,59 @@
 #define BSP_PRV_SRAM_LOCK                       (((BSP_FEATURE_CGC_SRAMPRCR_KW_VALUE) << \
                                                   BSP_FEATURE_CGC_SRAMPRCR_KW_OFFSET) | 0x0U)
 
-/* Calculate value to write to MOMCR (MODRV controls main clock drive strength and MOSEL determines the source of the
+/* Determine whether SRAM wait states should be enabled */
+#if BSP_STARTUP_ICLK_HZ <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_NO_RAM_WAITS
+ #define BSP_PRV_SRAM_WAIT_CYCLES               BSP_PRV_SRAMWTSC_WAIT_CYCLES_DISABLE
+#else
+ #define BSP_PRV_SRAM_WAIT_CYCLES               BSP_FEATURE_SRAM_SRAMWTSC_WAIT_CYCLE_ENABLE
+#endif
+
+/* Calculate value to write to MOMCR/CMC (MODRV controls main clock drive strength and MOSEL determines the source of the
  * main oscillator). */
-#define BSP_PRV_MOMCR_MOSEL_BIT                 (6)
 #define BSP_PRV_MODRV                           ((CGC_MAINCLOCK_DRIVE << BSP_FEATURE_CGC_MODRV_SHIFT) & \
                                                  BSP_FEATURE_CGC_MODRV_MASK)
-#define BSP_PRV_MOSEL                           (BSP_CLOCK_CFG_MAIN_OSC_CLOCK_SOURCE << BSP_PRV_MOMCR_MOSEL_BIT)
-#define BSP_PRV_MOMCR                           (BSP_PRV_MODRV | BSP_PRV_MOSEL)
+
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #define BSP_PRV_MOSEL                          (BSP_CLOCK_CFG_MAIN_OSC_CLOCK_SOURCE << R_SYSTEM_MOMCR_MOSEL_Pos)
+ #define BSP_PRV_MOMCR                          (BSP_PRV_MODRV | BSP_PRV_MOSEL)
+#else
+ #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
+  #if BSP_CLOCK_CFG_MAIN_OSC_CLOCK_SOURCE
+   #define BSP_PRV_MOSEL                        (3U << R_SYSTEM_CMC_MOSEL_Pos) // External clock input mode
+  #else
+   #define BSP_PRV_MOSEL                        (1U << R_SYSTEM_CMC_MOSEL_Pos) // Oscillation mode
+  #endif
+  #define BSP_PRV_CMC_MOSC                      (BSP_PRV_MODRV | BSP_PRV_MOSEL)
+ #endif
+
+/* Calculate value to write to CMC (SODRV controls sub-clock oscillator drive capability and SOSEL determines the source of the
+ * sub-clock oscillator). */
+ #if (0 == BSP_CLOCK_CFG_SUBCLOCK_DRIVE)
+  #define BSP_PRV_SODRV                         (1U << R_SYSTEM_CMC_SODRV_Pos) // Sub-Clock Oscillator Drive Capability Normal mode
+ #elif (1 == BSP_CLOCK_CFG_SUBCLOCK_DRIVE)
+  #define BSP_PRV_SODRV                         (0U << R_SYSTEM_CMC_SODRV_Pos) // Sub-Clock Oscillator Drive Capability Low Power Mode 1
+ #else
+  #define BSP_PRV_SODRV                         (BSP_CLOCK_CFG_SUBCLOCK_DRIVE << R_SYSTEM_CMC_SODRV_Pos)
+ #endif
+ #define BSP_PRV_CMC_SOSC                       (BSP_PRV_SODRV |                                                \
+                                                 (BSP_CLOCK_CFG_SUBCLOCK_POPULATED << R_SYSTEM_CMC_SOSEL_Pos) | \
+                                                 (BSP_CLOCK_CFG_SUBCLOCK_POPULATED << R_SYSTEM_CMC_XTSEL_Pos))
+
+ #if (BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK == BSP_CFG_FSXP_SOURCE)
+  #define BSP_PRV_OSMC                          (0U << R_SYSTEM_OSMC_WUTMMCK0_Pos) // Use Sub-clock oscillator (SOSC) as Subsystem Clock (FSXP) source.
+ #elif (BSP_CLOCKS_SOURCE_CLOCK_LOCO == BSP_CFG_FSXP_SOURCE)
+  #define BSP_PRV_OSMC                          (1U << R_SYSTEM_OSMC_WUTMMCK0_Pos) // Use Low-speed on-chip oscillator clock (LOCO) as Subsystem Clock (FSXP) source.
+ #endif
+
+ #if (BSP_CFG_CLKOUT_SOURCE != BSP_CLOCKS_CLOCK_DISABLED) && (BSP_CFG_CLKOUT_SOURCE != BSP_CFG_CLOCK_SOURCE)
+  #define BSP_PRV_CLKOUT_SOURCE_SET             (1U)
+ #elif defined(BSP_CFG_CLKOUT1_SOURCE) && (BSP_CFG_CLKOUT1_SOURCE != BSP_CLOCKS_CLOCK_DISABLED) && \
+    (BSP_CFG_CLKOUT1_SOURCE != BSP_CFG_CLOCK_SOURCE)
+  #define BSP_PRV_CLKOUT_SOURCE_SET             (2U)
+ #else
+  #define BSP_PRV_CLKOUT_SOURCE_SET             (0U)
+ #endif
+#endif
 
 /* Locations of bitfields used to configure CLKOUT. */
 #define BSP_PRV_CKOCR_CKODIV_BIT                (4U)
@@ -76,7 +113,7 @@
 
 /* Stop interval of at least 5 SOSC clock cycles between stop and restart of SOSC.
  * Calculated based on 8Mhz of MOCO clock. */
-#define BSP_PRV_SUBCLOCK_STOP_INTERVAL_US       (1220U)
+#define BSP_PRV_SUBCLOCK_STOP_INTERVAL_US       (200U)
 
 /* Locations of bitfields used to configure Peripheral Clocks. */
 #define BSP_PRV_PERIPHERAL_CLK_REQ_BIT_POS      (6U)
@@ -109,6 +146,10 @@
    #define BSP_PRV_UCK_DIV             (3U)
   #elif BSP_CLOCKS_USB_CLOCK_DIV_8 == BSP_CFG_UCK_DIV
    #define BSP_PRV_UCK_DIV             (4U)
+  #elif BSP_CLOCKS_USB_CLOCK_DIV_10 == BSP_CFG_UCK_DIV
+   #define BSP_PRV_UCK_DIV             (7U)
+  #elif BSP_CLOCKS_USB_CLOCK_DIV_16 == BSP_CFG_UCK_DIV
+   #define BSP_PRV_UCK_DIV             (8U)
   #else
 
    #error "BSP_CFG_UCK_DIV not supported."
@@ -116,15 +157,7 @@
   #endif
  #endif
 #endif
-#if BSP_FEATURE_BSP_HAS_USB60_CLOCK_REQ
- #define BSP_CLOCKS_USB60_CLOCK_DIV_1            (0) // Divide USB source clock by 1
- #define BSP_CLOCKS_USB60_CLOCK_DIV_2            (1) // Divide USB source clock by 2
- #define BSP_CLOCKS_USB60_CLOCK_DIV_3            (5) // Divide USB source clock by 3
- #define BSP_CLOCKS_USB60_CLOCK_DIV_4            (2) // Divide USB source clock by 4
- #define BSP_CLOCKS_USB60_CLOCK_DIV_5            (6) // Divide USB source clock by 5
- #define BSP_CLOCKS_USB60_CLOCK_DIV_6            (3) // Divide USB source clock by 6
- #define BSP_CLOCKS_USB60_CLOCK_DIV_8            (4) // Divide USB source clock by 8
-#endif /* BSP_FEATURE_BSP_HAS_USB60_CLOCK_REQ*/
+
 /* Choose the value to write to FLLCR2 (if applicable). */
 #if BSP_PRV_HOCO_USE_FLL
  #if 1U == BSP_CFG_HOCO_FREQUENCY
@@ -191,27 +224,38 @@
                                                   BSP_PRV_STARTUP_SCKDIVCR_FCLK_BITS)
 #if BSP_FEATURE_CGC_HAS_CPUCLK
  #define BSP_PRV_STARTUP_SCKDIVCR2_CPUCK_BITS    (BSP_CFG_CPUCLK_DIV & 0xFU)
- #define BSP_PRV_STARTUP_SCKDIVCR2               (BSP_PRV_STARTUP_SCKDIVCR2_CPUCK_BITS)
+#else
+ #define BSP_PRV_STARTUP_SCKDIVCR2_CPUCK_BITS    (0)
 #endif
+#if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+/* Set extraclk2 to the same value as extraclk3 if the MCU does not support extraclk2. */
+ #if (BSP_FEATURE_CGC_HAS_EXTRACLK2 == 0)
+  #define BSP_CFG_EXTRACLK2_DIV                     (BSP_CFG_EXTRACLK3_DIV)
+ #endif
+ #define BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK1_BITS    ((BSP_CFG_EXTRACLK1_DIV & 0xFU) << 4U)
+ #define BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK2_BITS    ((BSP_CFG_EXTRACLK2_DIV & 0xFU) << 8U)
+ #define BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK3_BITS    ((BSP_CFG_EXTRACLK3_DIV & 0xFU) << 12U)
+#else
+ #define BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK1_BITS    (0)
+ #define BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK2_BITS    (0)
+ #define BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK3_BITS    (0)
+#endif
+#define BSP_PRV_STARTUP_SCKDIVCR2                   (BSP_PRV_STARTUP_SCKDIVCR2_CPUCK_BITS |    \
+                                                     BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK1_BITS | \
+                                                     BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK2_BITS | \
+                                                     BSP_PRV_STARTUP_SCKDIVCR2_EXTRACK3_BITS)
 
 /* The number of clocks is used to size the g_clock_freq array. */
 #if BSP_PRV_PLL2_SUPPORTED
- #if 0 != BSP_FEATURE_NUM_PLL2_OUTPUT_CLOCKS
-  #define BSP_PRV_NUM_CLOCKS    ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_PLL2 + (BSP_FEATURE_NUM_PLL1_OUTPUT_CLOCKS - 1) + \
-                                 BSP_FEATURE_NUM_PLL2_OUTPUT_CLOCKS)
- #else
-  #define BSP_PRV_NUM_CLOCKS    ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_PLL2 + 1U)
- #endif
+ #define BSP_PRV_NUM_CLOCKS                         ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_PLL2 +       \
+                                                     (BSP_FEATURE_CGC_PLL1_NUM_OUTPUT_CLOCKS - 1) + \
+                                                     BSP_FEATURE_CGC_PLL2_NUM_OUTPUT_CLOCKS)
 #elif BSP_PRV_PLL_SUPPORTED
- #if 0 != BSP_FEATURE_NUM_PLL1_OUTPUT_CLOCKS
-
-/* Removed offset of 1 since the BSP_CLOCKS_SOURCE_CLOCK_PLL will be reused for BSP_CLOCKS_SOURCE_CLOCK_PLL1P which is included in BSP_FEATURE_NUM_PLL1_OUTPUT_CLOCKS count. */
-  #define BSP_PRV_NUM_CLOCKS    ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_PLL + BSP_FEATURE_NUM_PLL1_OUTPUT_CLOCKS)
- #else
-  #define BSP_PRV_NUM_CLOCKS    ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_PLL + 1U)
- #endif
+ #define BSP_PRV_NUM_CLOCKS                         ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_PLL + \
+                                                     BSP_FEATURE_CGC_PLL1_NUM_OUTPUT_CLOCKS)
 #else
- #define BSP_PRV_NUM_CLOCKS     ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK + 1U)
+ #define BSP_PRV_NUM_CLOCKS                         ((uint8_t) BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK + 1U)
 #endif
 
 /* Calculate PLLCCR value. */
@@ -245,10 +289,10 @@
   #define BSP_PRV_PLLCCR2_PLODIV_BIT               (6)    // PLODIV in PLLCCR2 starts at bit 6
 
   #define BSP_PRV_PLLCCR2_PLLMUL                   (BSP_CFG_PLL_MUL >> 1)
-  #define BSP_PRV_PLLCCR                           (BSP_PRV_PLLCCR2_PLLMUL & BSP_PRV_PLLCCR2_PLLMUL_MASK) | \
-    (BSP_CFG_PLL_DIV << BSP_PRV_PLLCCR2_PLODIV_BIT)
+  #define BSP_PRV_PLLCCR                           ((BSP_PRV_PLLCCR2_PLLMUL & BSP_PRV_PLLCCR2_PLLMUL_MASK) | \
+                                                    (BSP_CFG_PLL_DIV << BSP_PRV_PLLCCR2_PLODIV_BIT))
  #endif
- #if (3U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+ #if (3U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6U == BSP_FEATURE_CGC_PLLCCR_TYPE)
   #if BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC == BSP_CFG_PLL_SOURCE
    #define BSP_PRV_PLSRCSEL                        (0)
    #define BSP_PRV_PLL_USED                        (1)
@@ -289,6 +333,37 @@
                                                      BSP_PRV_PLLCCR_PLLMUL_BIT) |                      \
                                                     BSP_PRV_PLLCCR_RESET)
  #endif
+
+ #if (5U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+  #if BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC == BSP_CFG_PLL_SOURCE
+   #define BSP_PRV_PLSRCSEL                        (0)
+   #define BSP_PRV_PLL_USED                        (1)
+  #elif BSP_CLOCKS_SOURCE_CLOCK_HOCO == BSP_CFG_PLL_SOURCE
+   #define BSP_PRV_PLSRCSEL                        (1)
+   #define BSP_PRV_PLL_USED                        (1)
+  #else
+   #define BSP_PRV_PLL_USED                        (0)
+  #endif
+  #define BSP_PRV_PLLCCR_PLLMUL_MASK               (0x1F) // PLLMUL in PLLCCR is 5 bits wide
+  #define BSP_PRV_PLLCCR_PLLMUL_BIT                (8)    // PLLMUL in PLLCCR starts at bit 8
+  #define BSP_PRV_PLLCCR_PLSRCSEL_BIT              (4)    // PLSRCSEL in PLLCCR starts at bit 4
+  #if (BSP_CFG_PLL_DIV == BSP_CLOCKS_PLL_DIV_1)
+   #define BSP_PRV_PLLCCR                          ((((BSP_CFG_PLL_MUL & BSP_PRV_PLLCCR_PLLMUL_MASK) <<   \
+                                                      BSP_PRV_PLLCCR_PLLMUL_BIT) |                        \
+                                                     (BSP_PRV_PLSRCSEL << BSP_PRV_PLLCCR_PLSRCSEL_BIT)) | \
+                                                    (0U))
+  #elif (BSP_CFG_PLL_DIV == BSP_CLOCKS_PLL_DIV_4)
+   #define BSP_PRV_PLLCCR                          ((((BSP_CFG_PLL_MUL & BSP_PRV_PLLCCR_PLLMUL_MASK) <<   \
+                                                      BSP_PRV_PLLCCR_PLLMUL_BIT) |                        \
+                                                     (BSP_PRV_PLSRCSEL << BSP_PRV_PLLCCR_PLSRCSEL_BIT)) | \
+                                                    (1U))
+  #elif (BSP_CFG_PLL_DIV == BSP_CLOCKS_PLL_DIV_6)
+   #define BSP_PRV_PLLCCR                          ((((BSP_CFG_PLL_MUL & BSP_PRV_PLLCCR_PLLMUL_MASK) <<   \
+                                                      BSP_PRV_PLLCCR_PLLMUL_BIT) |                        \
+                                                     (BSP_PRV_PLSRCSEL << BSP_PRV_PLLCCR_PLSRCSEL_BIT)) | \
+                                                    (2U))
+  #endif
+ #endif
 #endif
 
 #if BSP_FEATURE_CGC_HAS_PLL2
@@ -302,7 +377,7 @@
   #define BSP_PRV_PLL2_USED                           (0)
  #endif
 
- #if (3U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+ #if (3U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6U == BSP_FEATURE_CGC_PLLCCR_TYPE)
   #define BSP_PRV_PLL2_MUL_CFG_MACRO_PLLMUL_MASK      (0x3FF)
   #define BSP_PRV_PLL2_MUL_CFG_MACRO_PLLMULNF_MASK    (0x003U)
   #define BSP_PRV_PLL2CCR_PLLMULNF_BIT                (6) // PLLMULNF in PLLCCR starts at bit 6
@@ -348,6 +423,8 @@
  #define BSP_PRV_STABILIZE_MAIN_OSC               (1)
 #elif defined(BSP_CFG_CLKOUT_SOURCE) && (BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
+#elif defined(BSP_CFG_CLKOUT1_SOURCE) && (BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
+ #define BSP_PRV_MAIN_OSC_USED                    (1)
 #elif defined(BSP_CFG_SCISPICLK_SOURCE) && (BSP_CFG_SCISPICLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
 #elif defined(BSP_CFG_SPICLK_SOURCE) && (BSP_CFG_SPICLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
@@ -364,15 +441,21 @@
  #define BSP_PRV_MAIN_OSC_USED                    (1)
 #elif defined(BSP_CFG_I3CCLK_SOURCE) && (BSP_CFG_I3CCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
-#elif defined(BSP_CFG_ADCCLK_SOURCE) && (BSP_CFG_ADCCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
- #define BSP_PRV_MAIN_OSC_USED                    (1)
 #elif defined(BSP_CFG_LCDCLK_SOURCE) && (BSP_CFG_LCDCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
 #elif defined(BSP_CFG_U60CLK_SOURCE) && (BSP_CFG_U60CLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
 #elif defined(BSP_CFG_OCTA_SOURCE) && (BSP_CFG_OCTA_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
-#elif defined(BSP_CFG_SDADC_CLOCK_SOURCE) && (BSP_CFG_SDADC_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_MAIN_OSC)
+#elif defined(BSP_CFG_SDADC_CLOCK_SOURCE) && (BSP_CFG_SDADC_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
+ #define BSP_PRV_MAIN_OSC_USED                    (1)
+#elif defined(BSP_CFG_UARTA0_CLOCK_SOURCE) && (BSP_CFG_UARTA0_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
+ #define BSP_PRV_MAIN_OSC_USED                    (1)
+#elif defined(BSP_CFG_UARTA1_CLOCK_SOURCE) && (BSP_CFG_UARTA1_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
+ #define BSP_PRV_MAIN_OSC_USED                    (1)
+#elif defined(BSP_CFG_TML_FITL0_SOURCE) && (BSP_CFG_TML_FITL0_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
+ #define BSP_PRV_MAIN_OSC_USED                    (1)
+#elif defined(BSP_CFG_TML_FITL1_SOURCE) && (BSP_CFG_TML_FITL1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC)
  #define BSP_PRV_MAIN_OSC_USED                    (1)
 #else
  #define BSP_PRV_MAIN_OSC_USED                    (0)
@@ -393,6 +476,8 @@
  #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_CLKOUT_SOURCE) && (BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
  #define BSP_PRV_HOCO_USED                        (1)
+#elif defined(BSP_CFG_CLKOUT1_SOURCE) && (BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
+ #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_SCISPICLK_SOURCE) && (BSP_CFG_SCISPICLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
  #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_SPICLK_SOURCE) && (BSP_CFG_SPICLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
@@ -405,8 +490,6 @@
  #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_IICCLK_SOURCE) && (BSP_CFG_IICCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
  #define BSP_PRV_HOCO_USED                        (1)
-#elif defined(BSP_CFG_ADCCLK_SOURCE) && (BSP_CFG_ADCCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
- #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_LCDCLK_SOURCE) && (BSP_CFG_LCDCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
  #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_U60CLK_SOURCE) && (BSP_CFG_U60CLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
@@ -414,6 +497,14 @@
 #elif defined(BSP_CFG_OCTA_SOURCE) && (BSP_CFG_OCTA_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO)
  #define BSP_PRV_HOCO_USED                        (1)
 #elif defined(BSP_CFG_SDADC_CLOCK_SOURCE) && (BSP_CFG_SDADC_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_HOCO)
+ #define BSP_PRV_HOCO_USED                        (1)
+#elif defined(BSP_CFG_UARTA0_CLOCK_SOURCE) && (BSP_CFG_UARTA0_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_HOCO)
+ #define BSP_PRV_HOCO_USED                        (1)
+#elif defined(BSP_CFG_UARTA1_CLOCK_SOURCE) && (BSP_CFG_UARTA1_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_HOCO)
+ #define BSP_PRV_HOCO_USED                        (1)
+#elif defined(BSP_CFG_TML_FITL0_SOURCE) && (BSP_CFG_TML_FITL0_SOURCE == BSP_CLOCKS_SOURCE_HOCO)
+ #define BSP_PRV_HOCO_USED                        (1)
+#elif defined(BSP_CFG_TML_FITL1_SOURCE) && (BSP_CFG_TML_FITL1_SOURCE == BSP_CLOCKS_SOURCE_HOCO)
  #define BSP_PRV_HOCO_USED                        (1)
 #else
  #define BSP_PRV_HOCO_USED                        (0)
@@ -424,6 +515,8 @@
  #define BSP_PRV_MOCO_USED                        (1)
  #define BSP_PRV_STABILIZE_MOCO                   (1)
 #elif defined(BSP_CFG_CLKOUT_SOURCE) && (BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
+ #define BSP_PRV_MOCO_USED                        (1)
+#elif defined(BSP_CFG_CLKOUT1_SOURCE) && (BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
  #define BSP_PRV_MOCO_USED                        (1)
 #elif defined(BSP_CFG_UCK_SOURCE) && BSP_FEATURE_BSP_HAS_USB_CLOCK_REQ && \
     (BSP_CFG_UCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
@@ -442,13 +535,19 @@
  #define BSP_PRV_MOCO_USED                        (1)
 #elif defined(BSP_CFG_I3CCLK_SOURCE) && (BSP_CFG_I3CCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
  #define BSP_PRV_MOCO_USED                        (1)
-#elif defined(BSP_CFG_ADCCLK_SOURCE) && (BSP_CFG_ADCCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
- #define BSP_PRV_MOCO_USED                        (1)
 #elif defined(BSP_CFG_LCDCLK_SOURCE) && (BSP_CFG_LCDCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
  #define BSP_PRV_MOCO_USED                        (1)
 #elif defined(BSP_CFG_U60CLK_SOURCE) && (BSP_CFG_U60CLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
  #define BSP_PRV_MOCO_USED                        (1)
 #elif defined(BSP_CFG_OCTA_SOURCE) && (BSP_CFG_OCTA_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
+ #define BSP_PRV_MOCO_USED                        (1)
+#elif defined(BSP_CFG_UARTA0_CLOCK_SOURCE) && (BSP_CFG_UARTA0_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
+ #define BSP_PRV_MOCO_USED                        (1)
+#elif defined(BSP_CFG_UARTA1_CLOCK_SOURCE) && (BSP_CFG_UARTA1_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
+ #define BSP_PRV_MOCO_USED                        (1)
+#elif defined(BSP_CFG_TML_FITL0_SOURCE) && (BSP_CFG_TML_FITL0_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
+ #define BSP_PRV_MOCO_USED                        (1)
+#elif defined(BSP_CFG_TML_FITL1_SOURCE) && (BSP_CFG_TML_FITL1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_MOCO)
  #define BSP_PRV_MOCO_USED                        (1)
 #else
  #define BSP_PRV_MOCO_USED                        (0)
@@ -459,6 +558,8 @@
  #define BSP_PRV_LOCO_USED                        (1)
  #define BSP_PRV_STABILIZE_LOCO                   (1)
 #elif defined(BSP_CFG_CLKOUT_SOURCE) && (BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
+ #define BSP_PRV_LOCO_USED                        (1)
+#elif defined(BSP_CFG_CLKOUT1_SOURCE) && (BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
  #define BSP_PRV_LOCO_USED                        (1)
 #elif defined(BSP_CFG_SCISPICLK_SOURCE) && (BSP_CFG_SCISPICLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
  #define BSP_PRV_LOCO_USED                        (1)
@@ -472,9 +573,19 @@
  #define BSP_PRV_LOCO_USED                        (1)
 #elif defined(BSP_CFG_IICCLK_SOURCE) && (BSP_CFG_IICCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
  #define BSP_PRV_LOCO_USED                        (1)
-#elif defined(BSP_CFG_ADCCLK_SOURCE) && (BSP_CFG_ADCCLK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
- #define BSP_PRV_LOCO_USED                        (1)
 #elif defined(BSP_CFG_OCTA_SOURCE) && (BSP_CFG_OCTA_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
+ #define BSP_PRV_LOCO_USED                        (1)
+#elif (defined(BSP_CFG_UARTA0_CLOCK_SOURCE) && (BSP_CFG_UARTA0_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_FSXP)) && \
+    (defined(BSP_CFG_FSXP_SOURCE) && (BSP_CFG_FSXP_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO))
+ #define BSP_PRV_LOCO_USED                        (1)
+#elif (defined(BSP_CFG_UARTA1_CLOCK_SOURCE) && (BSP_CFG_UARTA1_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_FSXP)) && \
+    (defined(BSP_CFG_FSXP_SOURCE) && (BSP_CFG_FSXP_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO))
+ #define BSP_PRV_LOCO_USED                        (1)
+#elif defined(BSP_CFG_UARTA0_CLOCK_SOURCE) && (BSP_CFG_UARTA0_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
+ #define BSP_PRV_LOCO_USED                        (1)
+#elif defined(BSP_CFG_UARTA1_CLOCK_SOURCE) && (BSP_CFG_UARTA1_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO)
+ #define BSP_PRV_LOCO_USED                        (1)
+#elif (defined(BSP_CFG_FSXP_SOURCE) && (BSP_CFG_FSXP_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO))
  #define BSP_PRV_LOCO_USED                        (1)
 #else
  #define BSP_PRV_LOCO_USED                        (0)
@@ -482,8 +593,8 @@
 
 /* Determine the optimal operating speed mode to apply after clock configuration based on the startup clock
  * frequency. */
-#if BSP_STARTUP_ICLK_HZ <= BSP_FEATURE_CGC_LOW_SPEED_MAX_FREQ_HZ && \
-    !BSP_PRV_PLL_USED && !BSP_PRV_PLL2_USED
+#if BSP_STARTUP_ICLK_HZ <= BSP_FEATURE_CGC_LOW_SPEED_MAX_FREQ_HZ && !BSP_PRV_PLL_USED && !BSP_PRV_PLL2_USED && \
+    (BSP_FEATURE_CGC_LOW_SPEED_SUPPORT_MAIN_OSC || !BSP_PRV_MAIN_OSC_USED)
  #define BSP_PRV_STARTUP_OPERATING_MODE           (BSP_PRV_OPERATING_MODE_LOW_SPEED)
 #elif BSP_STARTUP_ICLK_HZ <= BSP_FEATURE_CGC_MIDDLE_SPEED_MAX_FREQ_HZ
  #define BSP_PRV_STARTUP_OPERATING_MODE           (BSP_PRV_OPERATING_MODE_MIDDLE_SPEED)
@@ -502,18 +613,20 @@
     (BSP_FEATURE_BSP_HAS_SCISPI_CLOCK && (BSP_CFG_SCISPICLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) || \
     (BSP_FEATURE_BSP_HAS_SCI_CLOCK && (BSP_CFG_SCICLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
     (BSP_FEATURE_BSP_HAS_SPI_CLOCK && (BSP_CFG_SPICLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
-    (BSP_FEATURE_BSP_HAS_GPT_CLOCK && (BSP_CFG_GPTCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
+    (BSP_PERIPHERAL_GPT_GTCLK_PRESENT && (BSP_CFG_GPTCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||    \
     (BSP_FEATURE_BSP_HAS_IIC_CLOCK && (BSP_CFG_IICCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
     (BSP_FEATURE_BSP_HAS_CEC_CLOCK && (BSP_CFG_CECCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
     (BSP_FEATURE_BSP_HAS_I3C_CLOCK && (BSP_CFG_I3CCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
-    (BSP_FEATURE_BSP_HAS_ADC_CLOCK && (BSP_CFG_ADCCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
-    (BSP_FEATURE_BSP_HAS_USB60_CLOCK_REQ && (BSP_CFG_U60CK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||  \
-    (BSP_FEATURE_BSP_HAS_LCD_CLOCK && (BSP_CFG_LCDCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED))
+    (BSP_FEATURE_BSP_HAS_USB60_CLOCK && (BSP_CFG_U60CK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||      \
+    (BSP_FEATURE_BSP_HAS_LCD_CLOCK && (BSP_CFG_LCDCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)) ||       \
+    (BSP_FEATURE_BSP_HAS_ADC_CLOCK && (BSP_CFG_ADCCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED))
 
  #define BSP_PRV_HAS_ENABLED_PERIPHERAL_CLOCKS    (1U)
 #else
  #define BSP_PRV_HAS_ENABLED_PERIPHERAL_CLOCKS    (0U)
 #endif
+
+#define BSP_PRV_HZ_PER_MHZ                        (1000000)
 
 /***********************************************************************************************************************
  * Typedef definitions
@@ -526,19 +639,44 @@
 /***********************************************************************************************************************
  * Private global variables and functions
  **********************************************************************************************************************/
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
 static uint8_t bsp_clock_set_prechange(uint32_t requested_freq_hz);
 static void    bsp_clock_set_postchange(uint32_t updated_freq_hz, uint8_t new_rom_wait_state);
+
+ #if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
+static void bsp_clock_set_memwait(uint32_t updated_freq_hz);
+
+ #endif
+
+ #if !BSP_CFG_USE_LOW_VOLTAGE_MODE
+static void bsp_prv_operating_mode_opccr_set(uint8_t operating_mode);
+
+ #endif
+void prv_clock_dividers_set(uint32_t sckdivcr, uint16_t sckdivcr2);
+
+#else
+static void bsp_prv_cmc_init(void);
+static void bsp_prv_operating_mode_flmode_set(uint8_t operating_mode);
+
+static void bsp_prv_clkout_set(void);
+
+#endif
+
+static void bsp_prv_sosc_init(void);
 
 #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
  #if defined(__ICCARM__)
 
 void R_BSP_SubClockStabilizeWait(uint32_t delay_ms);
+void R_BSP_SubClockStabilizeWaitAfterReset(uint32_t delay_ms);
 
   #pragma weak R_BSP_SubClockStabilizeWait
+  #pragma weak R_BSP_SubClockStabilizeWaitAfterReset
 
  #elif defined(__GNUC__) || defined(__ARMCC_VERSION)
 
 void R_BSP_SubClockStabilizeWait(uint32_t delay_ms) __attribute__((weak));
+void R_BSP_SubClockStabilizeWaitAfterReset(uint32_t delay_ms) __attribute__((weak));
 
  #endif
 #endif
@@ -551,17 +689,15 @@ static void bsp_peripheral_clock_set(volatile uint8_t * p_clk_ctrl_reg,
 
 #endif
 
-#if !BSP_CFG_USE_LOW_VOLTAGE_MODE
-static void bsp_prv_operating_mode_opccr_set(uint8_t operating_mode);
-
-#endif
-
-#if !BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #if !BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
 static void bsp_prv_clock_set_hard_reset(void);
 
-#endif
+ #else
+void bsp_soft_reset_prepare(void);
 
-void prv_clock_dividers_set(uint32_t sckdivcr, uint8_t sckdivcr2);
+ #endif
+#endif
 
 /* This array stores the clock frequency of each system clock. This section of RAM should not be initialized by the C
  * runtime environment. This is initialized and used in bsp_clock_init, which is called before the C runtime
@@ -616,7 +752,7 @@ void r_bsp_clock_update_callback_set (bsp_clock_update_callback_t        p_callb
     r_bsp_clock_update_callback_call(g_bsp_clock_update_callback, &callback_args);
 }
 
-#elif BSP_TZ_NONSECURE_BUILD && BSP_TZ_CFG_CGFSAR != 0xFFFFFFFFU
+#elif BSP_TZ_NONSECURE_BUILD && BSP_CFG_CLOCKS_SECURE == 1
 
 bsp_clock_update_callback_args_t g_callback_memory;
  #if BSP_TZ_SECURE_BUILD || BSP_TZ_NONSECURE_BUILD
@@ -655,7 +791,8 @@ static volatile uint32_t * const gp_bsp_prv_mstp = &R_MSTP->MSTPCRB;
  * @{
  **********************************************************************************************************************/
 
-#if !BSP_CFG_USE_LOW_VOLTAGE_MODE
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #if !BSP_CFG_USE_LOW_VOLTAGE_MODE
 
 /***********************************************************************************************************************
  * Changes the operating speed in OPCCR.  Assumes the LPM registers are unlocked in PRCR and cache is off.
@@ -665,7 +802,7 @@ static volatile uint32_t * const gp_bsp_prv_mstp = &R_MSTP->MSTPCRB;
  **********************************************************************************************************************/
 static void bsp_prv_operating_mode_opccr_set (uint8_t operating_mode)
 {
- #if BSP_FEATURE_CGC_HOCOSF_BEFORE_OPCCR
+  #if BSP_FEATURE_CGC_HOCOSF_BEFORE_OPCCR
 
     /* If the desired operating mode is already set, return. */
     if (operating_mode == R_SYSTEM->OPCCR)
@@ -679,7 +816,7 @@ static void bsp_prv_operating_mode_opccr_set (uint8_t operating_mode)
         /* Wait for HOCO to stabilize. */
         FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.HOCOSF, 1U);
     }
- #endif
+  #endif
 
     /* Wait for transition to complete. */
     FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OPCCR_b.OPCMTSF, 0U);
@@ -691,6 +828,7 @@ static void bsp_prv_operating_mode_opccr_set (uint8_t operating_mode)
     FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OPCCR_b.OPCMTSF, 0U);
 }
 
+ #endif
 #endif
 
 #if !BSP_CFG_USE_LOW_VOLTAGE_MODE
@@ -745,7 +883,11 @@ void bsp_prv_operating_mode_set (uint8_t operating_mode)
         FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->SOPCCR, 0U);
  #endif
 
+ #if BSP_FEATURE_CGC_REGISTER_SET_B
+        bsp_prv_operating_mode_flmode_set(operating_mode);
+ #else
         bsp_prv_operating_mode_opccr_set(operating_mode);
+ #endif
     }
 
  #if BSP_PRV_POWER_USE_DCDC
@@ -764,14 +906,32 @@ void bsp_prv_operating_mode_set (uint8_t operating_mode)
 #if BSP_PRV_PLL_SUPPORTED
 
 /***********************************************************************************************************************
- * Updates the operating frequency of the PLL.
+ * Updates the operating frequency of the specified PLL and all its output channels.
  *
- * @param[in] pll_freq_hz              New frequency of the PLL after the PLL is configured
+ * @param[in] clock                    PLL being configured
+ * @param[in] p_pll_hz                 Array of values of the new PLL output clock frequencies
  **********************************************************************************************************************/
-void bsp_prv_prepare_pll (uint32_t pll_freq_hz)
+void bsp_prv_prepare_pll (uint32_t clock, uint32_t const * const p_pll_hz)
 {
-    /* Store the PLL frequency, which is required to update SystemCoreClock after switching to PLL. */
-    g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] = pll_freq_hz;
+    if (BSP_CLOCKS_SOURCE_CLOCK_PLL == clock)
+    {
+        g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] = p_pll_hz[0];
+ #if 3 == BSP_FEATURE_CGC_PLL1_NUM_OUTPUT_CLOCKS
+        g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL1Q] = p_pll_hz[1];
+        g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL1R] = p_pll_hz[2];
+ #endif
+    }
+
+ #if BSP_PRV_PLL2_SUPPORTED
+    else
+    {
+        g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2] = p_pll_hz[0];
+  #if 3 == BSP_FEATURE_CGC_PLL2_NUM_OUTPUT_CLOCKS
+        g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2Q] = p_pll_hz[1];
+        g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2R] = p_pll_hz[2];
+  #endif
+    }
+ #endif
 }
 
 #endif
@@ -779,13 +939,29 @@ void bsp_prv_prepare_pll (uint32_t pll_freq_hz)
 /*******************************************************************************************************************//**
  * Update SystemCoreClock variable based on current clock settings.
  **********************************************************************************************************************/
-void SystemCoreClockUpdate (void)
+BSP_SECTION_FLASH_GAP void SystemCoreClockUpdate (void)
 {
-    uint32_t clock_index = R_SYSTEM->SCKSCR;
-#if !BSP_FEATURE_CGC_HAS_CPUCLK
-    SystemCoreClock = g_clock_freq[clock_index] >> R_SYSTEM->SCKDIVCR_b.ICK;
-#else
-    uint8_t cpuclk_div = R_SYSTEM->SCKDIVCR2_b.CPUCK;
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #if BSP_FEATURE_TZ_HAS_TRUSTZONE && (BSP_TZ_SECURE_BUILD || BSP_TZ_NONSECURE_BUILD) && BSP_FEATURE_TZ_VERSION == 2
+    bool secure = !R_SYSTEM->CGFSAR_b.NONSEC00;
+ #endif
+
+    uint32_t clock_index = FSP_STYPE3_REG8_READ(R_SYSTEM->SCKSCR, secure);
+
+ #if !BSP_FEATURE_CGC_HAS_CPUCLK
+    uint32_t ick =
+        (FSP_STYPE3_REG32_READ(R_SYSTEM->SCKDIVCR, secure) & R_SYSTEM_SCKDIVCR_ICK_Msk) >> R_SYSTEM_SCKDIVCR_ICK_Pos;
+    SystemCoreClock = g_clock_freq[clock_index] >> ick;
+ #else
+  #if BSP_ALT_BUILD
+    uint8_t cpuck = (FSP_STYPE3_REG8_READ(R_SYSTEM->SCKDIVCR2, secure) & BSP_INTERNAL_SCKDIVCR2_EXTRACK1_MASK) >>
+                    BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS;
+  #else
+    uint8_t cpuck = (FSP_STYPE3_REG8_READ(R_SYSTEM->SCKDIVCR2, secure) & R_SYSTEM_SCKDIVCR2_CPUCK_Msk) >>
+                    R_SYSTEM_SCKDIVCR2_CPUCK_Pos;
+  #endif
+    uint8_t cpuclk_div = cpuck;
+
     if (8U == cpuclk_div)
     {
         SystemCoreClock = g_clock_freq[clock_index] / 3U;
@@ -798,9 +974,38 @@ void SystemCoreClockUpdate (void)
     {
         SystemCoreClock = g_clock_freq[clock_index] / 12U;
     }
+    else if (11U == cpuclk_div)
+    {
+        SystemCoreClock = g_clock_freq[clock_index] / 24U;
+    }
     else
     {
         SystemCoreClock = g_clock_freq[clock_index] >> cpuclk_div;
+    }
+ #endif
+#else
+ #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
+    SystemCoreClock = g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC] >> R_SYSTEM->MOSCDIV;
+ #endif
+    if (BSP_CLOCKS_SOURCE_CLOCK_FSUB == R_SYSTEM->ICLKSCR_b.CKST)
+    {
+ #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+        SystemCoreClock = R_SYSTEM->FSUBSCR ? g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_LOCO] : \
+                          g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK];
+ #else
+        SystemCoreClock = g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_LOCO];
+ #endif
+    }
+    else
+    {
+ #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
+        if (BSP_CLOCKS_FMAIN_SOURCE_CLOCK_FOCO == R_SYSTEM->FMAINSCR_b.CKST)
+ #endif
+        {
+            SystemCoreClock = R_SYSTEM->FOCOSCR_b.CKST ?                                        \
+                              g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_MOCO] >> R_SYSTEM->MOCODIV : \
+                              g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_HOCO] >> R_SYSTEM->HOCODIV;
+        }
     }
 #endif
 }
@@ -880,39 +1085,47 @@ void bsp_prv_power_change_mstp_clear (uint32_t mstp_clear_bitmask)
 
 #endif
 
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+
 /*******************************************************************************************************************//**
  * Write SCKDIVCR and SCKDIVCR2 in the correct order to ensure that CPUCLK frequency is greater than ICLK frequency.
  *
  * @param[in] sckdivcr                 The new SCKDIVCR setting.
  * @param[in] sckdivcr2                The new SCKDIVCR2 setting.
  **********************************************************************************************************************/
-void prv_clock_dividers_set (uint32_t sckdivcr, uint8_t sckdivcr2)
+void prv_clock_dividers_set (uint32_t sckdivcr, uint16_t sckdivcr2)
 {
-#if BSP_FEATURE_CGC_HAS_CPUCLK
+ #if BSP_FEATURE_CGC_HAS_CPUCLK
     uint32_t requested_iclk_div = BSP_PRV_SCKDIVCR_DIV_VALUE(
         (sckdivcr >> FSP_PRIV_CLOCK_ICLK) & FSP_PRV_SCKDIVCR_DIV_MASK);
     uint32_t current_iclk_div = BSP_PRV_SCKDIVCR_DIV_VALUE(R_SYSTEM->SCKDIVCR_b.ICK);
+
+  #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+    uint16_t temp_sckdivcr2 = sckdivcr2;
+  #else
+    uint8_t temp_sckdivcr2 = ((uint8_t) sckdivcr2) & R_SYSTEM_SCKDIVCR2_CPUCK_Msk;
+  #endif
 
     if (requested_iclk_div >= current_iclk_div)
     {
         /* If the requested ICLK divider is greater than or equal to the current ICLK divider, then writing to
          * SCKDIVCR first will always satisfy the constraint: CPUCLK frequency >= ICLK frequency. */
         R_SYSTEM->SCKDIVCR  = sckdivcr;
-        R_SYSTEM->SCKDIVCR2 = sckdivcr2;
+        R_SYSTEM->SCKDIVCR2 = temp_sckdivcr2;
     }
     else
     {
         /* If the requested ICLK divider is less than the current ICLK divider, then writing to SCKDIVCR2 first
          * will always satisfy the constraint: CPUCLK frequency >= ICLK frequency. */
-        R_SYSTEM->SCKDIVCR2 = sckdivcr2;
+        R_SYSTEM->SCKDIVCR2 = temp_sckdivcr2;
         R_SYSTEM->SCKDIVCR  = sckdivcr;
     }
 
-#else
+ #else
     FSP_PARAMETER_NOT_USED(sckdivcr2);
 
     R_SYSTEM->SCKDIVCR = sckdivcr;
-#endif
+ #endif
 }
 
 /*******************************************************************************************************************//**
@@ -923,46 +1136,251 @@ void prv_clock_dividers_set (uint32_t sckdivcr, uint8_t sckdivcr2)
  * @param[in] sckdivcr                 Value to set in SCKDIVCR register
  * @param[in] sckdivcr2                Value to set in SCKDIVCR2 register
  **********************************************************************************************************************/
-void bsp_prv_clock_set (uint32_t clock, uint32_t sckdivcr, uint8_t sckdivcr2)
+void bsp_prv_clock_set (uint32_t clock, uint32_t sckdivcr, uint16_t sckdivcr2)
 {
-#if BSP_FEATURE_LPM_CHANGE_MSTP_REQUIRED
+ #if BSP_FEATURE_LPM_CHANGE_MSTP_REQUIRED
 
     /* Set MSTP bits as required by the hardware manual. This is done first to ensure the 750 ns delay required after
      * increasing any division ratio in SCKDIVCR is met. */
     uint32_t mstp_set_bitmask = bsp_prv_power_change_mstp_set();
-#endif
+ #endif
 
-    uint32_t iclk_div = (sckdivcr >> FSP_PRIV_CLOCK_ICLK) & FSP_PRV_SCKDIVCR_DIV_MASK;
+    uint32_t iclk_div                 = (sckdivcr >> FSP_PRIV_CLOCK_ICLK) & FSP_PRV_SCKDIVCR_DIV_MASK;
+    uint32_t iclk_freq_hz_post_change = g_clock_freq[clock] / BSP_PRV_SCKDIVCR_DIV_VALUE(iclk_div);
+ #if BSP_FEATURE_CGC_HAS_CPUCLK
+    uint32_t cpuclk_div                = sckdivcr2 & R_SYSTEM_SCKDIVCR2_CPUCK_Msk;
+    uint32_t clock_freq_hz_post_change = g_clock_freq[clock] / BSP_PRV_SCKDIVCR_DIV_VALUE(cpuclk_div);
+ #else
+    uint32_t clock_freq_hz_post_change = iclk_freq_hz_post_change;
+ #endif
 
     /* Adjust the MCU specific wait state right before the system clock is set, if the system clock frequency to be
      * set is higher than before. */
-    uint32_t clock_freq_hz_post_change = g_clock_freq[clock] / BSP_PRV_SCKDIVCR_DIV_VALUE(iclk_div);
-    uint8_t  new_rom_wait_state        = bsp_clock_set_prechange(clock_freq_hz_post_change);
+    uint8_t new_rom_wait_state = bsp_clock_set_prechange(iclk_freq_hz_post_change);
+
+ #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+    uint32_t extraclk1_div = (sckdivcr2 & BSP_INTERNAL_SCKDIVCR2_EXTRACK1_MASK) >>
+                             BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS;
+    uint32_t extraclk2_div = (sckdivcr2 & BSP_INTERNAL_SCKDIVCR2_EXTRACK2_MASK) >>
+                             BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS;
+    uint32_t extraclk3_div = (sckdivcr2 & BSP_INTERNAL_SCKDIVCR2_EXTRACK3_MASK) >>
+                             BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS;
+
+    uint32_t extraclk3_freq_mhz_post_change = g_clock_freq[clock] / BSP_PRV_SCKDIVCR_DIV_VALUE(extraclk3_div) /
+                                              BSP_PRV_HZ_PER_MHZ;
+
+    /* Clear the PFB before doing any clock changes according to Frequency Change Procedure. */
+    bsp_internal_prv_clear_pfb();
+ #endif
 
     /* Switching to a faster source clock. */
     if (g_clock_freq[clock] >= g_clock_freq[R_SYSTEM->SCKSCR])
     {
+ #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+        /* New source clock will be faster so set wait state frequency according to Frequency Change Procedure. */
+        bsp_internal_prv_set_wait_state_frequency(extraclk3_freq_mhz_post_change);
+ #endif
+ #if BSP_CFG_CLOCK_SETTLING_DELAY_ENABLE
+        bool post_div_set_delay = false;
+
+        if ((clock_freq_hz_post_change > SystemCoreClock) &&
+            ((clock_freq_hz_post_change - SystemCoreClock) > BSP_MAX_CLOCK_CHANGE_THRESHOLD))
+        {
+            /* If the requested ICLK divider is greater than or equal to the current ICLK divider, then writing to
+             * SCKDIVCR first will always satisfy the constraint: CPUCLK frequency >= ICLK frequency. */
+
+            if (iclk_div == cpuclk_div)
+            {
+                /* If dividers are equal, bump both down 1 notch.
+                 * /1 and /2 are the only possible options. */
+                uint32_t new_div = BSP_CLOCKS_SYS_CLOCK_DIV_2;
+                if (cpuclk_div == BSP_CLOCKS_SYS_CLOCK_DIV_1)
+                {
+                    new_div = BSP_CLOCKS_SYS_CLOCK_DIV_4;
+                }
+
+                R_SYSTEM->SCKDIVCR = (sckdivcr & ~(R_SYSTEM_SCKDIVCR_ICK_Msk)) |
+                                     (new_div << R_SYSTEM_SCKDIVCR_ICK_Pos);
+  #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+                /* Bump down dividers to new_div for other sckdivcr2 dividers if needed. */
+                uint32_t new_extraclk1_div = (extraclk1_div < new_div) ? new_div : extraclk1_div;
+                uint32_t new_extraclk2_div = (extraclk2_div < new_div) ? new_div : extraclk2_div;
+                uint32_t new_extraclk3_div = (extraclk3_div < new_div) ? new_div : extraclk3_div;
+
+                R_SYSTEM->SCKDIVCR2 =
+                    (uint16_t) (new_div | (new_extraclk1_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+                                (new_extraclk2_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+                                (new_extraclk3_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS));
+  #else
+                R_SYSTEM->SCKDIVCR2 = (uint8_t) new_div;
+  #endif
+            }
+            else
+            {
+                R_SYSTEM->SCKDIVCR = sckdivcr;
+                if (cpuclk_div == BSP_CLOCKS_SYS_CLOCK_DIV_1)
+                {
+  #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+                    /* Determine what the other dividers are using and stay aligned with that. */
+                    uint32_t new_cpuclk0_div =
+                        (iclk_div & 0x8) ? BSP_CLOCKS_SYS_CLOCK_DIV_3 : BSP_CLOCKS_SYS_CLOCK_DIV_2;
+
+                    /* Bump down dividers to new_div for other sckdivcr2 dividers if needed. */
+                    uint32_t new_extraclk1_div =
+                        (extraclk1_div < new_cpuclk0_div) ? new_cpuclk0_div : extraclk1_div;
+                    uint32_t new_extraclk2_div =
+                        (extraclk2_div < new_cpuclk0_div) ? new_cpuclk0_div : extraclk2_div;
+                    uint32_t new_extraclk3_div =
+                        (extraclk3_div < new_cpuclk0_div) ? new_cpuclk0_div : extraclk3_div;
+
+                    R_SYSTEM->SCKDIVCR2 =
+                        (uint16_t) (new_cpuclk0_div |
+                                    (new_extraclk1_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+                                    (new_extraclk2_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+                                    (new_extraclk3_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS));
+  #else
+
+                    /* Determine what the other dividers are using and stay aligned with that. */
+                    R_SYSTEM->SCKDIVCR2 =
+                        (iclk_div & 0x8) ? BSP_CLOCKS_SYS_CLOCK_DIV_3 : BSP_CLOCKS_SYS_CLOCK_DIV_2;
+  #endif
+                }
+                else
+                {
+  #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+                    /* If not /1, can just add 1 to it. */
+                    uint32_t new_cpuclk0_div = sckdivcr2 + 1;
+
+                    /* Bump down dividers to new_div for other sckdivcr2 dividers if needed. */
+                    uint32_t new_extraclk1_div =
+                        (extraclk1_div < new_cpuclk0_div) ? new_cpuclk0_div : extraclk1_div;
+                    uint32_t new_extraclk2_div =
+                        (extraclk2_div < new_cpuclk0_div) ? new_cpuclk0_div : extraclk2_div;
+                    uint32_t new_extraclk3_div =
+                        (extraclk3_div < new_cpuclk0_div) ? new_cpuclk0_div : extraclk3_div;
+
+                    R_SYSTEM->SCKDIVCR2 =
+                        (uint16_t) (new_cpuclk0_div |
+                                    (new_extraclk1_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+                                    (new_extraclk2_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+                                    (new_extraclk3_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS));
+  #else
+
+                    /* If not /1, can just add 1 to it. */
+                    R_SYSTEM->SCKDIVCR2 = (uint8_t) sckdivcr2 + 1;
+  #endif
+                }
+            }
+
+            /* Set the system source clock */
+            R_SYSTEM->SCKSCR = (uint8_t) clock;
+
+            /* Wait for settling delay. */
+            SystemCoreClockUpdate();
+            R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+
+            /* Trigger delay after setting dividers */
+            post_div_set_delay = true;
+        }
+        /* Continue and set clock to actual target speed. */
+ #endif
+
         /* Set the clock dividers before switching to the new clock source. */
         prv_clock_dividers_set(sckdivcr, sckdivcr2);
 
-        /* Switch to the new clock source. */
-        R_SYSTEM->SCKSCR = (uint8_t) clock;
+ #if BSP_CFG_CLOCK_SETTLING_DELAY_ENABLE
+        if (post_div_set_delay)
+        {
+            /* Update the CMSIS core clock variable so that it reflects the new ICLK frequency. */
+            SystemCoreClock = clock_freq_hz_post_change;
+
+            /* Wait for settling delay. */
+            R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+        }
+        else
+ #endif
+        {
+            /* Switch to the new clock source. */
+            R_SYSTEM->SCKSCR = (uint8_t) clock;
+        }
     }
     /* Switching to a slower source clock. */
     else
     {
+ #if BSP_CFG_CLOCK_SETTLING_DELAY_ENABLE
+        if ((SystemCoreClock > clock_freq_hz_post_change) &&
+            ((SystemCoreClock - clock_freq_hz_post_change) > BSP_MAX_CLOCK_CHANGE_THRESHOLD))
+        {
+            uint32_t current_sckdivcr = R_SYSTEM->SCKDIVCR;
+
+            /* Must first step CPUCLK down by factor of 2 or 3 if it is currently above threshold. */
+  #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+            if ((R_SYSTEM->SCKDIVCR2 & R_SYSTEM_SCKDIVCR2_CPUCK_Msk) ==
+                ((current_sckdivcr >> R_SYSTEM_SCKDIVCR_ICK_Pos) & 0xF))
+  #else
+            if (R_SYSTEM->SCKDIVCR2 == ((current_sckdivcr >> R_SYSTEM_SCKDIVCR_ICK_Pos) & 0xF))
+  #endif
+            {
+                /* If ICLK and CPUCLK have same divider currently, move ICLK down 1 notch first. */
+                uint32_t current_iclk_div = (current_sckdivcr >> R_SYSTEM_SCKDIVCR_ICK_Pos) & 0xF;
+                uint32_t new_div          = (uint16_t) current_iclk_div + 1;
+                if (current_iclk_div == 0)
+                {
+                    /* Align with already selected divider for PCLKA because it must have one > 1 already. */
+                    new_div =
+                        (current_sckdivcr &
+                         (0x8 << R_SYSTEM_SCKDIVCR_PCKA_Pos)) ? BSP_CLOCKS_SYS_CLOCK_DIV_3 : BSP_CLOCKS_SYS_CLOCK_DIV_2;
+                }
+
+                R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+                R_SYSTEM->SCKDIVCR = (current_sckdivcr & ~(R_SYSTEM_SCKDIVCR_ICK_Msk)) |
+                                     (new_div << R_SYSTEM_SCKDIVCR_ICK_Pos);
+  #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+                /* Bump down dividers to new_div for other sckdivcr2 dividers if needed. */
+                uint32_t new_extraclk1_div = (extraclk1_div < new_div) ? new_div : extraclk1_div;
+                uint32_t new_extraclk2_div = (extraclk2_div < new_div) ? new_div : extraclk2_div;
+                uint32_t new_extraclk3_div = (extraclk3_div < new_div) ? new_div : extraclk3_div;
+
+                R_SYSTEM->SCKDIVCR2 =
+                    (uint16_t) (new_div | (new_extraclk1_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+                                (new_extraclk2_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+                                (new_extraclk3_div << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS));
+  #else
+                R_SYSTEM->SCKDIVCR2 = (uint8_t) new_div;
+  #endif
+
+                SystemCoreClockUpdate();
+            }
+        }
+        R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+ #endif
         R_SYSTEM->SCKSCR = (uint8_t) clock;
 
         /* Set the clock dividers after switching to the new clock source. */
         prv_clock_dividers_set(sckdivcr, sckdivcr2);
+
+ #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+        /* New source clock will be slower so set wait state frequency after changing clock frequency according to Frequency Change Procedure. */
+        bsp_internal_prv_set_wait_state_frequency(extraclk3_freq_mhz_post_change);
+ #endif
     }
+
+ #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+    bsp_internal_prv_set_pfb(extraclk3_freq_mhz_post_change);
+ #endif
 
     /* Clock is now at requested frequency. */
 
     /* Update the CMSIS core clock variable so that it reflects the new ICLK frequency. */
     SystemCoreClock = clock_freq_hz_post_change;
 
-#if BSP_TZ_SECURE_BUILD
+ #if BSP_TZ_SECURE_BUILD
     if (NULL != g_bsp_clock_update_callback)
     {
         /* Set callback args. */
@@ -974,21 +1392,215 @@ void bsp_prv_clock_set (uint32_t clock, uint32_t sckdivcr, uint8_t sckdivcr2)
         /* Call the callback. */
         r_bsp_clock_update_callback_call(g_bsp_clock_update_callback, &callback_args);
     }
-#endif
+ #endif
 
     /* Adjust the MCU specific wait state soon after the system clock is set, if the system clock frequency to be
      * set is lower than previous. */
-    bsp_clock_set_postchange(SystemCoreClock, new_rom_wait_state);
+    bsp_clock_set_postchange(iclk_freq_hz_post_change, new_rom_wait_state);
 
-#if BSP_FEATURE_LPM_CHANGE_MSTP_REQUIRED
+ #if BSP_FEATURE_LPM_CHANGE_MSTP_REQUIRED
 
     /* Clear MSTP bits as required by the hardware manual. This is done last to ensure the 250 ns delay required after
      * decreasing any division ratio in SCKDIVCR is met. */
     bsp_prv_power_change_mstp_clear(mstp_set_bitmask);
-#endif
+ #endif
 }
 
-#if !BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+ #if BSP_CFG_SLEEP_MODE_DELAY_ENABLE || BSP_CFG_RTOS_SLEEP_MODE_DELAY_ENABLE
+
+bool bsp_prv_clock_prepare_pre_sleep (void)
+{
+    /* Must wait before entering or exiting sleep modes.
+     * See Section 10.7.10 in RA8M1 manual R01UH0994EJ0100 */
+    R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+
+    /* Need to slow CPUCLK down before sleeping if it is above 240MHz. */
+    bool cpuclk_slowed = false;
+    if (SystemCoreClock > BSP_MAX_CLOCK_CHANGE_THRESHOLD)
+    {
+        /* Reduce speed of CPUCLK to /2 or /3 of current, select which ones based on what ICLK divider is. */
+        R_SYSTEM->SCKDIVCR2 =
+            (R_SYSTEM->SCKDIVCR &
+             (0x8 << R_SYSTEM_SCKDIVCR_ICK_Pos)) ? BSP_CLOCKS_SYS_CLOCK_DIV_3 : BSP_CLOCKS_SYS_CLOCK_DIV_2;
+        cpuclk_slowed = true;
+        SystemCoreClockUpdate();
+        R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+    }
+
+    return cpuclk_slowed;
+}
+
+void bsp_prv_clock_prepare_post_sleep (bool cpuclk_slowed)
+{
+    /* Set CPUCLK back to original speed here if it was slowed down before sleeping (dropped to below 240MHz)
+     * Add delays as described in Section 10.7.10 of RA8M1 manual R01UH0994EJ0100 */
+    R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+    if (cpuclk_slowed)
+    {
+        /* Set divider of CPUCLK back to /1. This is the only possible value for it to have been over 240MHz before sleeping. */
+        R_SYSTEM->SCKDIVCR2 = BSP_CLOCKS_SYS_CLOCK_DIV_1;
+        SystemCoreClockUpdate();
+        R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+    }
+}
+
+ #endif
+
+#else
+
+/*******************************************************************************************************************//**
+ * Get system core clock source.
+ *
+ **********************************************************************************************************************/
+uint32_t bsp_prv_clock_source_get (void)
+{
+    /*
+     * | System clock source | FOCOSCR.CKSEL | FMAINSCR.CKSEL | FSUBSCR.CKSEL | ICLKSCR.CKSEL |
+     * | ------------------- | ------------- | -------------- | ------------- | ------------- |
+     * | HOCO                | 0U            | 0U             | x             | 0U            |
+     * | MOCO                | 1U            | 0U             | x             | 0U            |
+     * | MOSC                | x             | 1U             | x             | 0U            |
+     * | LOCO                | x             | x              | 1U            | 1U            |
+     * | SOSC                | x             | x              | 0U            | 1U            |
+     *
+     * */
+    uint32_t clock = BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC;
+
+    if (BSP_CLOCKS_SOURCE_CLOCK_FSUB == R_SYSTEM->ICLKSCR_b.CKST)
+    {
+        clock = R_SYSTEM->FSUBSCR ? BSP_CLOCKS_SOURCE_CLOCK_LOCO : BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK;
+    }
+    else if (BSP_CLOCKS_FMAIN_SOURCE_CLOCK_FOCO == R_SYSTEM->FMAINSCR_b.CKST)
+    {
+        clock = R_SYSTEM->FOCOSCR_b.CKST ? BSP_CLOCKS_SOURCE_CLOCK_MOCO : BSP_CLOCKS_SOURCE_CLOCK_HOCO;
+    }
+    else
+    {
+        /* Do nothing. */
+    }
+
+    return clock;
+}
+
+/*******************************************************************************************************************//**
+ * Applies system core clock source and divider changes.  The MCU is expected to be in high speed mode during this
+ * configuration and the CGC registers are expected to be unlocked in PRCR.
+ *
+ * @param[in] clock                  Desired system clock
+ * @param[in] hocodiv                The new HOCODIV setting.
+ * @param[in] mocodiv                The new MOCODIV setting.
+ * @param[in] moscdiv                The new MOSCDIV setting.
+ **********************************************************************************************************************/
+void bsp_prv_clock_set (uint32_t clock, uint8_t hocodiv, uint8_t mocodiv, uint8_t moscdiv)
+{
+    /*
+     * | System clock source | FOCOSCR.CKSEL | FMAINSCR.CKSEL | FSUBSCR.CKSEL | ICLKSCR.CKSEL |
+     * | ------------------- | ------------- | -------------- | ------------- | ------------- |
+     * | HOCO                | 0U            | 0U             | x             | 0U            |
+     * | MOCO                | 1U            | 0U             | x             | 0U            |
+     * | MOSC                | x             | 1U             | x             | 0U            |
+     * | LOCO                | x             | x              | 1U            | 1U            |
+     * | SOSC                | x             | x              | 0U            | 1U            |
+     *
+     * */
+    R_SYSTEM->ICLKSCR_b.CKSEL = BSP_CLOCKS_SOURCE_CLOCK_FMAIN;
+    FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->ICLKSCR_b.CKST, BSP_CLOCKS_SOURCE_CLOCK_FMAIN);
+
+    if ((BSP_CLOCKS_SOURCE_CLOCK_HOCO == clock) || (BSP_CLOCKS_SOURCE_CLOCK_MOCO == clock))
+    {
+        R_SYSTEM->FMAINSCR_b.CKSEL = BSP_CLOCKS_FMAIN_SOURCE_CLOCK_FOCO;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->FMAINSCR_b.CKST, BSP_CLOCKS_FMAIN_SOURCE_CLOCK_FOCO);
+
+        if (BSP_CLOCKS_SOURCE_CLOCK_HOCO == clock)
+        {
+            R_SYSTEM->FOCOSCR_b.CKSEL = BSP_CLOCKS_FOCO_SOURCE_CLOCK_HOCO;
+            FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->FOCOSCR_b.CKST, BSP_CLOCKS_FOCO_SOURCE_CLOCK_HOCO);
+
+            /* Due to register access restrictions (see 8.6.1 Register Access), only set the HOCODIV when system clock source is HOCO */
+            R_SYSTEM->HOCODIV = hocodiv;
+        }
+        else
+        {
+            R_SYSTEM->FOCOSCR_b.CKSEL = BSP_CLOCKS_FOCO_SOURCE_CLOCK_MOCO;
+            FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->FOCOSCR_b.CKST, BSP_CLOCKS_FOCO_SOURCE_CLOCK_MOCO);
+        }
+    }
+
+ #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
+    else if (BSP_CLOCKS_SOURCE_CLOCK_MAIN_OSC == clock)
+    {
+        R_SYSTEM->FMAINSCR_b.CKSEL = BSP_CLOCKS_FMAIN_SOURCE_CLOCK_MAIN_OSC;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->FMAINSCR_b.CKST, BSP_CLOCKS_FMAIN_SOURCE_CLOCK_MAIN_OSC);
+    }
+ #endif
+    else
+    {
+        if (BSP_CLOCKS_SOURCE_CLOCK_LOCO == clock)
+        {
+            R_SYSTEM->FSUBSCR = BSP_CLOCKS_FSUB_SOURCE_CLOCK_LOCO;
+        }
+
+ #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+        else
+        {
+            R_SYSTEM->FSUBSCR = BSP_CLOCKS_FSUB_SOURCE_CLOCK_SUBCLOCK;
+        }
+ #endif
+
+        R_SYSTEM->ICLKSCR_b.CKSEL = BSP_CLOCKS_SOURCE_CLOCK_FSUB;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->ICLKSCR_b.CKST, BSP_CLOCKS_SOURCE_CLOCK_FSUB);
+    }
+
+    R_SYSTEM->MOCODIV = mocodiv;
+    R_SYSTEM->MOSCDIV = moscdiv;
+
+    /* Clock is now at requested frequency. Update the CMSIS core clock variable so that it reflects the new ICLK frequency.*/
+    SystemCoreClockUpdate();
+}
+
+/*******************************************************************************************************************//**
+ * Setting for CLKOUT/CLKOUT1
+ **********************************************************************************************************************/
+static void bsp_prv_clkout_set (void)
+{
+ #if BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_CLOCK_DISABLED
+  #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+    R_PCLBUZ->CKS[0] = 0U;
+  #endif
+ #else
+    uint8_t cks0 = (BSP_CFG_CLKOUT_DIV << R_PCLBUZ_CKS_CCS_Pos);
+  #if (BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO) || \
+    (BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK)
+    cks0 |= (BSP_CLOCKS_CLKOUT_SOURCE_CLOCK_FSUB << R_PCLBUZ_CKS_CSEL_Pos);
+  #else
+    cks0 |= (BSP_CLOCKS_CLKOUT_SOURCE_CLOCK_FMAIN << R_PCLBUZ_CKS_CSEL_Pos);
+  #endif
+    R_PCLBUZ->CKS[0]  = cks0;
+    R_PCLBUZ->CKS[0] |= (1U << R_PCLBUZ_CKS_PCLOE_Pos);
+ #endif
+
+ #if defined(BSP_CFG_CLKOUT1_SOURCE)
+  #if BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_CLOCK_DISABLED
+   #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+    R_PCLBUZ->CKS[1] = 0U;
+   #endif
+  #else
+    uint8_t cks1 = (BSP_CFG_CLKOUT1_DIV << R_PCLBUZ_CKS_CCS_Pos);
+   #if (BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_LOCO) || \
+    (BSP_CFG_CLKOUT1_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK)
+    cks1 |= (BSP_CLOCKS_CLKOUT_SOURCE_CLOCK_FSUB << R_PCLBUZ_CKS_CSEL_Pos);
+   #else
+    cks1 |= (BSP_CLOCKS_CLKOUT_SOURCE_CLOCK_FMAIN << R_PCLBUZ_CKS_CSEL_Pos);
+   #endif
+    R_PCLBUZ->CKS[1]  = cks1;
+    R_PCLBUZ->CKS[1] |= (1U << R_PCLBUZ_CKS_PCLOE_Pos);
+  #endif
+ #endif
+}
+
+#endif
+
+#if !BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET && !BSP_FEATURE_CGC_REGISTER_SET_B
 
 static void bsp_prv_clock_set_hard_reset (void)
 {
@@ -1018,9 +1630,14 @@ static void bsp_prv_clock_set_hard_reset (void)
 
  #if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
   #if BSP_STARTUP_ICLK_HZ > BSP_PRV_MEMWAIT_MAX_ZERO_WAIT_FREQ
+   #if ((BSP_STARTUP_ICLK_HZ > BSP_PRV_MEMWAIT_MAX_ONE_WAIT_FREQ) && \
+    (BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES & R_SYSTEM_MEMWAIT_MEMWAIT_Msk))
 
     /* The MCU must be in high speed mode to set wait states to 2. High speed mode is the default out of reset. */
     R_SYSTEM->MEMWAIT = BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES;
+   #else
+    R_SYSTEM->MEMWAIT = BSP_PRV_MEMWAIT_ONE_WAIT_CYCLES;
+   #endif
   #endif
  #endif
 
@@ -1032,6 +1649,12 @@ static void bsp_prv_clock_set_hard_reset (void)
   #endif
  #endif
 
+ #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+    /* Clear the PFB before doing any clock changes according to Frequency Change Procedure. */
+    bsp_internal_prv_clear_pfb();
+ #endif
+
     /* In order to avoid a system clock (momentarily) higher than expected, the order of switching the clock and
      * dividers must be so that the frequency of the clock goes lower, instead of higher, before being correct. */
 
@@ -1039,18 +1662,141 @@ static void bsp_prv_clock_set_hard_reset (void)
      * then set the clock dividers before switching to the new source clock. */
  #if BSP_MOCO_FREQ_HZ <= BSP_STARTUP_SOURCE_CLOCK_HZ
   #if BSP_FEATURE_CGC_HAS_CPUCLK
-   #if BSP_PRV_ICLK_DIV_VALUE >= BSP_PRV_SCKDIVCR_DIV_VALUE(BSP_FEATURE_CGC_ICLK_DIV_RESET)
+   #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+    /* New source clock will be faster so set wait state frequency before changing clock frequency
+     * according to Frequency Change Procedure. */
+    bsp_internal_prv_set_wait_state_frequency(BSP_STARTUP_EXTRACLK3_HZ / BSP_PRV_HZ_PER_MHZ);
+   #endif
+   #if BSP_CFG_CLOCK_SETTLING_DELAY_ENABLE && (BSP_STARTUP_CPUCLK_HZ >= BSP_MAX_CLOCK_CHANGE_THRESHOLD)
+
+    /* If the requested ICLK divider is greater than or equal to the current ICLK divider, then writing to
+     * SCKDIVCR first will always satisfy the constraint: CPUCLK frequency >= ICLK frequency. */
+    #if BSP_CFG_ICLK_DIV == BSP_CFG_CPUCLK_DIV
+
+    /* If dividers are equal, bump both down 1 notch.
+     * /1 and /2 are the only possible options. */
+     #if BSP_CFG_CPUCLK_DIV == BSP_CLOCKS_SYS_CLOCK_DIV_1
+    R_SYSTEM->SCKDIVCR = (BSP_PRV_STARTUP_SCKDIVCR & ~(R_SYSTEM_SCKDIVCR_ICK_Msk)) |
+                         (BSP_CLOCKS_SYS_CLOCK_DIV_2 << R_SYSTEM_SCKDIVCR_ICK_Pos);
+      #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+    R_SYSTEM->SCKDIVCR2 = BSP_CLOCKS_SYS_CLOCK_DIV_2 |
+       #if BSP_CFG_EXTRACLK1_DIV == BSP_CLOCKS_SYS_CLOCK_DIV_1
+                          (BSP_CLOCKS_SYS_CLOCK_DIV_2 << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+       #else
+                          (BSP_CFG_EXTRACLK1_DIV << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+       #endif
+       #if BSP_CFG_EXTRACLK2_DIV == BSP_CLOCKS_SYS_CLOCK_DIV_1
+                          (BSP_CLOCKS_SYS_CLOCK_DIV_2 << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+       #else
+                          (BSP_CFG_EXTRACLK2_DIV << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+       #endif
+       #if BSP_CFG_EXTRACLK3_DIV == BSP_CLOCKS_SYS_CLOCK_DIV_1
+                          (BSP_CLOCKS_SYS_CLOCK_DIV_2 << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS);
+       #else
+                          (BSP_CFG_EXTRACLK3_DIV << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS);
+       #endif
+      #else
+    R_SYSTEM->SCKDIVCR2 = BSP_CLOCKS_SYS_CLOCK_DIV_2;
+      #endif
+     #else
+    R_SYSTEM->SCKDIVCR = (BSP_PRV_STARTUP_SCKDIVCR & ~(R_SYSTEM_SCKDIVCR_ICK_Msk)) |
+                         (BSP_CLOCKS_SYS_CLOCK_DIV_4 << R_SYSTEM_SCKDIVCR_ICK_Pos);
+      #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+    R_SYSTEM->SCKDIVCR2 = BSP_CLOCKS_SYS_CLOCK_DIV_4 |
+       #if BSP_CFG_EXTRACLK1_DIV < BSP_CLOCKS_SYS_CLOCK_DIV_4
+                          (BSP_CLOCKS_SYS_CLOCK_DIV_4 << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS)
+       #else
+                          (BSP_CFG_EXTRACLK1_DIV << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+       #endif
+       #if BSP_CFG_EXTRACLK2_DIV < BSP_CLOCKS_SYS_CLOCK_DIV_4
+                          (BSP_CLOCKS_SYS_CLOCK_DIV_4 << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+       #else
+                          (BSP_CFG_EXTRACLK2_DIV << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+       #endif
+       #if BSP_CFG_EXTRACLK3_DIV < BSP_CLOCKS_SYS_CLOCK_DIV_4
+                          (BSP_CLOCKS_SYS_CLOCK_DIV_4 << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS);
+       #else
+                          (BSP_CFG_EXTRACLK3_DIV << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS);
+       #endif
+      #else
+    R_SYSTEM->SCKDIVCR2 = BSP_CLOCKS_SYS_CLOCK_DIV_4;
+      #endif
+     #endif
+    #else
+    R_SYSTEM->SCKDIVCR = BSP_PRV_STARTUP_SCKDIVCR;
+
+     #if BSP_CFG_CPUCLK_DIV == BSP_CLOCKS_SYS_CLOCK_DIV_1
+      #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+    /* Determine what the other dividers are using and stay aligned with that. */
+    uint32_t new_cpuclk0_div = (BSP_CFG_ICLK_DIV & 0x8) ? BSP_CLOCKS_SYS_CLOCK_DIV_3 : BSP_CLOCKS_SYS_CLOCK_DIV_2;
+
+    /* Bump down dividers to new_div for other sckdivcr2 dividers if needed. */
+    uint32_t new_extraclk1_div = (BSP_CFG_EXTRACLK1_DIV < new_cpuclk0_div) ? new_cpuclk0_div : BSP_CFG_EXTRACLK1_DIV;
+    uint32_t new_extraclk2_div = (BSP_CFG_EXTRACLK2_DIV < new_cpuclk0_div) ? new_cpuclk0_div : BSP_CFG_EXTRACLK2_DIV;
+    uint32_t new_extraclk3_div = (BSP_CFG_EXTRACLK3_DIV < new_cpuclk0_div) ? new_cpuclk0_div : BSP_CFG_EXTRACLK3_DIV;
+
+    R_SYSTEM->SCKDIVCR2 =
+        (uint16_t) (new_cpuclk0_div | ((new_extraclk1_div) << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+                    ((new_extraclk2_div) << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+                    ((new_extraclk3_div) << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS));
+      #else
+
+    /* Determine what the other dividers are using and stay aligned with that. */
+    R_SYSTEM->SCKDIVCR2 = (BSP_CFG_ICLK_DIV & 0x8) ? BSP_CLOCKS_SYS_CLOCK_DIV_3 : BSP_CLOCKS_SYS_CLOCK_DIV_2;
+      #endif
+     #else
+      #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+    /* If not /1, can just add 1 to it. */
+    uint32_t new_cpuclk0_div = BSP_PRV_STARTUP_SCKDIVCR2 + 1;
+
+    /* Bump down dividers to new_div for other sckdivcr2 dividers if needed. */
+    uint32_t new_extraclk1_div = (BSP_CFG_EXTRACLK1_DIV < new_cpuclk0_div) ? new_cpuclk0_div : BSP_CFG_EXTRACLK1_DIV;
+    uint32_t new_extraclk2_div = (BSP_CFG_EXTRACLK2_DIV < new_cpuclk0_div) ? new_cpuclk0_div : BSP_CFG_EXTRACLK2_DIV;
+    uint32_t new_extraclk3_div = (BSP_CFG_EXTRACLK3_DIV < new_cpuclk0_div) ? new_cpuclk0_div : BSP_CFG_EXTRACLK3_DIV;
+
+    R_SYSTEM->SCKDIVCR2 =
+        (uint16_t) (new_cpuclk0_div | ((new_extraclk1_div) << BSP_INTERNAL_SCKDIVCR2_EXTRACK1_POS) |
+                    ((new_extraclk2_div) << BSP_INTERNAL_SCKDIVCR2_EXTRACK2_POS) |
+                    ((new_extraclk3_div) << BSP_INTERNAL_SCKDIVCR2_EXTRACK3_POS));
+      #else
+
+    /* If not /1, can just add 1 to it. */
+    R_SYSTEM->SCKDIVCR2 = BSP_PRV_STARTUP_SCKDIVCR2 + 1;
+      #endif
+     #endif
+    #endif
+
+    /* Set the system source clock */
+    R_SYSTEM->SCKSCR = BSP_CFG_CLOCK_SOURCE;
+
+    /* Wait for settling delay. */
+    SystemCoreClockUpdate();
+    R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+
+    /* Continue and set clock to actual target speed. */
+    R_SYSTEM->SCKDIVCR2 = BSP_PRV_STARTUP_SCKDIVCR2;
+    R_SYSTEM->SCKDIVCR  = BSP_PRV_STARTUP_SCKDIVCR;
+
+    /* Wait for settling delay. */
+    SystemCoreClockUpdate();
+    R_BSP_SoftwareDelay(BSP_CFG_CLOCK_SETTLING_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
+   #else
+    #if BSP_PRV_ICLK_DIV_VALUE >= BSP_PRV_SCKDIVCR_DIV_VALUE(BSP_FEATURE_CGC_ICLK_DIV_RESET)
 
     /* If the requested ICLK divider is greater than or equal to the current ICLK divider, then writing to
      * SCKDIVCR first will always satisfy the constraint: CPUCLK frequency >= ICLK frequency. */
     R_SYSTEM->SCKDIVCR  = BSP_PRV_STARTUP_SCKDIVCR;
     R_SYSTEM->SCKDIVCR2 = BSP_PRV_STARTUP_SCKDIVCR2;
-   #else
+    #else
 
     /* If the requested ICLK divider is less than the current ICLK divider, then writing to SCKDIVCR2 first
      * will always satisfy the constraint: CPUCLK frequency >= ICLK frequency. */
     R_SYSTEM->SCKDIVCR2 = BSP_PRV_STARTUP_SCKDIVCR2;
     R_SYSTEM->SCKDIVCR  = BSP_PRV_STARTUP_SCKDIVCR;
+    #endif
    #endif
   #else
     R_SYSTEM->SCKDIVCR = BSP_PRV_STARTUP_SCKDIVCR;
@@ -1064,6 +1810,11 @@ static void bsp_prv_clock_set_hard_reset (void)
      * then set the clock dividers after switching to the new source clock. */
  #if BSP_MOCO_FREQ_HZ > BSP_STARTUP_SOURCE_CLOCK_HZ
   #if BSP_FEATURE_CGC_HAS_CPUCLK
+   #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+
+    /* New source clock will be slower so set wait state frequency after changing clock frequency according to Frequency Change Procedure. */
+    bsp_internal_prv_set_wait_state_frequency(BSP_STARTUP_EXTRACLK3_HZ / BSP_PRV_HZ_PER_MHZ);
+   #endif
    #if BSP_PRV_ICLK_DIV_VALUE >= BSP_PRV_SCKDIVCR_DIV_VALUE(BSP_FEATURE_CGC_ICLK_DIV_RESET)
 
     /* If the requested ICLK divider is greater than or equal to the current ICLK divider, then writing to
@@ -1082,6 +1833,10 @@ static void bsp_prv_clock_set_hard_reset (void)
   #endif
  #endif
 
+ #if BSP_FEATURE_CGC_SCKDIVCR2_HAS_EXTRA_CLOCKS
+    bsp_internal_prv_set_pfb(BSP_STARTUP_EXTRACLK3_HZ / BSP_PRV_HZ_PER_MHZ);
+ #endif
+
     /* Update the CMSIS core clock variable so that it reflects the new ICLK frequency. */
     SystemCoreClockUpdate();
 
@@ -1090,19 +1845,29 @@ static void bsp_prv_clock_set_hard_reset (void)
     /* Adjust the MCU specific wait state soon after the system clock is set, if the system clock frequency to be
      * set is lower than previous. */
  #if BSP_FEATURE_CGC_HAS_SRAMWTSC
-  #if BSP_STARTUP_ICLK_HZ <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_NO_RAM_WAITS
-   #if BSP_FEATURE_CGC_HAS_SRAMPRCR2 == 1
+  #if BSP_FEATURE_CGC_HAS_SRAMPRCR2 == 1
     R_SRAM->SRAMPRCR2 = BSP_PRV_SRAM_UNLOCK;
-    R_SRAM->SRAMWTSC  = BSP_PRV_SRAMWTSC_WAIT_CYCLES_DISABLE;
+    R_SRAM->SRAMWTSC  = BSP_PRV_SRAM_WAIT_CYCLES;
     R_SRAM->SRAMPRCR2 = BSP_PRV_SRAM_LOCK;
+  #else
+
+    /* Devices with TrustZone version 2 have a separate non-secure register for SRAM register protection. */
+   #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    R_SRAM->SRAMPRCR_NS = BSP_PRV_SRAM_UNLOCK;
    #else
     R_SRAM->SRAMPRCR = BSP_PRV_SRAM_UNLOCK;
+   #endif
 
-    /* Execute data memory barrier before and after setting the wait states (MREF_INTERNAL_000). */
+    /* Execute data memory barrier before and after setting the wait states, See Section 50.4.2 in the RA8M1
+     * manual R01UH0994EJ0100 */
     __DMB();
-    R_SRAM->SRAMWTSC = BSP_PRV_SRAMWTSC_WAIT_CYCLES_DISABLE;
+    R_SRAM->SRAMWTSC = BSP_PRV_SRAM_WAIT_CYCLES;
     __DMB();
 
+    /* Devices with TrustZone version 2 have a separate non-secure register for SRAM register protection. */
+   #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    R_SRAM->SRAMPRCR_NS = BSP_PRV_SRAM_LOCK;
+   #else
     R_SRAM->SRAMPRCR = BSP_PRV_SRAM_LOCK;
    #endif
   #endif
@@ -1116,7 +1881,7 @@ static void bsp_prv_clock_set_hard_reset (void)
 /*******************************************************************************************************************//**
  * Initializes variable to store system clock frequencies.
  **********************************************************************************************************************/
-#if BSP_TZ_NONSECURE_BUILD
+#if BSP_TZ_NONSECURE_BUILD || BSP_ALT_BUILD
 void bsp_clock_freq_var_init (void)
 #else
 static void bsp_clock_freq_var_init (void)
@@ -1137,7 +1902,7 @@ static void bsp_clock_freq_var_init (void)
 #endif
 #if BSP_PRV_PLL_SUPPORTED
  #if BSP_CLOCKS_SOURCE_CLOCK_PLL == BSP_CFG_CLOCK_SOURCE
-  #if (3U != BSP_FEATURE_CGC_PLLCCR_TYPE)
+  #if (3U != BSP_FEATURE_CGC_PLLCCR_TYPE) && (6U != BSP_FEATURE_CGC_PLLCCR_TYPE)
 
     /* The PLL Is the startup clock. */
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] = BSP_STARTUP_SOURCE_CLOCK_HZ;
@@ -1153,7 +1918,7 @@ static void bsp_clock_freq_var_init (void)
  #endif
 #endif
 
-#if BSP_TZ_NONSECURE_BUILD && BSP_TZ_CFG_CGFSAR != 0xFFFFFFFFU
+#if BSP_TZ_NONSECURE_BUILD && BSP_CFG_CLOCKS_SECURE == 1
 
     /* If the CGC is secure and this is a non secure project, register a callback for getting clock settings. */
     R_BSP_ClockUpdateCallbackSet(g_bsp_clock_update_callback, &g_callback_memory);
@@ -1161,27 +1926,29 @@ static void bsp_clock_freq_var_init (void)
 
     /* Update PLL Clock Frequency based on BSP Configuration. */
 #if BSP_PRV_PLL_SUPPORTED && BSP_CLOCKS_SOURCE_CLOCK_PLL != BSP_CFG_CLOCK_SOURCE && BSP_PRV_PLL_USED
- #if (1U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+ #if (1U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (5U == BSP_FEATURE_CGC_PLLCCR_TYPE)
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] = ((g_clock_freq[BSP_CFG_PLL_SOURCE] * (BSP_CFG_PLL_MUL + 1U)) >> 1U) /
                                                 (BSP_CFG_PLL_DIV + 1U);
- #elif (3U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+ #elif (3U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6U == BSP_FEATURE_CGC_PLLCCR_TYPE)
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL]   = BSP_CFG_PLL1P_FREQUENCY_HZ;
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL1Q] = BSP_CFG_PLL1Q_FREQUENCY_HZ;
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL1R] = BSP_CFG_PLL1R_FREQUENCY_HZ;
  #elif (4U == BSP_FEATURE_CGC_PLLCCR_TYPE)
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] = (g_clock_freq[BSP_CFG_PLL_SOURCE] * (BSP_CFG_PLL_MUL + 1U)) >> 1U;
  #else
-    g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] = ((g_clock_freq[BSP_CFG_PLL_SOURCE] * (BSP_CFG_PLL_MUL + 1U)) >> 1U) >>
-                                                BSP_CFG_PLL_DIV;
+    g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL] =
+        ((g_clock_freq[BSP_CFG_PLL_SOURCE] * (BSP_CFG_PLL_MUL + 1U)) >> 1U) >>
+        BSP_CFG_PLL_DIV;
  #endif
 #endif
 
     /* Update PLL2 Clock Frequency based on BSP Configuration. */
 #if BSP_PRV_PLL2_SUPPORTED && BSP_PRV_PLL2_USED
  #if (1U == BSP_FEATURE_CGC_PLLCCR_TYPE)
-    g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2] = ((g_clock_freq[BSP_CFG_PLL2_SOURCE] * (BSP_CFG_PLL2_MUL + 1U)) >> 1U) /
-                                                 (BSP_CFG_PLL2_DIV + 1U);
- #elif (3U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+    g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2] =
+        ((g_clock_freq[BSP_CFG_PLL2_SOURCE] * (BSP_CFG_PLL2_MUL + 1U)) >> 1U) /
+        (BSP_CFG_PLL2_DIV + 1U);
+ #elif (3U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6U == BSP_FEATURE_CGC_PLLCCR_TYPE)
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2]  = BSP_CFG_PLL2P_FREQUENCY_HZ;
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2Q] = BSP_CFG_PLL2Q_FREQUENCY_HZ;
     g_clock_freq[BSP_CLOCKS_SOURCE_CLOCK_PLL2R] = BSP_CFG_PLL2R_FREQUENCY_HZ;
@@ -1195,15 +1962,249 @@ static void bsp_clock_freq_var_init (void)
     SystemCoreClockUpdate();
 }
 
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+
+/*
+ * If the clock registers are not guaranteed to be set to their value after reset (Ie. the application is executing after a bootloader),
+ * then the current state of the registers must be taken into consideration before writing the clock configuration.
+ *
+ * The HOCO must be stopped in the following situations:
+ *  - The application configures the HOCO to be stopped.
+ *  - The application enables the FLL, but the HOCO is already running. In order to enable the FLL, the HOCO must be stopped.
+ * The PLL must be stopped in the following situations:
+ *  - The application configures the PLL to be stopped.
+ *  - The application configures settings that are different than the current settings, but the PLL is already running. In order to
+ *    write new PLL settings, the PLL must be stopped.
+ *  - The HOCO is the PLL source clock and the HOCO is being stopped.
+ * The PLL2 must be stopped in the following situations:
+ *  - The application configures the PLL2 to be stopped.
+ *  - The application configures settings that are different than the current settings, but the PLL2 is already running. In order to
+ *    write new PLL2 settings, the PLL2 must be stopped.
+ *  - The HOCO is the PLL2 source clock and the HOCO is being stopped.
+ *
+ * If the HOCO or PLL are being used as the system clock source and they need to be stopped, then the system clock source needs to be switched
+ * to the default system clock source before the current system clock source is disabled.
+ */
+void bsp_soft_reset_prepare (void)
+{
+    bool stop_hoco = false;
+  #if BSP_PRV_PLL_SUPPORTED
+    bool stop_pll = false;
+  #endif
+  #if BSP_PRV_PLL2_SUPPORTED
+    bool stop_pll2 = false;
+  #endif
+
+  #if BSP_PRV_HOCO_USE_FLL || !BSP_PRV_HOCO_USED
+   #if BSP_PRV_HOCO_USE_FLL
+
+    /* Determine if the FLL needs to be enabled. */
+    bool enable_fll = (0 == R_SYSTEM->FLLCR1 && BSP_PRV_HOCO_USE_FLL);
+   #else
+    bool enable_fll = false;
+   #endif
+
+    /* If the HOCO is already enabled and either the FLL needs to be enabled or the HOCO is not used, then stop the HOCO. */
+    if ((0 == R_SYSTEM->HOCOCR) && (enable_fll || !BSP_PRV_HOCO_USED))
+    {
+        stop_hoco = true;
+    }
+  #endif
+
+  #if BSP_PRV_PLL_SUPPORTED
+    if (0 == R_SYSTEM->PLLCR)
+    {
+        /*
+         * If any of the following conditions are true, then the PLL needs to be stopped:
+         * - The PLL is not used
+         * - The PLL settings need to be changed
+         * - The HOCO is selected as the PLL clock source and the HOCO needs to be stopped
+         *   - Note that PLL type 2 does not support running off of the HOCO
+         */
+   #if BSP_PRV_PLL_USED
+    #if (3 == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6 == BSP_FEATURE_CGC_PLLCCR_TYPE)
+        if ((BSP_PRV_PLLCCR != R_SYSTEM->PLLCCR) || (BSP_PRV_PLLCCR2 != R_SYSTEM->PLLCCR2) ||
+            (stop_hoco && (1 == R_SYSTEM->PLLCCR_b.PLSRCSEL)))
+    #elif 2 == BSP_FEATURE_CGC_PLLCCR_TYPE
+        if (BSP_PRV_PLLCCR != R_SYSTEM->PLLCCR2)
+    #else
+        if ((BSP_PRV_PLLCCR != R_SYSTEM->PLLCCR) || (stop_hoco && (1 == R_SYSTEM->PLLCCR_b.PLSRCSEL)))
+    #endif
+   #endif
+        {
+            stop_pll = true;
+        }
+    }
+  #endif
+
+  #if BSP_PRV_PLL2_SUPPORTED
+    if (0 == R_SYSTEM->PLL2CR)
+    {
+        /*
+         * If any of the following conditions are true, then the PLL2 needs to be stopped:
+         * - The PLL2 is not used
+         * - The PLL2 settings need to be changed
+         * - The HOCO is selected as the PLL2 clock source and the HOCO needs to be stopped
+         *   - Note that PLL type 2 does not support running off of the HOCO
+         */
+   #if BSP_PRV_PLL2_USED
+    #if (3 == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6 == BSP_FEATURE_CGC_PLLCCR_TYPE)
+        if ((BSP_PRV_PLL2CCR != R_SYSTEM->PLL2CCR) || (BSP_PRV_PLL2CCR2 != R_SYSTEM->PLL2CCR2) ||
+            (stop_hoco && (1 == R_SYSTEM->PLL2CCR_b.PL2SRCSEL)))
+    #else
+        if ((BSP_PRV_PLL2CCR != R_SYSTEM->PLL2CCR) || (stop_hoco && (1 == R_SYSTEM->PLL2CCR_b.PL2SRCSEL)))
+    #endif
+   #endif
+        {
+            stop_pll2 = true;
+        }
+    }
+  #endif
+
+    uint8_t sckscr = R_SYSTEM->SCKSCR;
+
+    /* If the System Clock source needs to be stopped, then switch to the MOCO. */
+  #if BSP_PRV_PLL_SUPPORTED
+    if ((stop_hoco && (BSP_CLOCKS_SOURCE_CLOCK_HOCO == sckscr)) ||
+        (stop_pll && (BSP_CLOCKS_SOURCE_CLOCK_PLL == sckscr)))
+  #else
+    if (stop_hoco && (BSP_CLOCKS_SOURCE_CLOCK_HOCO == sckscr))
+  #endif
+    {
+        bsp_prv_clock_set(BSP_FEATURE_CGC_STARTUP_SCKSCR,
+                          BSP_FEATURE_CGC_STARTUP_SCKDIVCR,
+                          BSP_FEATURE_CGC_STARTUP_SCKDIVCR2);
+    }
+
+    /* Disable the oscillators so that the application can write the new clock configuration. */
+
+  #if BSP_PRV_PLL_SUPPORTED
+    if (stop_pll)
+    {
+        R_SYSTEM->PLLCR = 1;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.PLLSF, 0);
+    }
+  #endif
+
+  #if BSP_PRV_PLL2_SUPPORTED
+    if (stop_pll2)
+    {
+        R_SYSTEM->PLL2CR = 1;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.PLL2SF, 0);
+    }
+  #endif
+
+    if (stop_hoco)
+    {
+        R_SYSTEM->HOCOCR = 1;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.HOCOSF, 0);
+    }
+}
+
+ #endif
+#else
+
+/*******************************************************************************************************************//**
+ * Initializes CMC and OSMC registers according to the BSP configuration.
+ **********************************************************************************************************************/
+void bsp_prv_cmc_init (void)
+{
+    /* The CMC register can be written only once after release from the reset state. If clock registers not reset
+     * values during startup, assume CMC register has already been set appropriately. */
+    uint8_t cmc_reg = 0x00U;
+
+    /* Set main clock oscillator drive capability */
+ #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
+    cmc_reg |= BSP_PRV_CMC_MOSC;
+ #endif
+
+    /* Set sub-clock oscillator drive capability and pin switching */
+ #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+    cmc_reg |= BSP_PRV_CMC_SOSC;
+ #endif
+
+    R_SYSTEM->CMC = cmc_reg;
+
+ #if (BSP_CFG_FSXP_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
+    uint8_t osmc = R_SYSTEM->OSMC;
+
+    if (BSP_PRV_OSMC != osmc)
+    {
+        /* Stop RTC counter operation to update the OSMC register. */
+        BSP_MSTP_REG_FSP_IP_RTC(0) &= ~BSP_MSTP_BIT_FSP_IP_RTC(0);
+        FSP_REGISTER_READ(BSP_MSTP_REG_FSP_IP_RTC(0));
+        R_RTC_C->RTCC0_b.RTCE       = 0U;
+        BSP_MSTP_REG_FSP_IP_RTC(0) |= BSP_MSTP_BIT_FSP_IP_RTC(0);
+        FSP_REGISTER_READ(BSP_MSTP_REG_FSP_IP_RTC(0));
+
+  #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+        if (0U == osmc)
+        {
+            /* Current Subsystem Clock (FSXP) source is SOSC. */
+            if (0U == R_SYSTEM->SOSCCR)
+            {
+                /* Stop the Sub-Clock Oscillator to update the OSMC register. */
+                R_SYSTEM->SOSCCR = 1U;
+
+                /* Allow a stop interval of at least 5 SOSC clock cycles before restarting Sub-Clock Oscillator. */
+                R_BSP_SoftwareDelay(BSP_PRV_SUBCLOCK_STOP_INTERVAL_US, BSP_DELAY_UNITS_MICROSECONDS);
+
+                /* When changing the value of the SOSTP bit, only execute subsequent
+                 * instructions after reading the bit to check that the value is updated. */
+                FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->SOSCCR, 1U);
+            }
+        }
+  #endif
+
+        R_SYSTEM->OSMC = BSP_PRV_OSMC;
+    }
+ #endif
+}
+
+/***********************************************************************************************************************
+ * Changes the operating speed in FLMODE.  Assumes the LPM registers are unlocked in PRCR.
+ *
+ * @param[in]  operating_mode  Desired operating mode, must be one of the BSP_PRV_OPERATING_MODE_* macros, cannot be
+ *                             BSP_PRV_OPERATING_MODE_SUBOSC_SPEED
+ **********************************************************************************************************************/
+static void bsp_prv_operating_mode_flmode_set (uint8_t operating_mode)
+{
+    if (operating_mode != R_FACI_LP->FLMODE_b.MODE)
+    {
+        /* Enable FLMWRP.FLMWEN bit to before rewrite to FLMODE register */
+        R_FACI_LP->FLMWRP_b.FLMWEN = 0x1U;
+
+        if ((BSP_PRV_OPERATING_MODE_MIDDLE_SPEED != operating_mode) &&
+            (BSP_PRV_OPERATING_MODE_MIDDLE_SPEED != R_FACI_LP->FLMODE_b.MODE))
+        {
+            /* Set flash operating mode to middle-speed mode first */
+            R_FACI_LP->FLMODE = (uint8_t) (BSP_PRV_OPERATING_MODE_MIDDLE_SPEED << R_FACI_LP_FLMODE_MODE_Pos);
+        }
+
+        /* Set flash operating mode */
+        R_FACI_LP->FLMODE = (uint8_t) (operating_mode << R_FACI_LP_FLMODE_MODE_Pos);
+
+        /* Disable FLMWRP.FLMWEN bit to after rewrite to FLMODE register */
+        R_FACI_LP->FLMWRP_b.FLMWEN = 0x0U;
+    }
+}
+
+#endif
+
 /*******************************************************************************************************************//**
  * Initializes system clocks.  Makes no assumptions about current register settings.
  **********************************************************************************************************************/
 void bsp_clock_init (void)
 {
     /* Unlock CGC and LPM protection registers. */
+#if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    R_SYSTEM->PRCR_NS = (uint16_t) BSP_PRV_PRCR_UNLOCK;
+#else
     R_SYSTEM->PRCR = (uint16_t) BSP_PRV_PRCR_UNLOCK;
+#endif
 
-#if BSP_FEATURE_BSP_FLASH_CACHE
+#if BSP_FEATURE_BSP_FLASH_CACHE || defined(R_CACHE)
  #if !BSP_CFG_USE_LOW_VOLTAGE_MODE && BSP_FEATURE_BSP_FLASH_CACHE_DISABLE_OPM
 
     /* Disable flash cache before modifying MEMWAIT, SOPCCR, or OPCCR. */
@@ -1224,6 +2225,16 @@ void bsp_clock_init (void)
 
     bsp_clock_freq_var_init();
 
+#if BSP_FEATURE_CGC_REGISTER_SET_B
+    bsp_prv_cmc_init();
+#else
+ #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+
+    /* Transition to an intermediate clock configuration in order to prepare for writing the new clock configuraiton. */
+    bsp_soft_reset_prepare();
+ #endif
+#endif
+
 #if BSP_CLOCK_CFG_MAIN_OSC_POPULATED
  #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
 
@@ -1231,6 +2242,12 @@ void bsp_clock_init (void)
      * oscillator is running, the drive, source, and wait states are assumed to be already set appropriately. */
     if (R_SYSTEM->MOSCCR)
     {
+  #if BSP_FEATURE_CGC_REGISTER_SET_B
+
+        /* Set the main oscillator wait time. */
+        R_SYSTEM->OSTS = BSP_CLOCK_CFG_MAIN_OSC_WAIT;
+  #else
+
         /* Don't write to MOSCWTCR unless MOSTP is 1 and MOSCSF = 0. */
         FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.MOSCSF, 0U);
 
@@ -1239,46 +2256,27 @@ void bsp_clock_init (void)
 
         /* Set the main oscillator wait time. */
         R_SYSTEM->MOSCWTCR = (uint8_t) BSP_CLOCK_CFG_MAIN_OSC_WAIT;
+  #endif
     }
 
  #else
+  #if BSP_FEATURE_CGC_REGISTER_SET_B
+
+    /* Set the main oscillator wait time. */
+    R_SYSTEM->OSTS = BSP_CLOCK_CFG_MAIN_OSC_WAIT;
+  #else
 
     /* Configure main oscillator drive. */
     R_SYSTEM->MOMCR = BSP_PRV_MOMCR;
 
-    /* Set the main oscillator wait time. */
+    /* Set the stabilization time for XTAL. */
     R_SYSTEM->MOSCWTCR = (uint8_t) BSP_CLOCK_CFG_MAIN_OSC_WAIT;
- #endif
-#endif
-
-#if BSP_FEATURE_CGC_HAS_SOSC
- #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
-
-    /* If Sub-Clock Oscillator is started at reset, stop it before configuring the subclock drive. */
-    if (0U == R_SYSTEM->SOSCCR)
-    {
-        /* Stop the Sub-Clock Oscillator to update the SOMCR register. */
-        R_SYSTEM->SOSCCR = 1U;
-
-        /* Allow a stop interval of at least 5 SOSC clock cycles before configuring the drive capacity
-         * and restarting Sub-Clock Oscillator. */
-        R_BSP_SoftwareDelay(BSP_PRV_SUBCLOCK_STOP_INTERVAL_US, BSP_DELAY_UNITS_MICROSECONDS);
-    }
-
-    /* Configure the subclock drive as subclock is not running. */
-    R_SYSTEM->SOMCR = ((BSP_CLOCK_CFG_SUBCLOCK_DRIVE << BSP_FEATURE_CGC_SODRV_SHIFT) & BSP_FEATURE_CGC_SODRV_MASK);
-
-    /* Restart the Sub-Clock Oscillator. */
-    R_SYSTEM->SOSCCR = 0U;
-  #if (BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK == BSP_CFG_CLOCK_SOURCE) || (BSP_PRV_HOCO_USE_FLL)
-
-    /* If the subclock is the system clock source OR if FLL is used, wait for stabilization. */
-    R_BSP_SubClockStabilizeWait(BSP_CLOCK_CFG_SUBCLOCK_STABILIZATION_MS);
   #endif
- #else
-    R_SYSTEM->SOSCCR = 1U;
  #endif
 #endif
+
+    /* Initialize the sub-clock according to the BSP configuration. */
+    bsp_prv_sosc_init();
 
 #if BSP_FEATURE_CGC_HAS_HOCOWTCR
  #if BSP_FEATURE_CGC_HOCOWTCR_64MHZ_ONLY
@@ -1323,7 +2321,11 @@ void bsp_clock_init (void)
  #elif BSP_FEATURE_CGC_STARTUP_OPCCR_MODE != BSP_PRV_OPERATING_MODE_HIGH_SPEED
 
     /* Some MCUs do not start in high speed mode. */
+  #if !BSP_FEATURE_CGC_REGISTER_SET_B
     bsp_prv_operating_mode_opccr_set(BSP_PRV_OPERATING_MODE_HIGH_SPEED);
+  #else
+    bsp_prv_operating_mode_set(BSP_PRV_OPERATING_MODE_HIGH_SPEED);
+  #endif
  #endif
 #endif
 
@@ -1362,6 +2364,14 @@ void bsp_clock_init (void)
         R_BSP_SoftwareDelay(BSP_FEATURE_CGC_MOCO_STABILIZATION_MAX_US, BSP_DELAY_UNITS_MICROSECONDS);
   #endif
     }
+
+ #else
+  #if BSP_FEATURE_CGC_REGISTER_SET_B
+    R_SYSTEM->MOCOCR = 0U;
+   #if BSP_PRV_STABILIZE_MOCO
+    R_BSP_SoftwareDelay(BSP_FEATURE_CGC_MOCO_STABILIZATION_MAX_US, BSP_DELAY_UNITS_MICROSECONDS);
+   #endif
+  #endif
  #endif
 #endif
 #if BSP_PRV_LOCO_USED
@@ -1384,102 +2394,134 @@ void bsp_clock_init (void)
  #endif
 #endif
 #if BSP_PRV_MAIN_OSC_USED
-    R_SYSTEM->MOSCCR = 0U;
+ #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+    if (R_SYSTEM->MOSCCR)
+ #endif
+    {
+        R_SYSTEM->MOSCCR = 0U;
 
  #if BSP_PRV_STABILIZE_MAIN_OSC
 
-    /* Wait for main oscillator to stabilize. */
-    FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.MOSCSF, 1U);
+        /* Wait for main oscillator to stabilize. */
+  #if BSP_FEATURE_CGC_REGISTER_SET_B
+   #if !BSP_CLOCK_CFG_MAIN_OSC_CLOCK_SOURCE
+
+        /*
+         * The main oscillation stabilization time countered by OSTC
+         *  0x80:  2^8/fx min
+         *  0xC0:  2^9/fx min
+         *  0xE0:  2^10/fx min
+         *  0xF0:  2^11/fx min
+         *  0xF8:  2^13/fx min
+         *  0xFC:  2^15/fx min
+         *  0xFE:  2^17/fx min
+         *  0xFF:  2^18/fx min
+         *  Note: The oscillation stabilization time counter is not applied for External clock input.
+         */
+        uint8_t mainosc_stable_value = (uint8_t) ~(BSP_PRV_OSTC_OFFSET >> BSP_CLOCK_CFG_MAIN_OSC_WAIT);
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSTC, mainosc_stable_value);
+   #endif
+  #else
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.MOSCSF, 1U);
+  #endif
  #endif
+    }
 #endif
 
     /* Start clocks that require other clocks. At this point, all dependent clocks are running and stable if needed. */
 
 #if BSP_PRV_STARTUP_OPERATING_MODE != BSP_PRV_OPERATING_MODE_LOW_SPEED
  #if BSP_FEATURE_CGC_HAS_PLL2 && BSP_CFG_PLL2_SOURCE != BSP_CLOCKS_CLOCK_DISABLED
-    R_SYSTEM->PLL2CCR = BSP_PRV_PLL2CCR;
-  #if (3U == BSP_FEATURE_CGC_PLLCCR_TYPE)
-    R_SYSTEM->PLL2CCR2 = BSP_PRV_PLL2CCR2;
+  #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+    if (R_SYSTEM->PLL2CR)
+  #endif
+    {
+        R_SYSTEM->PLL2CCR = BSP_PRV_PLL2CCR;
+  #if (3U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+        R_SYSTEM->PLL2CCR2 = BSP_PRV_PLL2CCR2;
   #endif
 
-    /* Start PLL2. */
-    R_SYSTEM->PLL2CR = 0U;
+        /* Start PLL2. */
+        R_SYSTEM->PLL2CR = 0U;
+    }
  #endif                                /* BSP_FEATURE_CGC_HAS_PLL2 && BSP_CFG_PLL2_ENABLE */
 #endif
 
 #if BSP_PRV_PLL_SUPPORTED && BSP_PRV_PLL_USED
-
-    /* Configure the PLL registers. */
- #if (1U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (4U == BSP_FEATURE_CGC_PLLCCR_TYPE)
-    R_SYSTEM->PLLCCR = (uint16_t) BSP_PRV_PLLCCR;
+ #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+    if (R_SYSTEM->PLLCR)
+ #endif
+    {
+ #if (1U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (4U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (5U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+        R_SYSTEM->PLLCCR = (uint16_t) BSP_PRV_PLLCCR;
  #elif 2U == BSP_FEATURE_CGC_PLLCCR_TYPE
-    R_SYSTEM->PLLCCR2 = (uint8_t) BSP_PRV_PLLCCR;
- #elif 3U == BSP_FEATURE_CGC_PLLCCR_TYPE
-    R_SYSTEM->PLLCCR  = (uint16_t) BSP_PRV_PLLCCR;
-    R_SYSTEM->PLLCCR2 = (uint16_t) BSP_PRV_PLLCCR2;
+        R_SYSTEM->PLLCCR2 = (uint8_t) BSP_PRV_PLLCCR;
+ #elif (3U == BSP_FEATURE_CGC_PLLCCR_TYPE) || (6U == BSP_FEATURE_CGC_PLLCCR_TYPE)
+  #if 6U == BSP_FEATURE_CGC_PLLCCR_TYPE
+        R_SYSTEM->PLLCCR = BSP_PRV_PLLCCR;
+  #else
+        R_SYSTEM->PLLCCR = (uint16_t) BSP_PRV_PLLCCR;
+  #endif
+        R_SYSTEM->PLLCCR2 = (uint16_t) BSP_PRV_PLLCCR2;
  #endif
 
  #if BSP_FEATURE_CGC_PLLCCR_WAIT_US > 0
 
-    /* This loop is provided to ensure at least 1 us passes between setting PLLMUL and clearing PLLSTP on some
-     * MCUs (see PLLSTP notes in Section 8.2.4 "PLL Control Register (PLLCR)" of the RA4M1 manual R01UH0887EJ0100).
-     * Five loops are needed here to ensure the most efficient path takes at least 1 us from the setting of
-     * PLLMUL to the clearing of PLLSTP. HOCO is the fastest clock we can be using here since PLL cannot be running
-     * while setting PLLCCR. */
-    bsp_prv_software_delay_loop(BSP_DELAY_LOOPS_CALCULATE(BSP_PRV_MAX_HOCO_CYCLES_PER_US));
+        /* This loop is provided to ensure at least 1 us passes between setting PLLMUL and clearing PLLSTP on some
+         * MCUs (see PLLSTP notes in Section 8.2.4 "PLL Control Register (PLLCR)" of the RA4M1 manual R01UH0887EJ0100).
+         * Five loops are needed here to ensure the most efficient path takes at least 1 us from the setting of
+         * PLLMUL to the clearing of PLLSTP. HOCO is the fastest clock we can be using here since PLL cannot be running
+         * while setting PLLCCR. */
+        bsp_prv_software_delay_loop(BSP_DELAY_LOOPS_CALCULATE(BSP_PRV_MAX_HOCO_CYCLES_PER_US));
  #endif
 
-    /* Start the PLL. */
-    R_SYSTEM->PLLCR = 0U;
+ #if BSP_MCU_GROUP_NEPTUNE
+
+        /* Always set not high VSCR_1 (non-default), change before enabling PLL.
+         * - Note this will consume more power than necessary for certain configuraitons. See User Manual for more infomration. */
+        R_SYSTEM->VSCR_b.VSCM = 0x1U;
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->VSCR_b.VSCMTSF, 0U);
+ #endif
+
+        R_SYSTEM->PLLCR = 0U;
 
  #if BSP_PRV_STABILIZE_PLL
 
-    /* Wait for PLL to stabilize. */
-    FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.PLLSF, 1U);
+        /* Wait for PLL to stabilize. */
+        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.PLLSF, 1U);
  #endif
+    }
 #endif
 
     /* Set source clock and dividers. */
-#if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
- #if BSP_TZ_SECURE_BUILD
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+  #if BSP_TZ_SECURE_BUILD
 
     /* In case of soft reset, make sure callback pointer is NULL initially. */
     g_bsp_clock_update_callback = NULL;
- #endif
+  #endif
 
- #if BSP_FEATURE_CGC_HAS_CPUCLK
+  #if BSP_FEATURE_CGC_HAS_CPUCLK
     bsp_prv_clock_set(BSP_CFG_CLOCK_SOURCE, BSP_PRV_STARTUP_SCKDIVCR, BSP_PRV_STARTUP_SCKDIVCR2);
- #else
+  #else
     bsp_prv_clock_set(BSP_CFG_CLOCK_SOURCE, BSP_PRV_STARTUP_SCKDIVCR, 0);
+  #endif
+ #else
+    bsp_prv_clock_set_hard_reset();
  #endif
 #else
-    bsp_prv_clock_set_hard_reset();
+ #if (1U == BSP_PRV_CLKOUT_SOURCE_SET)
+    bsp_prv_clock_set(BSP_CFG_CLKOUT_SOURCE, BSP_CFG_HOCO_DIV, BSP_CFG_MOCO_DIV, BSP_CFG_XTAL_DIV);
+ #elif (2U == BSP_PRV_CLKOUT_SOURCE_SET)
+    bsp_prv_clock_set(BSP_CFG_CLKOUT1_SOURCE, BSP_CFG_HOCO_DIV, BSP_CFG_MOCO_DIV, BSP_CFG_XTAL_DIV);
+ #endif
+    bsp_prv_clock_set(BSP_CFG_CLOCK_SOURCE, BSP_CFG_HOCO_DIV, BSP_CFG_MOCO_DIV, BSP_CFG_XTAL_DIV);
 #endif
 
     /* If the MCU can run in a lower power mode, apply the optimal operating speed mode. */
 #if !BSP_CFG_USE_LOW_VOLTAGE_MODE
  #if BSP_PRV_STARTUP_OPERATING_MODE != BSP_PRV_OPERATING_MODE_HIGH_SPEED
-  #if BSP_PRV_PLL_SUPPORTED
-   #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
-    if (BSP_PRV_OPERATING_MODE_LOW_SPEED == BSP_PRV_STARTUP_OPERATING_MODE)
-    {
-        /* If the MCU has a PLL, ensure PLL is stopped and stable before entering low speed mode. */
-        R_SYSTEM->PLLCR = 1U;
-
-        /* Wait for PLL to stabilize. */
-        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.PLLSF, 0U);
-
-    #if BSP_FEATURE_CGC_HAS_PLL2
-
-        /* If the MCU has a PLL2, ensure PLL2 is stopped and stable before entering low speed mode. */
-        R_SYSTEM->PLL2CR = 1U;
-
-        /* Wait for PLL to stabilize. */
-        FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OSCSF_b.PLL2SF, 0U);
-    #endif
-    }
-   #endif
-  #endif
     bsp_prv_operating_mode_set(BSP_PRV_STARTUP_OPERATING_MODE);
  #endif
 #endif
@@ -1509,15 +2551,19 @@ void bsp_clock_init (void)
 #endif
 
     /* Configure CLKOUT. */
-#if BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_CLOCK_DISABLED
- #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+ #if BSP_CFG_CLKOUT_SOURCE == BSP_CLOCKS_CLOCK_DISABLED
+  #if BSP_CFG_STARTUP_CLOCK_REG_NOT_RESET
     R_SYSTEM->CKOCR = 0U;
- #endif
-#else
+  #endif
+ #else
     uint8_t ckocr = BSP_CFG_CLKOUT_SOURCE | (BSP_CFG_CLKOUT_DIV << BSP_PRV_CKOCR_CKODIV_BIT);
     R_SYSTEM->CKOCR = ckocr;
     ckocr          |= (1U << BSP_PRV_CKOCR_CKOEN_BIT);
     R_SYSTEM->CKOCR = ckocr;
+ #endif
+#else
+    bsp_prv_clkout_set();
 #endif
 
 #if BSP_PRV_STARTUP_OPERATING_MODE != BSP_PRV_OPERATING_MODE_LOW_SPEED
@@ -1528,7 +2574,7 @@ void bsp_clock_init (void)
     R_SYSTEM->SCKDIVCR2 = BSP_PRV_UCK_DIV << BSP_PRV_SCKDIVCR2_UCK_BIT;
   #endif                               /* BSP_FEATURE_BSP_HAS_USB_CLOCK_DIV && !BSP_FEATURE_BSP_HAS_USBCKDIVCR */
 
-    /* If there is a REQ bit in USBCKCR than follow sequence from section 8.2.29 in RA6M4 hardware manual R01UH0890EJ0050. */
+    /* If there is a REQ bit in USBCKCR, then follow sequence from section 8.2.29 in RA6M4 hardware manual R01UH0890EJ0050. */
   #if BSP_FEATURE_BSP_HAS_USB_CLOCK_REQ
 
     /* Request to change the USB Clock. */
@@ -1611,7 +2657,7 @@ void bsp_clock_init (void)
 #endif
 
     /* Set the GPT clock if it exists on the MCU */
-#if BSP_FEATURE_BSP_HAS_GPT_CLOCK && (BSP_CFG_GPTCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
+#if BSP_PERIPHERAL_GPT_GTCLK_PRESENT && (BSP_CFG_GPTCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
     bsp_peripheral_clock_set(&R_SYSTEM->GPTCKCR, &R_SYSTEM->GPTCKDIVCR, BSP_CFG_GPTCLK_DIV, BSP_CFG_GPTCLK_SOURCE);
 #endif
 
@@ -1630,32 +2676,43 @@ void bsp_clock_init (void)
     bsp_peripheral_clock_set(&R_SYSTEM->I3CCKCR, &R_SYSTEM->I3CCKDIVCR, BSP_CFG_I3CCLK_DIV, BSP_CFG_I3CCLK_SOURCE);
 #endif
 
-    /* Set the ADC clock if it exists on the MCU */
-#if BSP_FEATURE_BSP_HAS_ADC_CLOCK && (BSP_CFG_ADCCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
-    bsp_peripheral_clock_set(&R_SYSTEM->ADCCKCR, &R_SYSTEM->ADCCKDIVCR, BSP_CFG_ADCCLK_DIV, BSP_CFG_ADCCLK_SOURCE);
-#endif
-
     /* Set the LCD clock if it exists on the MCU */
 #if BSP_FEATURE_BSP_HAS_LCD_CLOCK && (BSP_CFG_LCDCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
     bsp_peripheral_clock_set(&R_SYSTEM->LCDCKCR, &R_SYSTEM->LCDCKDIVCR, BSP_CFG_LCDCLK_DIV, BSP_CFG_LCDCLK_SOURCE);
 #endif
 
     /* Set the USB-HS clock if it exists on the MCU */
-#if BSP_FEATURE_BSP_HAS_USB60_CLOCK_REQ && (BSP_CFG_U60CK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
+#if BSP_FEATURE_BSP_HAS_USB60_CLOCK && (BSP_CFG_U60CK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
     bsp_peripheral_clock_set(&R_SYSTEM->USB60CKCR, &R_SYSTEM->USB60CKDIVCR, BSP_CFG_U60CK_DIV, BSP_CFG_U60CK_SOURCE);
+#endif
+
+    /* Set the ADC clock if it exists on the MCU */
+#if BSP_FEATURE_BSP_HAS_ADC_CLOCK && (BSP_CFG_ADCCLK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
+    bsp_peripheral_clock_set(&R_SYSTEM->ADCCKCR, &R_SYSTEM->ADCCKDIVCR, BSP_CFG_ADCCLK_DIV, BSP_CFG_ADCCLK_SOURCE);
 #endif
 
     /* Set the SDADC clock if it exists on the MCU. */
 #if BSP_FEATURE_BSP_HAS_SDADC_CLOCK && (BSP_CFG_SDADC_CLOCK_SOURCE != BSP_CLOCKS_CLOCK_DISABLED)
+ #if BSP_CFG_SDADC_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_HOCO
+    uint8_t sdadcckcr = 1U;
+ #elif BSP_CFG_SDADC_CLOCK_SOURCE == BSP_CLOCKS_SOURCE_CLOCK_PLL
+    uint8_t sdadcckcr = 2U;
+ #else                                 /* BSP_CLOCK_SOURCE_CLOCK_MOSC */
+    uint8_t sdadcckcr = 0U;
+ #endif
 
     /* SDADC isn't controlled like the other peripheral clocks so we cannot use the generic setter. */
-    R_SYSTEM->SDADCCKCR = BSP_CFG_SDADC_CLOCK_SOURCE & R_SYSTEM_SDADCCKCR_SDADCCKSEL_Msk;
+    R_SYSTEM->SDADCCKCR = sdadcckcr & R_SYSTEM_SDADCCKCR_SDADCCKSEL_Msk;
 #endif
 
     /* Lock CGC and LPM protection registers. */
+#if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    R_SYSTEM->PRCR_NS = (uint16_t) BSP_PRV_PRCR_LOCK;
+#else
     R_SYSTEM->PRCR = (uint16_t) BSP_PRV_PRCR_LOCK;
+#endif
 
-#if BSP_FEATURE_BSP_FLASH_CACHE && BSP_FEATURE_BSP_FLASH_CACHE_DISABLE_OPM
+#if (BSP_FEATURE_BSP_FLASH_CACHE || defined(R_CACHE)) && BSP_FEATURE_BSP_FLASH_CACHE_DISABLE_OPM
     R_BSP_FlashCacheEnable();
 #endif
 
@@ -1679,6 +2736,25 @@ void R_BSP_SubClockStabilizeWait (uint32_t delay_ms)
 {
     /* Wait for clock to stabilize. */
     R_BSP_SoftwareDelay(delay_ms, BSP_DELAY_UNITS_MILLISECONDS);
+}
+
+/*******************************************************************************************************************//**
+ * This function is called during SOSC registers initialization when Sub-Clock oscillator is populated.
+ * This function is declared as a weak symbol higher up in this file because it is meant to be overridden by a user
+ * implemented version. One of the main uses for this function is to skip waiting for stabilization time after reset.
+ * To use this function just copy this function into your own code and modify it to meet your needs.
+ *
+ * @param[in]  delay_ms    Stabilization Time for the clock.
+ **********************************************************************************************************************/
+void R_BSP_SubClockStabilizeWaitAfterReset (uint32_t delay_ms)
+{
+ #if (BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK == BSP_CFG_CLOCK_SOURCE) || (BSP_PRV_HOCO_USE_FLL)
+
+    /* Wait for clock to stabilize after reset. */
+    R_BSP_SoftwareDelay(delay_ms, BSP_DELAY_UNITS_MILLISECONDS);
+ #else
+    FSP_PARAMETER_NOT_USED(delay_ms);
+ #endif
 }
 
 #endif
@@ -1724,6 +2800,8 @@ static void bsp_peripheral_clock_set (volatile uint8_t * p_clk_ctrl_reg,
 
 #endif
 
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+
 /*******************************************************************************************************************//**
  * Increases the ROM and RAM wait state settings to the minimum required based on the requested clock change.
  *
@@ -1737,32 +2815,44 @@ static uint8_t bsp_clock_set_prechange (uint32_t requested_freq_hz)
 
     FSP_PARAMETER_NOT_USED(requested_freq_hz);
 
-#if BSP_FEATURE_CGC_HAS_SRAMWTSC
+ #if BSP_FEATURE_CGC_HAS_SRAMWTSC
 
     /* Wait states for SRAM (SRAM0, SRAM1 and SRAM0 (DED)). */
     if (requested_freq_hz > BSP_FEATURE_BSP_SYS_CLOCK_FREQ_NO_RAM_WAITS)
     {
- #if BSP_FEATURE_CGC_HAS_SRAMPRCR2 == 1
+  #if BSP_FEATURE_CGC_HAS_SRAMPRCR2 == 1
         R_SRAM->SRAMPRCR2 = BSP_PRV_SRAM_UNLOCK;
         R_SRAM->SRAMWTSC  = BSP_FEATURE_SRAM_SRAMWTSC_WAIT_CYCLE_ENABLE;
         R_SRAM->SRAMPRCR2 = BSP_PRV_SRAM_LOCK;
- #else
-        R_SRAM->SRAMPRCR = BSP_PRV_SRAM_UNLOCK;
+  #else
 
-        /* Execute data memory barrier before and after setting the wait states (MREF_INTERNAL_000). */
+        /* Devices with TrustZone version 2 have a separate non-secure register for SRAM register protection. */
+   #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+        R_SRAM->SRAMPRCR_NS = BSP_PRV_SRAM_UNLOCK;
+   #else
+        R_SRAM->SRAMPRCR = BSP_PRV_SRAM_UNLOCK;
+   #endif
+
+        /* Execute data memory barrier before and after setting the wait states, See Section 50.4.2 in the RA8M1
+         * manual R01UH0994EJ0100 */
         __DMB();
         R_SRAM->SRAMWTSC = BSP_FEATURE_SRAM_SRAMWTSC_WAIT_CYCLE_ENABLE;
         __DMB();
 
+        /* Devices with TrustZone version 2 have a separate non-secure register for SRAM register protection. */
+   #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+        R_SRAM->SRAMPRCR_NS = BSP_PRV_SRAM_LOCK;
+   #else
         R_SRAM->SRAMPRCR = BSP_PRV_SRAM_LOCK;
- #endif
+   #endif
+  #endif
     }
-#endif
+ #endif
 
-#if BSP_FEATURE_CGC_HAS_FLWT
+ #if BSP_FEATURE_CGC_HAS_FLWT
 
     /* Calculate the wait states for ROM */
- #if BSP_FEATURE_BSP_SYS_CLOCK_FREQ_TWO_ROM_WAITS == 0
+  #if BSP_FEATURE_BSP_SYS_CLOCK_FREQ_TWO_ROM_WAITS == 0
     if (requested_freq_hz <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_ONE_ROM_WAITS)
     {
         new_rom_wait_state = BSP_PRV_ROM_ZERO_WAIT_CYCLES;
@@ -1772,7 +2862,7 @@ static uint8_t bsp_clock_set_prechange (uint32_t requested_freq_hz)
         new_rom_wait_state = BSP_PRV_ROM_ONE_WAIT_CYCLES;
     }
 
- #elif BSP_FEATURE_BSP_SYS_CLOCK_FREQ_THREE_ROM_WAITS == 0
+  #elif BSP_FEATURE_BSP_SYS_CLOCK_FREQ_THREE_ROM_WAITS == 0
     if (requested_freq_hz <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_ONE_ROM_WAITS)
     {
         new_rom_wait_state = BSP_PRV_ROM_ZERO_WAIT_CYCLES;
@@ -1786,7 +2876,7 @@ static uint8_t bsp_clock_set_prechange (uint32_t requested_freq_hz)
         new_rom_wait_state = BSP_PRV_ROM_TWO_WAIT_CYCLES;
     }
 
- #elif BSP_FEATURE_BSP_SYS_CLOCK_FREQ_FOUR_ROM_WAITS == 0
+  #elif BSP_FEATURE_BSP_SYS_CLOCK_FREQ_FOUR_ROM_WAITS == 0
     if (requested_freq_hz <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_ONE_ROM_WAITS)
     {
         new_rom_wait_state = BSP_PRV_ROM_ZERO_WAIT_CYCLES;
@@ -1804,7 +2894,7 @@ static uint8_t bsp_clock_set_prechange (uint32_t requested_freq_hz)
         new_rom_wait_state = BSP_PRV_ROM_THREE_WAIT_CYCLES;
     }
 
- #elif BSP_FEATURE_BSP_SYS_CLOCK_FREQ_FIVE_ROM_WAITS == 0
+  #elif BSP_FEATURE_BSP_SYS_CLOCK_FREQ_FIVE_ROM_WAITS == 0
     if (requested_freq_hz <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_ONE_ROM_WAITS)
     {
         new_rom_wait_state = BSP_PRV_ROM_ZERO_WAIT_CYCLES;
@@ -1826,7 +2916,7 @@ static uint8_t bsp_clock_set_prechange (uint32_t requested_freq_hz)
         new_rom_wait_state = BSP_PRV_ROM_FOUR_WAIT_CYCLES;
     }
 
- #else
+  #else
     if (requested_freq_hz <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_ONE_ROM_WAITS)
     {
         new_rom_wait_state = BSP_PRV_ROM_ZERO_WAIT_CYCLES;
@@ -1851,32 +2941,29 @@ static uint8_t bsp_clock_set_prechange (uint32_t requested_freq_hz)
     {
         new_rom_wait_state = BSP_PRV_ROM_FIVE_WAIT_CYCLES;
     }
- #endif
+  #endif
 
     /* If more wait states are required after the change, then set the wait states before changing the clock. */
     if (new_rom_wait_state > R_FCACHE->FLWT)
     {
         R_FCACHE->FLWT = new_rom_wait_state;
     }
-#endif
+ #endif
 
-#if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
-    if (requested_freq_hz > BSP_PRV_MEMWAIT_MAX_ZERO_WAIT_FREQ)
-    {
-        /* The MCU must be in high speed mode to set wait states to 2. The MCU should already be in high speed mode as
-         * a precondition to bsp_prv_clock_set. */
-        R_SYSTEM->MEMWAIT = BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES;
-    }
-#endif
+ #if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
 
-#if BSP_FEATURE_CGC_HAS_FLDWAITR && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
+    /* Set the wait state to MEMWAIT */
+    bsp_clock_set_memwait(requested_freq_hz);
+ #endif
+
+ #if BSP_FEATURE_CGC_HAS_FLDWAITR && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
     if (requested_freq_hz > BSP_PRV_FLDWAITR_MAX_ONE_WAIT_FREQ)
     {
         /* The MCU must be in high speed mode to set wait states to 2. The MCU should already be in high speed mode as
          * a precondition to bsp_prv_clock_set. */
         BSP_PRV_FLDWAITR_REG_ACCESS = BSP_PRV_FLDWAITR_TWO_WAIT_CYCLES;
     }
-#endif
+ #endif
 
     return new_rom_wait_state;
 }
@@ -1893,47 +2980,164 @@ static void bsp_clock_set_postchange (uint32_t updated_freq_hz, uint8_t new_rom_
     FSP_PARAMETER_NOT_USED(new_rom_wait_state);
     FSP_PARAMETER_NOT_USED(updated_freq_hz);
 
-#if BSP_FEATURE_CGC_HAS_SRAMWTSC
+ #if BSP_FEATURE_CGC_HAS_SRAMWTSC
 
     /* Wait states for SRAM (SRAM0, SRAM1 and SRAM0 (DED)). */
     if (updated_freq_hz <= BSP_FEATURE_BSP_SYS_CLOCK_FREQ_NO_RAM_WAITS)
     {
- #if BSP_FEATURE_CGC_HAS_SRAMPRCR2 == 1
+  #if BSP_FEATURE_CGC_HAS_SRAMPRCR2 == 1
         R_SRAM->SRAMPRCR2 = BSP_PRV_SRAM_UNLOCK;
         R_SRAM->SRAMWTSC  = BSP_PRV_SRAMWTSC_WAIT_CYCLES_DISABLE;
         R_SRAM->SRAMPRCR2 = BSP_PRV_SRAM_LOCK;
- #else
-        R_SRAM->SRAMPRCR = BSP_PRV_SRAM_UNLOCK;
+  #else
 
-        /* Execute data memory barrier before and after setting the wait states (MREF_INTERNAL_000). */
+        /* Devices with TrustZone version 2 have a separate non-secure register for SRAM register protection. */
+   #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+        R_SRAM->SRAMPRCR_NS = BSP_PRV_SRAM_UNLOCK;
+   #else
+        R_SRAM->SRAMPRCR = BSP_PRV_SRAM_UNLOCK;
+   #endif
+
+        /* Execute data memory barrier before and after setting the wait states,See Section 50.4.2 in the RA8M1
+         * manual R01UH0994EJ0100*/
         __DMB();
         R_SRAM->SRAMWTSC = BSP_PRV_SRAMWTSC_WAIT_CYCLES_DISABLE;
         __DMB();
 
+        /* Devices with TrustZone version 2 have a separate non-secure register for SRAM register protection. */
+   #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+        R_SRAM->SRAMPRCR_NS = BSP_PRV_SRAM_LOCK;
+   #else
         R_SRAM->SRAMPRCR = BSP_PRV_SRAM_LOCK;
- #endif
+   #endif
+  #endif
     }
-#endif
+ #endif
 
-#if BSP_FEATURE_CGC_HAS_FLWT
+ #if BSP_FEATURE_CGC_HAS_FLWT
     if (new_rom_wait_state != R_FCACHE->FLWT)
     {
         R_FCACHE->FLWT = new_rom_wait_state;
     }
-#endif
+ #endif
 
-#if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
-    if (updated_freq_hz <= BSP_PRV_MEMWAIT_MAX_ZERO_WAIT_FREQ)
-    {
-        R_SYSTEM->MEMWAIT = BSP_PRV_MEMWAIT_ZERO_WAIT_CYCLES;
-    }
-#endif
+ #if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
 
-#if BSP_FEATURE_CGC_HAS_FLDWAITR && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
+    /* Set the wait state to MEMWAIT */
+    bsp_clock_set_memwait(updated_freq_hz);
+ #endif
+
+ #if BSP_FEATURE_CGC_HAS_FLDWAITR && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
     if (updated_freq_hz <= BSP_PRV_FLDWAITR_MAX_ONE_WAIT_FREQ)
     {
         BSP_PRV_FLDWAITR_REG_ACCESS = BSP_PRV_FLDWAITR_ONE_WAIT_CYCLES;
     }
+ #endif
+}
+
+#endif
+
+/*******************************************************************************************************************//**
+ * Set the wait state to MEMWAIT.
+ **********************************************************************************************************************/
+#if BSP_FEATURE_CGC_HAS_MEMWAIT && !BSP_PRV_CLOCK_SUPPLY_TYPE_B
+static void bsp_clock_set_memwait (uint32_t updated_freq_hz)
+{
+    uint8_t memwait;
+    if ((updated_freq_hz > BSP_PRV_MEMWAIT_MAX_ONE_WAIT_FREQ) &&
+        ((BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES & R_SYSTEM_MEMWAIT_MEMWAIT_Msk) != 0))
+    {
+        /* The MCU must be in high speed mode to set wait states to 2. The MCU should already be in high speed mode as
+         * a precondition to bsp_prv_clock_set. */
+        memwait = BSP_PRV_MEMWAIT_TWO_WAIT_CYCLES;
+    }
+    else if (updated_freq_hz > BSP_PRV_MEMWAIT_MAX_ZERO_WAIT_FREQ)
+    {
+        memwait = BSP_PRV_MEMWAIT_ONE_WAIT_CYCLES;
+    }
+    else
+    {
+        memwait = BSP_PRV_MEMWAIT_ZERO_WAIT_CYCLES;
+    }
+
+    R_SYSTEM->MEMWAIT = memwait;
+}
+
+#endif
+
+/*******************************************************************************************************************//**
+ * Initializes sub-clock according to the BSP configuration.
+ **********************************************************************************************************************/
+static void bsp_prv_sosc_init (void)
+{
+#if BSP_FEATURE_CGC_HAS_SOSC
+ #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+  #if BSP_FEATURE_RTC_IS_IRTC
+   #if ((BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK == BSP_CFG_CLOCK_SOURCE) || (BSP_PRV_HOCO_USE_FLL))
+
+    /* If sub-clock is used as system clock source or HOCO FLL source, wait for VRTC-domain become valid */
+    FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->VRTSR_b.VRTVLD, 1);
+   #else
+
+    /* Check if VRTC-domain area is valid. */
+    if (1U == R_SYSTEM->VRTSR_b.VRTVLD)
+   #endif
+  #endif
+    {
+  #if !BSP_FEATURE_CGC_REGISTER_SET_B
+        if (R_SYSTEM->SOSCCR || (BSP_CLOCK_CFG_SUBCLOCK_DRIVE != R_SYSTEM->SOMCR_b.SODRV))
+        {
+            /* If Sub-Clock Oscillator is started at reset, stop it before configuring the subclock drive. */
+            if (0U == R_SYSTEM->SOSCCR)
+            {
+                /* Stop the Sub-Clock Oscillator to update the SOMCR register. */
+                R_SYSTEM->SOSCCR = 1U;
+
+                /* Allow a stop interval of at least 5 SOSC clock cycles before configuring the drive capacity
+                 * and restarting Sub-Clock Oscillator. */
+                R_BSP_SoftwareDelay(BSP_PRV_SUBCLOCK_STOP_INTERVAL_US, BSP_DELAY_UNITS_MICROSECONDS);
+
+                /*
+                 * r01uh0893ej0120-ra4m3 8.2.9 SOSCCR : Sub-Clock Oscillator Control Register:
+                 * When changing the value of the SOSTP bit, execute subsequent instructions
+                 * only after reading the bit to check that the value is updated.
+                 */
+                FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->SOSCCR, 1U);
+            }
+
+            /* Configure the subclock drive as subclock is not running. */
+            R_SYSTEM->SOMCR =
+                ((BSP_CLOCK_CFG_SUBCLOCK_DRIVE << BSP_FEATURE_CGC_SODRV_SHIFT) & BSP_FEATURE_CGC_SODRV_MASK);
+  #else
+        if (R_SYSTEM->SOSCCR)
+        {
+  #endif
+
+            R_SYSTEM->SOSCCR = 0U;
+
+            /* r01uh0893ej0120-ra4m3 8.2.9 SOSCCR : Sub-Clock Oscillator Control Register:
+             * After setting the SOSTP bit to 0, use the sub-clock only after the sub-clock
+             * oscillation stabilization time has elapsed.
+             */
+  #if (BSP_CLOCKS_SOURCE_CLOCK_SUBCLOCK == BSP_CFG_CLOCK_SOURCE) || (BSP_PRV_HOCO_USE_FLL)
+            R_BSP_SubClockStabilizeWait(BSP_CLOCK_CFG_SUBCLOCK_STABILIZATION_MS);
+  #endif
+        }
+        else
+        {
+            /*
+             * RA MCUs like RA6M5 requires to use sub-clock after oscillation stabilization time
+             * has elapsed on Power-On-Reset. But, POR is not well supported on EK boards, so BSP
+             * has to wait on any reset. Please override this function in application if waiting
+             * for stabilization is not required.
+             */
+            R_BSP_SubClockStabilizeWaitAfterReset(BSP_CLOCK_CFG_SUBCLOCK_STABILIZATION_MS);
+        }
+    }
+
+ #else
+    R_SYSTEM->SOSCCR = 1U;
+ #endif
 #endif
 }
 
@@ -1948,10 +3152,18 @@ void R_BSP_OctaclkUpdate (bsp_octaclk_settings_t * p_octaclk_setting)
 #if BSP_FEATURE_BSP_HAS_OCTASPI_CLOCK
 
     /* Store initial value of CGC and LPM protection registers. */
+ #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    uint16_t bsp_prv_prcr_orig = R_SYSTEM->PRCR_NS;
+ #else
     uint16_t bsp_prv_prcr_orig = R_SYSTEM->PRCR;
+ #endif
 
     /* Unlock CGC and LPM protection registers. */
+ #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    R_SYSTEM->PRCR_NS = (uint16_t) BSP_PRV_PRCR_UNLOCK;
+ #else
     R_SYSTEM->PRCR = (uint16_t) BSP_PRV_PRCR_UNLOCK;
+ #endif
 
     /* Request to change the OCTASPI Clock. */
     R_SYSTEM->OCTACKCR_b.OCTACKSREQ = 1;
@@ -1970,7 +3182,11 @@ void R_BSP_OctaclkUpdate (bsp_octaclk_settings_t * p_octaclk_setting)
     FSP_HARDWARE_REGISTER_WAIT(R_SYSTEM->OCTACKCR_b.OCTACKSRDY, 0U);
 
     /* Restore CGC and LPM protection registers. */
+ #if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+    R_SYSTEM->PRCR_NS = bsp_prv_prcr_orig;
+ #else
     R_SYSTEM->PRCR = bsp_prv_prcr_orig;
+ #endif
 #else
     FSP_PARAMETER_NOT_USED(p_octaclk_setting);
 #endif
@@ -2005,16 +3221,26 @@ void R_BSP_Init_RTC (void)
     /* RCKSEL bit is not initialized after reset. Use LOCO as the default
      * clock source if it is available. Note RCR4.ROPSEL is also cleared.
      */
- #if BSP_PRV_LOCO_USED
+
+ #if BSP_FEATURE_RTC_IS_IRTC
+    if (0U == R_SYSTEM->VRTSR_b.VRTVLD) // Return if VRTC-domain is invalid
+    {
+        return;
+    }
+ #endif
+ #if !BSP_FEATURE_CGC_REGISTER_SET_B
+  #if BSP_PRV_LOCO_USED && !BSP_FEATURE_RTC_IS_IRTC
     R_RTC->RCR4 = 1 << R_RTC_RCR4_RCKSEL_Pos;
- #else
+  #else
 
     /* Sses SOSC as clock source, or there is no clock source. */
     R_RTC->RCR4 = 0;
+  #endif
  #endif
 
  #if !BSP_CFG_RTC_USED
   #if BSP_PRV_LOCO_USED || (BSP_FEATURE_CGC_HAS_SOSC && BSP_CLOCK_CFG_SUBCLOCK_POPULATED)
+   #if !BSP_FEATURE_CGC_REGISTER_SET_B
 
     /*Wait for 6 clocks: 200 > (6*1000000) / 32K */
     R_BSP_SoftwareDelay(BSP_PRV_RTC_RESET_DELAY_US, BSP_DELAY_UNITS_MICROSECONDS);
@@ -2027,6 +3253,11 @@ void R_BSP_Init_RTC (void)
 
     /* Disable RTC interrupts */
     R_RTC->RCR1 = 0;
+
+    /* When the RCR1 register is modified, check that all the bits are updated before proceeding
+     * (see section 26.2.17 "RTC Control Register 1 (RCR1)" of the RA6M3 manual R01UH0886EJ0100)*/
+    FSP_HARDWARE_REGISTER_WAIT(R_RTC->RCR1, 0);
+   #endif
 
    #if BSP_FEATURE_RTC_HAS_TCEN
     for (uint8_t index = 0U; index < BSP_FEATURE_RTC_RTCCR_CHANNELS; index++)
@@ -2045,6 +3276,110 @@ void R_BSP_Init_RTC (void)
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_OM_LPC_BATT);
     R_SYSTEM->VBTICTLR = 0U;
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
+ #endif
+
+ #if BSP_FEATURE_LPM_RTC_REGISTER_CLOCK_DISABLE
+
+    /* Enable low power counter measures. */
+    R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_CGC);
+    R_SYSTEM->LPOPT = R_SYSTEM_LPOPT_LPOPTEN_Msk;
+    R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_CGC);
+
+    /* Disable RTC Register Read/Write Clock to reduce power consumption. */
+    bsp_prv_rtc_register_clock_set(false);
+
+    /* Enable Asynchronous interrupts */
+    R_ICU->IELEN = R_ICU_IELEN_RTCINTEN_Msk | R_ICU_IELEN_IELEN_Msk;
+ #endif
+}
+
+#endif
+
+#if BSP_FEATURE_LPM_RTC_REGISTER_CLOCK_DISABLE
+
+/*******************************************************************************************************************//**
+ * Enable or disable the RTC Register Read/Write Clock in order to save power.
+ **********************************************************************************************************************/
+bool bsp_prv_rtc_register_clock_set (bool enable)
+{
+    /* Save the previous state of RTCRWDIS.
+     * - RTCRWDIS = 0: Register Clock enabled.
+     * - RTCRWDIS = 1: Register Clock disabled.
+     */
+    bool previous_state = !R_MSTP->LSMRWDIS_b.RTCRWDIS;
+
+    if (previous_state == enable)
+    {
+        return previous_state;
+    }
+
+    /* Critical section required when writing to registers that are shared between modules. */
+    FSP_CRITICAL_SECTION_DEFINE;
+    FSP_CRITICAL_SECTION_ENTER;
+
+    /* Set WREN. */
+    R_MSTP->LSMRWDIS = BSP_PRV_LSMRDIS_KEY | R_MSTP_LSMRWDIS_WREN_Msk;
+
+    /* Set RTCRWDIS and clear WREN. */
+    R_MSTP->LSMRWDIS = BSP_PRV_LSMRDIS_KEY | !enable;
+
+    /* Wait 2 cycles of PCLKB (See Table 3.2 "Access Cycles" in the RA2A2 user manual). */
+    FSP_REGISTER_READ(R_MSTP->LSMRWDIS);
+
+    FSP_CRITICAL_SECTION_EXIT;
+
+    return previous_state;
+}
+
+#endif
+
+#if BSP_FEATURE_RTC_IS_IRTC
+
+/*******************************************************************************************************************//**
+ * To check sub-clock status.
+ *
+ * @retval FSP_SUCCESS                  Sub-clock is ready to use.
+ * @retval FSP_ERR_INVALID_HW_CONDITION VRTC-domain area is invalid.
+ * @retval FSP_ERR_NOT_INITIALIZED      Sub-clock has not been inititalized yet.
+ **********************************************************************************************************************/
+fsp_err_t R_BSP_SubclockStatusGet ()
+{
+ #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+
+    /* Check if VRTC-domain area is invalid */
+    FSP_ERROR_RETURN(1U == R_SYSTEM->VRTSR_b.VRTVLD, FSP_ERR_INVALID_HW_CONDITION);
+
+    /* Check if SOSC has been configured */
+    if ((0U == R_SYSTEM->SOSCCR) && (BSP_CLOCK_CFG_SUBCLOCK_DRIVE == R_SYSTEM->SOMCR_b.SODRV))
+    {
+        return FSP_SUCCESS;
+    }
+ #endif
+
+    return FSP_ERR_NOT_INITIALIZED;
+}
+
+/*******************************************************************************************************************//**
+ * To initialize the sub-clock.
+ *
+ * @retval FSP_SUCCESS                  Sub-clock successfully initialized.
+ * @retval FSP_ERR_INVALID_HW_CONDITION Sub-clock cannot be initialized.
+ **********************************************************************************************************************/
+fsp_err_t R_BSP_SubclockInitialize ()
+{
+ #if BSP_CLOCK_CFG_SUBCLOCK_POPULATED
+
+    /* Check if VRTC-domain area is valid */
+    FSP_ERROR_RETURN(1U == R_SYSTEM->VRTSR_b.VRTVLD, FSP_ERR_INVALID_HW_CONDITION);
+
+    R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_CGC);
+    bsp_prv_sosc_init();
+    R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_CGC);
+
+    return FSP_SUCCESS;
+ #else
+
+    return FSP_ERR_INVALID_HW_CONDITION;
  #endif
 }
 

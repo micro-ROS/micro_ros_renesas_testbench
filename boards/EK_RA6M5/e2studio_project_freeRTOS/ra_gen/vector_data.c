@@ -7,9 +7,11 @@
                         [0] = agt_int_isr, /* AGT0 INT (AGT interrupt) */
             [1] = ether_eint_isr, /* EDMAC0 EINT (EDMAC 0 interrupt) */
         };
+        #if BSP_FEATURE_ICU_HAS_IELSR
         const bsp_interrupt_event_t g_interrupt_event_link_select[BSP_ICU_VECTOR_MAX_ENTRIES] =
         {
-            [0] = BSP_PRV_IELS_ENUM(EVENT_AGT0_INT), /* AGT0 INT (AGT interrupt) */
-            [1] = BSP_PRV_IELS_ENUM(EVENT_EDMAC0_EINT), /* EDMAC0 EINT (EDMAC 0 interrupt) */
+            [0] = BSP_PRV_VECT_ENUM(EVENT_AGT0_INT,GROUP0), /* AGT0 INT (AGT interrupt) */
+            [1] = BSP_PRV_VECT_ENUM(EVENT_EDMAC0_EINT,GROUP1), /* EDMAC0 EINT (EDMAC 0 interrupt) */
         };
+        #endif
         #endif

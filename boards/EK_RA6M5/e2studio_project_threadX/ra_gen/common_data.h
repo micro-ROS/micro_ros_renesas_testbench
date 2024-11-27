@@ -16,12 +16,22 @@ FSP_HEADER
 #define ETHER_PHY_LSI_TYPE_KIT_COMPONENT ETHER_PHY_LSI_TYPE_DEFAULT
 #endif
 
+#ifndef NULL
+void NULL(ether_phy_instance_ctrl_t *p_instance_ctrl);
+#endif
+
+#ifndef NULL
+bool NULL(ether_phy_instance_ctrl_t *p_instance_ctrl,
+		uint32_t line_speed_duplex);
+#endif
+
 /** ether_phy on ether_phy Instance. */
 extern const ether_phy_instance_t g_ether_phy0;
 
 /** Access the Ethernet PHY instance using these structures when calling API functions directly (::p_api is not used). */
 extern ether_phy_instance_ctrl_t g_ether_phy0_ctrl;
 extern const ether_phy_cfg_t g_ether_phy0_cfg;
+extern const ether_phy_extended_cfg_t g_ether_phy0_extended_cfg;
 #if (BSP_FEATURE_TZ_HAS_TRUSTZONE == 1) && (BSP_TZ_SECURE_BUILD != 1) && (BSP_TZ_NONSECURE_BUILD != 1) && (BSP_FEATURE_ETHER_SUPPORTS_TZ_SECURE == 0)
 #define ETHER_BUFFER_PLACE_IN_SECTION BSP_PLACE_IN_SECTION(".ns_buffer.eth")
 #else
@@ -75,6 +85,10 @@ void g_ip0_error_handler(UINT status);
 extern NXD_ADDRESS g_ip0_ipv6_global_address;
 extern NXD_ADDRESS g_ip0_ipv6_link_local_address;
 #endif
+#define IOPORT_CFG_NAME g_bsp_pin_cfg
+#define IOPORT_CFG_OPEN R_IOPORT_Open
+#define IOPORT_CFG_CTRL g_ioport_ctrl
+
 /* IOPORT Instance */
 extern const ioport_instance_t g_ioport;
 

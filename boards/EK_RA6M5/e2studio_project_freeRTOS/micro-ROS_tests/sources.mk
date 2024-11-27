@@ -41,8 +41,8 @@ C_DEPS :=
 SRC_DEPS := 
 JMP_UPPER_DEPS := 
 PP_DEPS := 
-ASM_UPPER_DEPS := 
 SX_DEPS := 
+ASM_UPPER_DEPS := 
 SX_UPPER_DEPS := 
 OBJS := 
 SECONDARY_FLASH := 
@@ -55,8 +55,8 @@ MAP :=
 SUBDIRS := \
 ra/aws/FreeRTOS/FreeRTOS/Source \
 ra/aws/FreeRTOS/FreeRTOS/Source/portable/MemMang \
-ra/aws/FreeRTOS/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP \
-ra/aws/FreeRTOS/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/portable/BufferManagement \
+ra/aws/FreeRTOS/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source \
+ra/aws/FreeRTOS/FreeRTOS-Plus/Source/FreeRTOS-Plus-TCP/source/portable/BufferManagement \
 ra/board/ra6m5_ek \
 ra/fsp/src/bsp/cmsis/Device/RENESAS/Source \
 ra/fsp/src/bsp/mcu/all \

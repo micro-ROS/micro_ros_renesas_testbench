@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 #ifndef BSP_COMMON_H
 #define BSP_COMMON_H
@@ -33,8 +19,17 @@
 #include <string.h>
 
 /* Different compiler support. */
-#include "../../inc/fsp_common_api.h"
+#include "../../inc/api/fsp_common_api.h"
 #include "bsp_compiler_support.h"
+
+/* BSP TFU Includes. */
+#include "../../src/bsp/mcu/all/bsp_tfu.h"
+
+#include "../../src/bsp/mcu/all/bsp_sdram.h"
+
+/* BSP MMF Includes. */
+#include "../../src/bsp/mcu/all/bsp_mmf.h"
+
 #include "bsp_cfg.h"
 
 /** Common macro for FSP header files. There is also a corresponding FSP_FOOTER macro at the end of this file. */
@@ -57,6 +52,7 @@ FSP_HEADER
 #if 1 == BSP_CFG_RTOS                  /* ThreadX */
  #include "tx_user.h"
  #if defined(TX_ENABLE_EVENT_TRACE) || defined(TX_ENABLE_EXECUTION_CHANGE_NOTIFY)
+  #include "tx_port.h"
   #define FSP_CONTEXT_SAVE       tx_isr_start((uint32_t) R_FSP_CurrentIrqGet());
   #define FSP_CONTEXT_RESTORE    tx_isr_end((uint32_t) R_FSP_CurrentIrqGet());
  #else
@@ -138,12 +134,11 @@ FSP_HEADER
  * The macros __CORE__ , __ARM7EM__ and __ARM_ARCH_8M_BASE__ are undefined for GCC, but defined(__IAR_SYSTEMS_ICC__) is false for GCC, so
  * the left half of the || expression evaluates to false for GCC regardless of the values of these macros. */
 
-#if (defined(__IAR_SYSTEMS_ICC__) && ((__CORE__ == __ARM7EM__) || (__CORE__ == __ARM_ARCH_8M_BASE__))) || \
-    defined(__ARM_ARCH_7EM__)          // CM4
+#if (defined(__IICARM__) && defined(RENESAS_CORTEX_M23)) || defined(RENESAS_CORTEX_M4)
  #ifndef BSP_CFG_IRQ_MASK_LEVEL_FOR_CRITICAL_SECTION
   #define BSP_CFG_IRQ_MASK_LEVEL_FOR_CRITICAL_SECTION    (0U)
  #endif
-#else // CM23
+#else
  #ifdef BSP_CFG_IRQ_MASK_LEVEL_FOR_CRITICAL_SECTION
   #undef BSP_CFG_IRQ_MASK_LEVEL_FOR_CRITICAL_SECTION
  #endif
@@ -194,7 +189,7 @@ FSP_HEADER
 #endif
 
 /* Use the secure registers for secure projects and flat projects. */
-#if !BSP_TZ_NONSECURE_BUILD && BSP_FEATURE_TZ_HAS_TRUSTZONE && !(BSP_CFG_MCU_PART_SERIES == 8)
+#if !BSP_TZ_NONSECURE_BUILD && BSP_FEATURE_TZ_HAS_TRUSTZONE
  #define FSP_PRIV_TZ_USE_SECURE_REGS            (1)
 #else
  #define FSP_PRIV_TZ_USE_SECURE_REGS            (0)
@@ -205,6 +200,79 @@ FSP_HEADER
  #define BSP_SECTION_EARLY_INIT                 BSP_PLACE_IN_SECTION(BSP_SECTION_NOINIT)
 #else
  #define BSP_SECTION_EARLY_INIT
+#endif
+
+#if (BSP_TZ_SECURE_BUILD || BSP_TZ_NONSECURE_BUILD) && BSP_FEATURE_TZ_VERSION == 2
+BSP_CMSE_NONSECURE_ENTRY uint8_t  R_BSP_NSC_STYPE3_RegU8Read(uint8_t volatile const * p_reg);
+BSP_CMSE_NONSECURE_ENTRY uint16_t R_BSP_NSC_STYPE3_RegU16Read(uint16_t volatile const * p_reg);
+BSP_CMSE_NONSECURE_ENTRY uint32_t R_BSP_NSC_STYPE3_RegU32Read(uint32_t volatile const * p_reg);
+
+#endif
+
+#if BSP_FEATURE_TZ_HAS_TRUSTZONE && BSP_TZ_NONSECURE_BUILD && BSP_FEATURE_TZ_VERSION == 2
+
+/*
+ * If the STYPE3 register's security attribution is set to secure, the non-secure application must read the register
+ * from the secure application using the provided non-secure callable functions.
+ */
+ #define FSP_STYPE3_REG8_READ(X, S)     (!(S) ? X : (R_BSP_NSC_STYPE3_RegU8Read((uint8_t const volatile *) &X)))
+ #define FSP_STYPE3_REG16_READ(X, S)    (!(S) ? X : (R_BSP_NSC_STYPE3_RegU16Read((uint16_t const volatile *) &X)))
+ #define FSP_STYPE3_REG32_READ(X, S)    (!(S) ? X : (R_BSP_NSC_STYPE3_RegU32Read((uint32_t const volatile *) &X)))
+#elif BSP_FEATURE_TZ_HAS_TRUSTZONE && BSP_TZ_SECURE_BUILD && BSP_FEATURE_TZ_VERSION == 2
+
+/*******************************************************************************************************************//**
+ * Read a non-secure 8-bit STYPE3 register in the secure state.
+ *
+ * @param[in]  p_reg The address of the non-secure register.
+ *
+ * @return     Value read from the register.
+ **********************************************************************************************************************/
+__STATIC_INLINE uint8_t R_BSP_S_STYPE3_RegU8Read (uint8_t volatile const * p_reg)
+{
+    p_reg = (uint8_t volatile const *) ((uint32_t) p_reg | BSP_FEATURE_TZ_NS_OFFSET);
+
+    return *p_reg;
+}
+
+/*******************************************************************************************************************//**
+ * Read a non-secure 16-bit STYPE3 register in the secure state.
+ *
+ * @param[in]  p_reg The address of the non-secure register.
+ *
+ * @return     Value read from the register.
+ **********************************************************************************************************************/
+__STATIC_INLINE uint16_t R_BSP_S_STYPE3_RegU16Read (uint16_t volatile const * p_reg)
+{
+    p_reg = (uint16_t volatile const *) ((uint32_t) p_reg | BSP_FEATURE_TZ_NS_OFFSET);
+
+    return *p_reg;
+}
+
+/*******************************************************************************************************************//**
+ * Read a non-secure 32-bit STYPE3 register in the secure state.
+ *
+ * @param[in]  p_reg The address of the non-secure register.
+ *
+ * @return     Value read from the register.
+ **********************************************************************************************************************/
+__STATIC_INLINE uint32_t R_BSP_S_STYPE3_RegU32Read (uint32_t volatile const * p_reg)
+{
+    p_reg = (uint32_t volatile const *) ((uint32_t) p_reg | BSP_FEATURE_TZ_NS_OFFSET);
+
+    return *p_reg;
+}
+
+/*
+ * If the STYPE3 register's security attribution is set to non-secure, the secure application must read the register
+ * using the non-secure aliased address.
+ */
+ #define FSP_STYPE3_REG8_READ(X, S)     ((S) ? (X) : R_BSP_S_STYPE3_RegU8Read((uint8_t const volatile *) &X))
+ #define FSP_STYPE3_REG16_READ(X, S)    ((S) ? (X) : R_BSP_S_STYPE3_RegU16Read((uint16_t const volatile *) &X))
+ #define FSP_STYPE3_REG32_READ(X, S)    ((S) ? (X) : R_BSP_S_STYPE3_RegU32Read((uint32_t const volatile *) &X))
+#else
+ #define FSP_STYPE3_REG8_READ(X, S)     (X)
+ #define FSP_STYPE3_REG16_READ(X, S)    (X)
+ #define FSP_STYPE3_REG32_READ(X, S)    (X)
 #endif
 
 /***********************************************************************************************************************
@@ -222,13 +290,15 @@ typedef enum e_bsp_warm_start_event
 /* Private enum used in R_FSP_SystemClockHzGet.  Maps clock name to base bit in SCKDIVCR. */
 typedef enum e_fsp_priv_clock
 {
-    FSP_PRIV_CLOCK_PCLKD = 0,
-    FSP_PRIV_CLOCK_PCLKC = 4,
-    FSP_PRIV_CLOCK_PCLKB = 8,
-    FSP_PRIV_CLOCK_PCLKA = 12,
-    FSP_PRIV_CLOCK_BCLK  = 16,
-    FSP_PRIV_CLOCK_ICLK  = 24,
-    FSP_PRIV_CLOCK_FCLK  = 28,
+    FSP_PRIV_CLOCK_PCLKD  = 0,
+    FSP_PRIV_CLOCK_PCLKC  = 4,
+    FSP_PRIV_CLOCK_PCLKB  = 8,
+    FSP_PRIV_CLOCK_PCLKA  = 12,
+    FSP_PRIV_CLOCK_BCLK   = 16,
+    FSP_PRIV_CLOCK_PCLKE  = 20,
+    FSP_PRIV_CLOCK_ICLK   = 24,
+    FSP_PRIV_CLOCK_FCLK   = 28,
+    FSP_PRIV_CLOCK_CPUCLK = 32,
 } fsp_priv_clock_t;
 
 /* Private enum used in R_FSP_SciSpiClockHzGe.  Maps clock name to base bit in SCISPICKCR. */
@@ -239,8 +309,14 @@ typedef enum e_fsp_priv_source_clock
     FSP_PRIV_CLOCK_LOCO     = 2,       ///< The low speed on chip oscillator
     FSP_PRIV_CLOCK_MAIN_OSC = 3,       ///< The main oscillator
     FSP_PRIV_CLOCK_SUBCLOCK = 4,       ///< The subclock oscillator
-    FSP_PRIV_CLOCK_PLL      = 5,       ///< The PLL oscillator
-    FSP_PRIV_CLOCK_PLL2     = 6,       ///< The PLL2 oscillator
+    FSP_PRIV_CLOCK_PLL      = 5,       ///< The PLL output
+    FSP_PRIV_CLOCK_PLL1P    = 5,       ///< The PLL1P output
+    FSP_PRIV_CLOCK_PLL2     = 6,       ///< The PLL2 output
+    FSP_PRIV_CLOCK_PLL2P    = 6,       ///< The PLL2P output
+    FSP_PRIV_CLOCK_PLL1Q    = 7,       ///< The PLL1Q output
+    FSP_PRIV_CLOCK_PLL1R    = 8,       ///< The PLL1R output
+    FSP_PRIV_CLOCK_PLL2Q    = 9,       ///< The PLL2Q output
+    FSP_PRIV_CLOCK_PLL2R    = 10,      ///< The PLL2R output
 } fsp_priv_source_clock_t;
 
 typedef struct st_bsp_unique_id
@@ -256,6 +332,7 @@ typedef struct st_bsp_unique_id
  * Exported global variables
  **********************************************************************************************************************/
 uint32_t R_BSP_SourceClockHzGet(fsp_priv_source_clock_t clock);
+
 /***********************************************************************************************************************
  * Global variables (defined in other files)
  **********************************************************************************************************************/
@@ -284,13 +361,18 @@ __STATIC_INLINE IRQn_Type R_FSP_CurrentIrqGet (void)
  **********************************************************************************************************************/
 __STATIC_INLINE uint32_t R_FSP_SystemClockHzGet (fsp_priv_clock_t clock)
 {
-    uint32_t sckdivcr  = R_SYSTEM->SCKDIVCR;
+#if !BSP_FEATURE_CGC_REGISTER_SET_B
+    uint32_t sckdivcr  = FSP_STYPE3_REG32_READ(R_SYSTEM->SCKDIVCR, BSP_CFG_CLOCKS_SECURE);
     uint32_t clock_div = (sckdivcr >> clock) & FSP_PRV_SCKDIVCR_DIV_MASK;
 
-#if BSP_FEATURE_CGC_HAS_CPUCLK
+ #if BSP_FEATURE_CGC_HAS_CPUCLK
+    if (FSP_PRIV_CLOCK_CPUCLK == clock)
+    {
+        return SystemCoreClock;
+    }
 
     /* Get CPUCLK divisor */
-    uint32_t cpuclk_div = R_SYSTEM->SCKDIVCR2 & FSP_PRV_SCKDIVCR_DIV_MASK;
+    uint32_t cpuclk_div = FSP_STYPE3_REG8_READ(R_SYSTEM->SCKDIVCR2, BSP_CFG_CLOCKS_SECURE) & FSP_PRV_SCKDIVCR_DIV_MASK;
 
     /* Determine if either divisor is a multiple of 3 */
     if ((cpuclk_div | clock_div) & 8U)
@@ -306,10 +388,16 @@ __STATIC_INLINE uint32_t R_FSP_SystemClockHzGet (fsp_priv_clock_t clock)
     {
         return (SystemCoreClock << cpuclk_div) >> clock_div;
     }
-#else
+
+ #else
     uint32_t iclk_div = (sckdivcr >> FSP_PRIV_CLOCK_ICLK) & FSP_PRV_SCKDIVCR_DIV_MASK;
 
     return (SystemCoreClock << iclk_div) >> clock_div;
+ #endif
+#else
+    FSP_PARAMETER_NOT_USED(clock);
+
+    return SystemCoreClock;
 #endif
 }
 
@@ -322,31 +410,51 @@ __STATIC_INLINE uint32_t R_FSP_ClockDividerGet (uint32_t ckdivcr)
 {
     if (2U >= ckdivcr)
     {
+
         /* clock_div:
          * - Clock Divided by 1: 0
          * - Clock Divided by 2: 1
          * - Clock Divided by 4: 2
          */
-        return 1 << ckdivcr;
+        return 1U << ckdivcr;
     }
     else if (3U == ckdivcr)
     {
+
         /* Clock Divided by 6 */
         return 6U;
     }
     else if (4U == ckdivcr)
     {
+
         /* Clock Divided by 8 */
         return 8U;
     }
     else if (5U == ckdivcr)
     {
+
         /* Clock Divided by 3 */
         return 3U;
     }
+    else if (6U == ckdivcr)
+    {
 
-    /* Clock Divided by 5 */
-    return 5U;
+        /* Clock Divided by 5 */
+        return 5;
+    }
+    else if (7U == ckdivcr)
+    {
+
+        /* Clock Divided by 10 */
+        return 10;
+    }
+    else
+    {
+        /* The remaining case is ckdivcr = 8 which divides the clock by 16. */
+    }
+
+    /* Clock Divided by 16 */
+    return 16U;
 }
 
 #if BSP_FEATURE_BSP_HAS_SCISPI_CLOCK
@@ -375,9 +483,12 @@ __STATIC_INLINE uint32_t R_FSP_SciSpiClockHzGet (void)
  **********************************************************************************************************************/
 __STATIC_INLINE uint32_t R_FSP_SpiClockHzGet (void)
 {
-    uint32_t                spidivcr  = R_SYSTEM->SPICKDIVCR;
+    uint32_t                spidivcr  = FSP_STYPE3_REG8_READ(R_SYSTEM->SPICKDIVCR, BSP_CFG_CLOCKS_SECURE);
     uint32_t                clock_div = R_FSP_ClockDividerGet(spidivcr & FSP_PRV_SCKDIVCR_DIV_MASK);
-    fsp_priv_source_clock_t spicksel  = (fsp_priv_source_clock_t) R_SYSTEM->SPICKCR_b.CKSEL;
+    fsp_priv_source_clock_t spicksel  =
+        (fsp_priv_source_clock_t) ((FSP_STYPE3_REG8_READ(R_SYSTEM->SPICKCR,
+                                                         BSP_CFG_CLOCKS_SECURE) & R_SYSTEM_SPICKCR_CKSEL_Msk) >>
+                                   R_SYSTEM_SPICKCR_CKSEL_Pos);
 
     return R_BSP_SourceClockHzGet(spicksel) / clock_div;
 }
@@ -392,9 +503,12 @@ __STATIC_INLINE uint32_t R_FSP_SpiClockHzGet (void)
  **********************************************************************************************************************/
 __STATIC_INLINE uint32_t R_FSP_SciClockHzGet (void)
 {
-    uint32_t                scidivcr  = R_SYSTEM->SCICKDIVCR;
+    uint32_t                scidivcr  = FSP_STYPE3_REG8_READ(R_SYSTEM->SCICKDIVCR, BSP_CFG_CLOCKS_SECURE);
     uint32_t                clock_div = R_FSP_ClockDividerGet(scidivcr & FSP_PRV_SCKDIVCR_DIV_MASK);
-    fsp_priv_source_clock_t scicksel  = (fsp_priv_source_clock_t) R_SYSTEM->SCICKCR_b.SCICKSEL;
+    fsp_priv_source_clock_t scicksel  =
+        (fsp_priv_source_clock_t) (FSP_STYPE3_REG8_READ(R_SYSTEM->SCICKCR,
+                                                        BSP_CFG_CLOCKS_SECURE) & R_SYSTEM_SCICKCR_SCICKSEL_Msk >>
+                                   R_SYSTEM_SCICKCR_SCICKSEL_Pos);
 
     return R_BSP_SourceClockHzGet(scicksel) / clock_div;
 }
@@ -408,7 +522,13 @@ __STATIC_INLINE uint32_t R_FSP_SciClockHzGet (void)
  **********************************************************************************************************************/
 __STATIC_INLINE bsp_unique_id_t const * R_BSP_UniqueIdGet (void)
 {
+#if BSP_FEATURE_TZ_VERSION == 2 && BSP_TZ_NONSECURE_BUILD == 1
+
+    return (bsp_unique_id_t *) (BSP_FEATURE_BSP_UNIQUE_ID_POINTER | BSP_FEATURE_TZ_NS_OFFSET);
+#else
+
     return (bsp_unique_id_t *) BSP_FEATURE_BSP_UNIQUE_ID_POINTER;
+#endif
 }
 
 /*******************************************************************************************************************//**
@@ -420,10 +540,26 @@ __STATIC_INLINE void R_BSP_FlashCacheDisable (void)
     R_FCACHE->FCACHEE = 0U;
 #endif
 
-#if BSP_FEATURE_BSP_HAS_CODE_SYSTEM_CACHE
+#ifdef R_CACHE
+ #if BSP_FEATURE_BSP_CODE_CACHE_VERSION == 2
+
+    /* Writeback and flush cache when disabling
+     * MREF_INTERNAL_12 */
+    if (R_CACHE->CCAWTA_b.WT)
+    {
+        R_CACHE->CCACTL = R_CACHE_CCACTL_FC_Msk;
+    }
+    else
+    {
+        R_CACHE->CCACTL = R_CACHE_CCACTL_FC_Msk | R_CACHE_CCACTL_WB_Msk;
+    }
+
+    FSP_HARDWARE_REGISTER_WAIT(R_CACHE->CCAFCT, 0U);
+ #else
 
     /* Disable the C-Cache. */
     R_CACHE->CCACTL = 0U;
+ #endif
 #endif
 }
 
@@ -443,10 +579,17 @@ __STATIC_INLINE void R_BSP_FlashCacheEnable (void)
     R_FCACHE->FCACHEE = 1U;
 #endif
 
-#if BSP_FEATURE_BSP_HAS_CODE_SYSTEM_CACHE
+#ifdef R_CACHE
+ #if BSP_FEATURE_BSP_CODE_CACHE_VERSION == 1
 
     /* Configure the C-Cache line size. */
     R_CACHE->CCALCF = BSP_CFG_C_CACHE_LINE_SIZE;
+ #else
+
+    /* Check that no flush or writeback are ongoing before enabling
+     * MREF_INTERNAL_13 */
+    FSP_HARDWARE_REGISTER_WAIT(R_CACHE->CCAFCT, 0U);
+ #endif
 
     /* Enable the C-Cache. */
     R_CACHE->CCACTL = 1U;

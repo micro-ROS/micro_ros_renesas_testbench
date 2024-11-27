@@ -13,6 +13,10 @@ extern const uint16_t NULL[];
             #define USB_CFG_HCDC_USE
             #endif
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
+            #define USB_CFG_HCDC_USE
+            #define USB_CFG_HCDC_ECM_USE
+            #endif
+#if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_HHID_USE
             #endif
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
@@ -24,7 +28,7 @@ extern const uint16_t NULL[];
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
             #define USB_CFG_HPRN_USE
             #endif
-#if (1 != RA_NOT_DEFINED)
+#if ((1 != RA_NOT_DEFINED) || (RA_NOT_DEFINED != RA_NOT_DEFINED))
 #define USB_CFG_PCDC_USE
 #endif
 #if (RA_NOT_DEFINED != RA_NOT_DEFINED)
@@ -99,6 +103,7 @@ extern const uint16_t NULL[];
 #define USB_CFG_DBLB (USB_CFG_DBLBON)
 #define USB_CFG_CNTMD (USB_CFG_CNTMDOFF)
 #define USB_CFG_LDO_REGULATOR (USB_CFG_DISABLE)
+#define USB_CFG_TYPEC_FEATURE (USB_CFG_DISABLE)
 #define USB_CFG_DMA   (USB_CFG_DISABLE)
 #define USB_SRC_ADDRESS (NULL)
 #define USB_DEST_ADDRESS (NULL)

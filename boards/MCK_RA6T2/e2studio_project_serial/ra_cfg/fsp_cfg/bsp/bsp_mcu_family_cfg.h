@@ -28,6 +28,7 @@ extern "C" {
 
 #define BSP_CORTEX_VECTOR_TABLE_ENTRIES    (16U)
 #define BSP_VECTOR_TABLE_MAX_ENTRIES       (112U)
+#define BSP_CFG_INLINE_IRQ_FUNCTIONS       (1)
 
 #define BSP_CFG_USE_TFU_MATHLIB           ((1))
 
@@ -171,11 +172,6 @@ extern "C" {
 #endif
 #endif
 
-/* Security attribution for Battery Backup registers. */
-#ifndef BSP_TZ_CFG_BBFSAR
-#define BSP_TZ_CFG_BBFSAR (RA_NOT_DEFINED)
-#endif
-
 /* Security attribution for registers for IRQ channels. */
 #ifndef BSP_TZ_CFG_ICUSARA
 #define BSP_TZ_CFG_ICUSARA (\
@@ -249,13 +245,10 @@ extern "C" {
 
 /* Security attribution for SRAM registers. */
 #ifndef BSP_TZ_CFG_SRAMSAR
-/* If the CGC registers are only accessible in Secure mode, than there is no reason for Non Secure applications to access
- * SRAM0WTEN and therefore there is no reason to access PRCR2. */
 #define BSP_TZ_CFG_SRAMSAR (\
         1 | \
-        ((BSP_CFG_CLOCKS_SECURE == 0) ? (1U << 1U) : 0U) | \
         4 | \
-        0xFFFFFFF8U)
+        0xFFFFFFFAU)
 #endif
 
 /* Security attribution for Standby RAM registers. */
@@ -293,7 +286,7 @@ extern "C" {
 /* Option Function Select Register 1 Security Attribution */
 #ifndef BSP_CFG_ROM_REG_OFS1_SEL
 #if defined(_RA_TZ_SECURE) || defined(_RA_TZ_NONSECURE)
-            #define BSP_CFG_ROM_REG_OFS1_SEL (0xFFF0F8F8U | ((BSP_CFG_CLOCKS_SECURE == 0) ? 0x700U : 0U) | ((RA_NOT_DEFINED > 0) ? 0U : 0x7U))
+            #define BSP_CFG_ROM_REG_OFS1_SEL (0xFFF0F8F8U | ((0U << 0U)) | ((0U << 2U)) | ((BSP_CFG_CLOCKS_SECURE == 0) ? 0x700U : 0U) | ((0U << 16U)) | ((0U << 17U)) | ((0U << 18U)) | ((0U << 19U)))
 #else
 #define BSP_CFG_ROM_REG_OFS1_SEL (0xFFF0F8F8U)
 #endif
