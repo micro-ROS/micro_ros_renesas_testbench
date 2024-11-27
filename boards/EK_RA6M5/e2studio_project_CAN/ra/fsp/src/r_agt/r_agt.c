@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /***********************************************************************************************************************
  * Includes
@@ -54,19 +40,30 @@
 
 #define AGT_PRV_MIN_CLOCK_FREQ                  (0U)
 
-#if (BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT > 0)
- #if (BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT < (BSP_FEATURE_AGT_MAX_CHANNEL_NUM + 1))
-  #define AGT_PRV_IS_AGTW(p_instance_ctrl)    ((p_instance_ctrl)->p_cfg->channel < BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT)
+#define AGT_PRV_CHANNEL_SIZE                    ((uint32_t) R_AGTX1_BASE - (uint32_t) R_AGTX0_BASE)
+
+#if BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT
+ #if BSP_FEATURE_AGT_AGT_CHANNEL_COUNT
+  #define AGT_PRV_DETERMINE_IS_AGTW(p_cfg)          (((agt_extended_cfg_t const *) (p_cfg)->p_extend)-> \
+                                                     counter_bit_width == AGT_COUNTER_BIT_WIDTH_32)
  #else
-  #define AGT_PRV_IS_AGTW(p_instance_ctrl)    (true)
+  #define AGT_PRV_DETERMINE_IS_AGTW(p_cfg)          (true)
  #endif
 #else
- #define AGT_PRV_IS_AGTW(p_instance_ctrl)     (false)
+ #define AGT_PRV_DETERMINE_IS_AGTW(p_cfg)           (false)
 #endif
 
-#define AGT_PRV_CTRL_PTR(p_instance_ctrl)     ((agt_prv_reg_ctrl_ptr_t) (AGT_PRV_IS_AGTW((p_instance_ctrl))      \
-                                                                         ? &(p_instance_ctrl)->p_reg->AGT32.CTRL \
-                                                                         : &(p_instance_ctrl)->p_reg->AGT16.CTRL))
+#define AGT_PRV_IS_AGTW(p_instance_ctrl)            ((p_instance_ctrl)->is_agtw)
+
+#define AGT_PRV_CHANNEL_OFFSET_AGT_AGTW(p_instance_ctrl,                                                                       \
+                                        channel)    ((uint8_t) ((AGT_PRV_IS_AGTW(p_instance_ctrl)) ? (channel) : ((            \
+                                                                                                                      channel) \
+                                                                                                                  +            \
+                                                                                                                  BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT)))
+
+#define AGT_PRV_CTRL_PTR(p_instance_ctrl)           ((agt_prv_reg_ctrl_ptr_t) (AGT_PRV_IS_AGTW((p_instance_ctrl))      \
+                                                                               ? &(p_instance_ctrl)->p_reg->AGT32.CTRL \
+                                                                               : &(p_instance_ctrl)->p_reg->AGT16.CTRL))
 
 /**********************************************************************************************************************
  * Typedef definitions
@@ -104,7 +101,7 @@ void agt_int_isr(void);
 
 /* The period for even channels must be known to calculate the frequency of odd channels if the count source is AGT
  * underflow. */
-static uint32_t gp_prv_agt_periods[BSP_FEATURE_AGT_MAX_CHANNEL_NUM + 1];
+static uint32_t gp_prv_agt_periods[BSP_FEATURE_AGT_AGT_CHANNEL_COUNT + BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT];
 
 /***********************************************************************************************************************
  * Global Variables
@@ -113,18 +110,19 @@ static uint32_t gp_prv_agt_periods[BSP_FEATURE_AGT_MAX_CHANNEL_NUM + 1];
 /** AGT Implementation of General Timer Driver  */
 const timer_api_t g_timer_on_agt =
 {
-    .open         = R_AGT_Open,
-    .stop         = R_AGT_Stop,
-    .start        = R_AGT_Start,
-    .reset        = R_AGT_Reset,
-    .enable       = R_AGT_Enable,
-    .disable      = R_AGT_Disable,
-    .periodSet    = R_AGT_PeriodSet,
-    .dutyCycleSet = R_AGT_DutyCycleSet,
-    .infoGet      = R_AGT_InfoGet,
-    .statusGet    = R_AGT_StatusGet,
-    .callbackSet  = R_AGT_CallbackSet,
-    .close        = R_AGT_Close,
+    .open            = R_AGT_Open,
+    .stop            = R_AGT_Stop,
+    .start           = R_AGT_Start,
+    .reset           = R_AGT_Reset,
+    .enable          = R_AGT_Enable,
+    .disable         = R_AGT_Disable,
+    .periodSet       = R_AGT_PeriodSet,
+    .dutyCycleSet    = R_AGT_DutyCycleSet,
+    .compareMatchSet = R_AGT_CompareMatchSet,
+    .infoGet         = R_AGT_InfoGet,
+    .statusGet       = R_AGT_StatusGet,
+    .callbackSet     = R_AGT_CallbackSet,
+    .close           = R_AGT_Close,
 };
 
 /*******************************************************************************************************************//**
@@ -163,17 +161,25 @@ fsp_err_t R_AGT_Open (timer_ctrl_t * const p_ctrl, timer_cfg_t const * const p_c
 #if AGT_CFG_PARAM_CHECKING_ENABLE
     fsp_err_t err = r_agt_open_param_checking(p_instance_ctrl, p_cfg);
     FSP_ERROR_RETURN(FSP_SUCCESS == err, err);
+#else
+    p_instance_ctrl->p_cfg   = p_cfg;
+    p_instance_ctrl->is_agtw = AGT_PRV_DETERMINE_IS_AGTW(p_cfg);
 #endif
 
-    uint32_t base_address = (uint32_t) R_AGTX0 + (p_cfg->channel * ((uint32_t) R_AGTX1 - (uint32_t) R_AGTX0));
-    p_instance_ctrl->p_reg = (R_AGTX0_Type *) base_address;
-
-    p_instance_ctrl->p_cfg = p_cfg;
+#if BSP_FEATURE_AGT_AGT_CHANNEL_COUNT && BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT
+    uint32_t base_address = (uint32_t) ((AGT_PRV_IS_AGTW(p_instance_ctrl)) ? R_AGTW0 : R_AGT0);
+#elif BSP_FEATURE_AGT_AGTW_CHANNEL_COUNT
+    uint32_t base_address = (uint32_t) R_AGTW0;
+#else
+    uint32_t base_address = (uint32_t) R_AGT0;
+#endif
+    uint32_t channel_base_address = base_address + (p_cfg->channel * AGT_PRV_CHANNEL_SIZE);
+    p_instance_ctrl->p_reg = (R_AGTX0_Type *) channel_base_address;
 
     agt_prv_reg_ctrl_ptr_t p_reg_ctrl = AGT_PRV_CTRL_PTR(p_instance_ctrl);
 
     /* Power on the AGT channel. */
-    R_BSP_MODULE_START(FSP_IP_AGT, p_cfg->channel);
+    R_BSP_MODULE_START(FSP_IP_AGT, AGT_PRV_CHANNEL_OFFSET_AGT_AGTW(p_instance_ctrl, p_cfg->channel));
 
     /* Clear AGTCR. This stops the timer if it is running and clears the flags. */
     p_reg_ctrl->AGTCR = 0U;
@@ -472,6 +478,24 @@ fsp_err_t R_AGT_DutyCycleSet (timer_ctrl_t * const p_ctrl, uint32_t const duty_c
 }
 
 /*******************************************************************************************************************//**
+ * Placeholder for unsupported compareMatch function. Implements @ref timer_api_t::compareMatchSet.
+ *
+ * @retval FSP_ERR_UNSUPPORTED      AGT compare match is not supported.
+ **********************************************************************************************************************/
+fsp_err_t R_AGT_CompareMatchSet (timer_ctrl_t * const        p_ctrl,
+                                 uint32_t const              compare_match_value,
+                                 timer_compare_match_t const match_channel)
+{
+    /* This function isn't supported. It is defined only to implement a required function of timer_api_t.
+     * Mark the input parameter as unused since this function isn't supported. */
+    FSP_PARAMETER_NOT_USED(p_ctrl);
+    FSP_PARAMETER_NOT_USED(compare_match_value);
+    FSP_PARAMETER_NOT_USED(match_channel);
+
+    return FSP_ERR_UNSUPPORTED;
+}
+
+/*******************************************************************************************************************//**
  * Gets timer information and store it in provided pointer p_info. Implements @ref timer_api_t::infoGet.
  *
  * Example:
@@ -501,17 +525,19 @@ fsp_err_t R_AGT_InfoGet (timer_ctrl_t * const p_ctrl, timer_info_t * const p_inf
         /* Clock frequency of this channel is the clock frequency divided by the timer period of the source channel. */
 
         /* Source instance is the channel immediately preceding this one. */
-        if (0U == gp_prv_agt_periods[p_instance_ctrl->p_cfg->channel - 1])
+        if (0U ==
+            gp_prv_agt_periods[AGT_PRV_CHANNEL_OFFSET_AGT_AGTW(p_instance_ctrl, p_instance_ctrl->p_cfg->channel - 1)])
         {
             p_info->clock_frequency = AGT_PRV_MIN_CLOCK_FREQ;
         }
         else
         {
-            R_AGTX0_Type * p_source_channel_reg = (R_AGTX0_Type *) ((uint32_t) p_instance_ctrl->p_reg -
-                                                                    ((uint32_t) R_AGTX1 - (uint32_t) R_AGTX0));
+            R_AGTX0_Type * p_source_channel_reg =
+                (R_AGTX0_Type *) ((uint32_t) p_instance_ctrl->p_reg - AGT_PRV_CHANNEL_SIZE);
             p_info->clock_frequency =
                 r_agt_clock_frequency_get(p_source_channel_reg, AGT_PRV_IS_AGTW(p_instance_ctrl)) /
-                gp_prv_agt_periods[p_instance_ctrl->p_cfg->channel - 1];
+                gp_prv_agt_periods[AGT_PRV_CHANNEL_OFFSET_AGT_AGTW(p_instance_ctrl,
+                                                                   p_instance_ctrl->p_cfg->channel - 1)];
         }
     }
     else
@@ -683,6 +709,10 @@ static fsp_err_t r_agt_open_param_checking (agt_instance_ctrl_t * p_instance_ctr
         FSP_ERROR_RETURN(p_cfg->cycle_end_irq >= 0, FSP_ERR_IRQ_BSP_DISABLED);
     }
 
+    /* Save pointer to config struct */
+    p_instance_ctrl->p_cfg   = p_cfg;
+    p_instance_ctrl->is_agtw = AGT_PRV_DETERMINE_IS_AGTW(p_cfg);
+
     if (!AGT_PRV_IS_AGTW(p_instance_ctrl))
     {
         FSP_ASSERT(0U != p_cfg->period_counts);
@@ -697,16 +727,6 @@ static fsp_err_t r_agt_open_param_checking (agt_instance_ctrl_t * p_instance_ctr
     /* AGT_CLOCK_AGT_UNDERFLOW is not allowed on even AGT channels. */
     agt_extended_cfg_t const * p_extend = (agt_extended_cfg_t const *) p_cfg->p_extend;
     FSP_ASSERT((AGT_CLOCK_AGT_UNDERFLOW != p_extend->count_source) || (p_cfg->channel & 1U));
-
-    /* Devices with RTCCR.TCEN support P402/P403 as count sources. */
- #if !BSP_FEATURE_RTC_HAS_TCEN
-    if (AGT_PRV_IS_AGTW(p_instance_ctrl))
-    {
-        /* Return error for MCUs that do not support P402 and P403 as count sources*/
-        FSP_ASSERT(AGT_CLOCK_P402 != p_extend->count_source);
-        FSP_ASSERT(AGT_CLOCK_P403 != p_extend->count_source);
-    }
- #endif
 
     /* Validate divider. */
     if (AGT_CLOCK_PCLKB == p_extend->count_source)
@@ -909,7 +929,8 @@ static void r_agt_period_register_set (agt_instance_ctrl_t * p_instance_ctrl, ui
 {
     /* Store the period value so it can be retrieved later. */
     p_instance_ctrl->period = period_counts;
-    gp_prv_agt_periods[p_instance_ctrl->p_cfg->channel] = period_counts;
+    gp_prv_agt_periods[AGT_PRV_CHANNEL_OFFSET_AGT_AGTW(p_instance_ctrl,
+                                                       p_instance_ctrl->p_cfg->channel)] = period_counts;
 
     uint32_t period_reg = (period_counts - 1U);
 
