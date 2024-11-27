@@ -80,7 +80,7 @@ endif
 
 -include ../makefile.defs
 
-# Add inputs and outputs from these tool invocations to the build variables 
+# Add inputs and outputs from these tool invocations to the build variables
 SECONDARY_FLASH += \
 microros_testbench.hex \
 
@@ -98,7 +98,7 @@ main-build: microros_testbench.elf secondary-outputs
 
 # Tool invocations
 microros_testbench.elf: $(OBJS) $(USER_OBJS) $(LINKER_SCRIPT)
-	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g -T "fsp.ld" -Xlinker --gc-sections -L "/home/pgarrido/dev/micro-ROS/micro_ros_renesas_testbench/boards/EK_RA6M5/e2studio_project_serial/script" -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
+	$(file > microros_testbench.elf.in,-mcpu=cortex-m33 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g -T "fsp.ld" -Xlinker --gc-sections -L "../script" -L "../script" -L "../micro_ros_renesas2estudio_component/libmicroros" -Wl,-Map,"microros_testbench.map" --specs=nano.specs --specs=rdimon.specs -o "microros_testbench.elf" -Wl,--start-group $(OBJS) $(USER_OBJS) $(LIBS) -Wl,--end-group)
 	@echo Building target: $@ && arm-none-eabi-gcc @"microros_testbench.elf.in"
 microros_testbench.hex: microros_testbench.elf
 	arm-none-eabi-objcopy -O ihex "microros_testbench.elf"  "microros_testbench.hex"
