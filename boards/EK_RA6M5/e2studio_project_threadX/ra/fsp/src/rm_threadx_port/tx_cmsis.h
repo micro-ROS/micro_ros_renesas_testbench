@@ -30,41 +30,8 @@
  #pragma GCC diagnostic push
 #endif
 
-#include <stddef.h>
-#include "../../src/bsp/mcu/all/bsp_arm_exceptions.h"
-#include "cmsis_compiler.h"
-
-#include "bsp_api.h"                   /* This include brings in a workaround for defining __ARM_ARCH_8_1M_MAIN__. It should be removed when this behaviour is fixed. */
-
-#if   __ARM_ARCH_7EM__
- #define __MPU_PRESENT             1   /*!< MPU present or not                                                    */
- #define __NVIC_PRIO_BITS          4   /*!< Number of Bits used for Priority Levels                               */
- #define __Vendor_SysTickConfig    0   /*!< Set to 1 if different SysTick Config is used                          */
- #define __FPU_PRESENT             1   /*!< FPU present or not                                                    */
- #include "core_cm4.h"
-#elif __ARM_ARCH_8M_BASE__
- #define __MPU_PRESENT             1   /*!< MPU present or not                                                    */
- #define __NVIC_PRIO_BITS          2   /*!< Number of Bits used for Priority Levels                               */
- #define __Vendor_SysTickConfig    0   /*!< Set to 1 if different SysTick Config is used                          */
- #define __FPU_PRESENT             0   /*!< FPU present or not                                                    */
- #include "core_cm23.h"                /*!< Cortex-M23 processor and core peripherals                             */
-#elif __ARM_ARCH_8M_MAIN__
- #define __MPU_PRESENT             1   /*!< MPU present or not                                                    */
- #define __NVIC_PRIO_BITS          4   /*!< Number of Bits used for Priority Levels                               */
- #define __Vendor_SysTickConfig    0   /*!< Set to 1 if different SysTick Config is used                          */
- #define __FPU_PRESENT             1   /*!< FPU present or not                                                    */
- #define __DSP_PRESENT             1   /*!< DSP present or not                                                    */
- #include "core_cm33.h"
-#elif __ARM_ARCH_8_1M_MAIN__
- #define __MPU_PRESENT             1   /*!< MPU present or not                                                    */
- #define __NVIC_PRIO_BITS          4   /*!< Number of Bits used for Priority Levels                               */
- #define __Vendor_SysTickConfig    0   /*!< Set to 1 if different SysTick Config is used                          */
- #define __FPU_PRESENT             1   /*!< FPU present or not                                                    */
- #define __DSP_PRESENT             1   /*!< DSP present or not                                                    */
- #include "core_cm85.h"
-#else
- #error Unsupported Architecture
-#endif
+/* Workarounds for LLVM and CM85 are already defined in renesas.h. */
+#include "bsp_api.h"
 
 #if defined(__GNUC__) && !defined(__ARMCC_VERSION)
 

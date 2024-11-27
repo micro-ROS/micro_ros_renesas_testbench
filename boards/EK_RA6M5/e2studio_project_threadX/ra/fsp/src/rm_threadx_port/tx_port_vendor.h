@@ -41,10 +41,11 @@ extern "C" {
  #define TX_INCLUDE_USER_DEFINE_FILE
 #endif
 
-#ifdef __ARM_ARCH_8M_MAIN__            // CM33
+#if defined(RENESAS_CORTEX_M33) || defined(RENESAS_CORTEX_M85)
  #define TX_PORT_PSPLIM_PRESENT
-#else
+#elif (1 == __MPU_PRESENT)
  #define TX_PORT_VENDOR_STACK_MONITOR_ENABLE
+#else
 #endif
 
 #ifdef TX_PORT_VENDOR_STACK_MONITOR_ENABLE
