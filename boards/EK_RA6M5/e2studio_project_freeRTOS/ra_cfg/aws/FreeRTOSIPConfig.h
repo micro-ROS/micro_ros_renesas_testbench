@@ -2,8 +2,8 @@
 #ifndef FREERTOSIPCONFIG_H_
 #define FREERTOSIPCONFIG_H_
 /*
- * FreeRTOS Kernel V10.3.0
- * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * FreeRTOS V202212.01
+ * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -22,8 +22,8 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * https://aws.amazon.com/freertos
+ * https://www.FreeRTOS.org
  */
 
 /*****************************************************************************
@@ -32,8 +32,6 @@
  * http://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_TCP/TCP_IP_Configuration.html
  *
  *****************************************************************************/
-#include "r_ether_cfg.h"
-
 #ifndef FREERTOS_IP_CONFIG_H
 #define FREERTOS_IP_CONFIG_H
 
@@ -46,7 +44,7 @@ extern "C" {
  * out the debugging messages. */
 #define ipconfigHAS_DEBUG_PRINTF    0
 #if ( ipconfigHAS_DEBUG_PRINTF == 1 )
-    #define FreeRTOS_debug_printf( X )    configPRINTF( X )
+    #define FreeRTOS_debug_printf( X )    vLoggingPrintf X
 #endif
 
 /* Set to 1 to print out non debugging messages, for example the output of the
@@ -55,7 +53,7 @@ extern "C" {
  * messages. */
 #define ipconfigHAS_PRINTF    0
 #if ( ipconfigHAS_PRINTF == 1 )
-    #define FreeRTOS_printf( X )    configPRINTF( X )
+    #define FreeRTOS_printf( X )    vLoggingPrintf X
 #endif
 
 /* Define the byte order of the target MCU (the MCU FreeRTOS+TCP is executing
@@ -101,14 +99,6 @@ extern "C" {
  * http://www.freertos.org/Stacks-and-stack-overflow-checking.html. */
 #define ipconfigIP_TASK_STACK_SIZE_WORDS           (configMINIMAL_STACK_SIZE * 5)
 
-/* ipconfigRAND32() is called by the IP stack to generate random numbers for
- * things such as a DHCP transaction number or initial sequence number.  Random
- * number generation is performed via this macro to allow applications to use their
- * own random number generation method.  For example, it might be possible to
- * generate a random number by sampling noise on an analogue input. */
-uint32_t ulRand(void);
-#define ipconfigRAND32()    ulRand()
-
 /* If ipconfigUSE_NETWORK_EVENT_HOOK is set to 1 then FreeRTOS+TCP will call the
  * network event hook at the appropriate times.  If ipconfigUSE_NETWORK_EVENT_HOOK
  * is not set to 1 then the network event hook will never be called. See:
@@ -140,7 +130,6 @@ uint32_t ulRand(void);
 #define ipconfigUSE_DHCP                         1
 #define ipconfigDHCP_REGISTER_HOSTNAME           0
 #define ipconfigDHCP_USES_UNICAST                1
-#define ipconfigDHCP_SEND_DISCOVER_AFTER_AUTO_IP 0
 
 /* If ipconfigDHCP_USES_USER_HOOK is set to 1 then the application writer must
  * provide an implementation of the DHCP callback function,
@@ -278,10 +267,6 @@ uint32_t ulRand(void);
  * simultaneously, one could define TCP_WIN_SEG_COUNT as 120. */
 #define ipconfigTCP_WIN_SEG_COUNT                      240
 
-/* When non-zero, TCP will not send RST packets in reply to
- * TCP packets which are unknown, or out-of-order. */
-#define ipconfigIGNORE_UNKNOWN_PACKETS	( 1 )
-
 /* Each TCP socket has a circular buffers for Rx and Tx, which have a fixed
  * maximum size.  Define the size of Rx buffer for TCP sockets. */
 #define ipconfigTCP_RX_BUFFER_LENGTH                   (3000)
@@ -317,9 +302,18 @@ uint32_t ulRand(void);
  * the MAC to the TCP/IP stack. */
 #define ipconfigUSE_LINKED_RX_MESSAGES           (0)
 
-#define portINLINE                               __inline
+#define ipconfigUSE_IPv6                         (0)
 
-void vApplicationMQTTGetKeys(const char **ppcRootCA, const char **ppcClientCert, const char **ppcClientPrivateKey);
+#define ipconfigIPv4_BACKWARD_COMPATIBLE         (1)
+
+#if defined(__GNUC__) || defined(__ARMCC_VERSION)
+  #define portINLINE          __inline
+#elif defined(__ICCARM__)
+  #define portINLINE          inline
+#endif
+
+void vApplicationMQTTGetKeys(const char **ppcRootCA, const char **ppcClientCert,
+		const char **ppcClientPrivateKey);
 
 #ifdef __cplusplus
 }

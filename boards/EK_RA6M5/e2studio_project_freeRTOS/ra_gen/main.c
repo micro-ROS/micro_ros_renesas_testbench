@@ -30,83 +30,75 @@ rtos_startup_err_callback_WEAK_ATTRIBUTE;
  * @param[in] p_instance arguments used to identify which instance caused the error and p_data Callback arguments used to identify what error caused the callback.
  **********************************************************************************************************************/
 void rtos_startup_err_callback_internal(void *p_instance, void *p_data);
-void rtos_startup_err_callback_internal(void *p_instance, void *p_data)
-{
-    /** Suppress compiler warning for not using parameters. */
-    FSP_PARAMETER_NOT_USED (p_instance);
-    FSP_PARAMETER_NOT_USED (p_data);
+void rtos_startup_err_callback_internal(void *p_instance, void *p_data) {
+	/** Suppress compiler warning for not using parameters. */
+	FSP_PARAMETER_NOT_USED(p_instance);
+	FSP_PARAMETER_NOT_USED(p_data);
 
-    /** An error has occurred. Please check function arguments for more information. */
-    BSP_CFG_HANDLE_UNRECOVERABLE_ERROR (0);
+	/** An error has occurred. Please check function arguments for more information. */
+	BSP_CFG_HANDLE_UNRECOVERABLE_ERROR(0);
 }
 
 void rtos_startup_common_init(void);
-void rtos_startup_common_init(void)
-{
-    /* First thread will take care of common initialization. */
-    BaseType_t err;
-    err = xSemaphoreTake (g_fsp_common_initialized_semaphore, portMAX_DELAY);
-    if (pdPASS != err)
-    {
-        /* Check err, problem occurred. */
-        rtos_startup_err_callback (g_fsp_common_initialized_semaphore, 0);
-    }
+void rtos_startup_common_init(void) {
+	/* First thread will take care of common initialization. */
+	BaseType_t err;
+	err = xSemaphoreTake(g_fsp_common_initialized_semaphore, portMAX_DELAY);
+	if (pdPASS != err) {
+		/* Check err, problem occurred. */
+		rtos_startup_err_callback(g_fsp_common_initialized_semaphore, 0);
+	}
 
-    /* Only perform common initialization if this is the first thread to execute. */
-    if (false == g_fsp_common_initialized)
-    {
-        /* Later threads will not run this code. */
-        g_fsp_common_initialized = true;
+	/* Only perform common initialization if this is the first thread to execute. */
+	if (false == g_fsp_common_initialized) {
+		/* Later threads will not run this code. */
+		g_fsp_common_initialized = true;
 
-        /* Perform common module initialization. */
-        g_hal_init ();
+		/* Perform common module initialization. */
+		g_hal_init();
 
-        /* Now that common initialization is done, let other threads through. */
-        /* First decrement by 1 since 1 thread has already come through. */
-        g_fsp_common_thread_count--;
-        while (g_fsp_common_thread_count > 0)
-        {
-            err = xSemaphoreGive (g_fsp_common_initialized_semaphore);
-            if (pdPASS != err)
-            {
-                /* Check err, problem occurred. */
-                rtos_startup_err_callback (g_fsp_common_initialized_semaphore, 0);
-            }
-            g_fsp_common_thread_count--;
-        }
-    }
+		/* Now that common initialization is done, let other threads through. */
+		/* First decrement by 1 since 1 thread has already come through. */
+		g_fsp_common_thread_count--;
+		while (g_fsp_common_thread_count > 0) {
+			err = xSemaphoreGive(g_fsp_common_initialized_semaphore);
+			if (pdPASS != err) {
+				/* Check err, problem occurred. */
+				rtos_startup_err_callback(g_fsp_common_initialized_semaphore,
+						0);
+			}
+			g_fsp_common_thread_count--;
+		}
+	}
 }
 
-int main(void)
-{
-    g_fsp_common_thread_count = 0;
-    g_fsp_common_initialized = false;
+int main(void) {
+	g_fsp_common_thread_count = 0;
+	g_fsp_common_initialized = false;
 
-    /* Create semaphore to make sure common init is done before threads start running. */
-    g_fsp_common_initialized_semaphore =
+	/* Create semaphore to make sure common init is done before threads start running. */
+	g_fsp_common_initialized_semaphore =
 #if configSUPPORT_STATIC_ALLOCATION
                     xSemaphoreCreateCountingStatic(
                     #else
-            xSemaphoreCreateCounting (
+			xSemaphoreCreateCounting(
 #endif
-                                      256,
-                                      1
+					256, 1
 #if configSUPPORT_STATIC_ALLOCATION
                         , &g_fsp_common_initialized_semaphore_memory
                         #endif
-                                      );
+					);
 
-    if (NULL == g_fsp_common_initialized_semaphore)
-    {
-        rtos_startup_err_callback (g_fsp_common_initialized_semaphore, 0);
-    }
+	if (NULL == g_fsp_common_initialized_semaphore) {
+		rtos_startup_err_callback(g_fsp_common_initialized_semaphore, 0);
+	}
 
-    /* Init RTOS tasks. */
-    net_thread_create ();
+	/* Init RTOS tasks. */
+	net_thread_create();
 
-    /* Start the scheduler. */
-    vTaskStartScheduler ();
-    return 0;
+	/* Start the scheduler. */
+	vTaskStartScheduler();
+	return 0;
 }
 
 #if configSUPPORT_STATIC_ALLOCATION
