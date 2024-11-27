@@ -1,22 +1,8 @@
-/***********************************************************************************************************************
- * Copyright [2020-2023] Renesas Electronics Corporation and/or its affiliates.  All Rights Reserved.
- *
- * This software and documentation are supplied by Renesas Electronics America Inc. and may only be used with products
- * of Renesas Electronics Corp. and its affiliates ("Renesas").  No other uses are authorized.  Renesas products are
- * sold pursuant to Renesas terms and conditions of sale.  Purchasers are solely responsible for the selection and use
- * of Renesas products and Renesas assumes no liability.  No license, express or implied, to any intellectual property
- * right is granted by Renesas. This software is protected under all applicable laws, including copyright laws. Renesas
- * reserves the right to change or discontinue this software and/or this documentation. THE SOFTWARE AND DOCUMENTATION
- * IS DELIVERED TO YOU "AS IS," AND RENESAS MAKES NO REPRESENTATIONS OR WARRANTIES, AND TO THE FULLEST EXTENT
- * PERMISSIBLE UNDER APPLICABLE LAW, DISCLAIMS ALL WARRANTIES, WHETHER EXPLICITLY OR IMPLICITLY, INCLUDING WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT, WITH RESPECT TO THE SOFTWARE OR
- * DOCUMENTATION.  RENESAS SHALL HAVE NO LIABILITY ARISING OUT OF ANY SECURITY VULNERABILITY OR BREACH.  TO THE MAXIMUM
- * EXTENT PERMITTED BY LAW, IN NO EVENT WILL RENESAS BE LIABLE TO YOU IN CONNECTION WITH THE SOFTWARE OR DOCUMENTATION
- * (OR ANY PERSON OR ENTITY CLAIMING RIGHTS DERIVED FROM YOU) FOR ANY LOSS, DAMAGES, OR CLAIMS WHATSOEVER, INCLUDING,
- * WITHOUT LIMITATION, ANY DIRECT, CONSEQUENTIAL, SPECIAL, INDIRECT, PUNITIVE, OR INCIDENTAL DAMAGES; ANY LOST PROFITS,
- * OTHER ECONOMIC DAMAGE, PROPERTY DAMAGE, OR PERSONAL INJURY; AND EVEN IF RENESAS HAS BEEN ADVISED OF THE POSSIBILITY
- * OF SUCH LOSS, DAMAGES, CLAIMS OR COSTS.
- **********************************************************************************************************************/
+/*
+* Copyright (c) 2020 - 2024 Renesas Electronics Corporation and/or its affiliates
+*
+* SPDX-License-Identifier: BSD-3-Clause
+*/
 
 /*******************************************************************************************************************//**
  * @addtogroup BSP_MCU
@@ -27,6 +13,14 @@
  * Includes   <System Includes> , "Project Includes"
  **********************************************************************************************************************/
 #include <string.h>
+#if defined(__GNUC__) && defined(__llvm__) && !defined(__ARMCC_VERSION) && !defined(__CLANG_TIDY__)
+ #include <picotls.h>
+#endif
+#if defined(__ARMCC_VERSION)
+ #if defined(__ARMCC_USING_STANDARDLIB)
+  #include <rt_misc.h>
+ #endif
+#endif
 #include "bsp_api.h"
 
 /***********************************************************************************************************************
@@ -50,6 +44,8 @@
 #define BSP_PRV_STACK_TOP                             ((uint32_t) __Vectors[0])
 #define BSP_TZ_STACK_SEAL_VALUE                       (0xFEF5EDA5)
 
+#define ARMV8_MPU_REGION_MIN_SIZE                     (32U)
+
 /***********************************************************************************************************************
  * Typedef definitions
  **********************************************************************************************************************/
@@ -67,12 +63,27 @@ extern uint32_t Image$$BSS$$ZI$$Length;
 extern uint32_t Load$$DATA$$Base;
 extern uint32_t Image$$DATA$$Base;
 extern uint32_t Image$$DATA$$Length;
-extern uint32_t Image$$STACK$$ZI$$Base;
-extern uint32_t Image$$STACK$$ZI$$Length;
- #if BSP_FEATURE_BSP_HAS_DTCM == 1
-extern uint32_t Load$$DTCM_DATA_INIT$$Base;
-extern uint32_t Image$$DTCM_DATA_INIT$$Base;
-extern uint32_t Image$$DTCM_DATA_INIT$$Length;
+ #if defined(__ARMCC_USING_STANDARDLIB)
+extern uint32_t Image$$ARM_LIB_HEAP$$ZI$$Base;
+extern uint32_t Image$$ARM_LIB_HEAP$$ZI$$Length;
+ #endif
+ #if BSP_FEATURE_BSP_HAS_ITCM
+extern uint32_t Load$$ITCM_DATA$$Base;
+extern uint32_t Load$$ITCM_PAD$$Limit;
+extern uint32_t Image$$ITCM_DATA$$Base;
+ #endif
+ #if BSP_FEATURE_BSP_HAS_DTCM
+extern uint32_t Load$$DTCM_DATA$$Base;
+extern uint32_t Load$$DTCM_PAD$$Limit;
+extern uint32_t Image$$DTCM_DATA$$Base;
+extern uint32_t Image$$DTCM_BSS$$Base;
+extern uint32_t Image$$DTCM_BSS_PAD$$ZI$$Limit;
+ #endif
+ #if BSP_CFG_DCACHE_ENABLED
+extern uint32_t Image$$NOCACHE$$ZI$$Base;
+extern uint32_t Image$$NOCACHE_PAD$$ZI$$Limit;
+extern uint32_t Image$$NOCACHE_SDRAM$$ZI$$Base;
+extern uint32_t Image$$NOCACHE_SDRAM_PAD$$ZI$$Limit;
  #endif
 #elif defined(__GNUC__)
 
@@ -84,20 +95,53 @@ extern uint32_t __bss_start__;
 extern uint32_t __bss_end__;
 extern uint32_t __StackLimit;
 extern uint32_t __StackTop;
- #if BSP_FEATURE_BSP_HAS_DTCM == 1
+
+/* Nested in __GNUC__ because LLVM generates both __GNUC__ and __llvm__*/
+ #if defined(__llvm__) && !defined(__CLANG_TIDY__)
+extern uint32_t __tls_base;
+ #endif
+ #if BSP_FEATURE_BSP_HAS_ITCM
+extern uint32_t __itcm_data_init_start;
+extern uint32_t __itcm_data_init_end;
+extern uint32_t __itcm_data_start;
+ #endif
+ #if BSP_FEATURE_BSP_HAS_DTCM
 extern uint32_t __dtcm_data_init_start;
-extern uint32_t __dtcm_data_start__;
-extern uint32_t __dtcm_data_end__;
+extern uint32_t __dtcm_data_init_end;
+extern uint32_t __dtcm_data_start;
+extern uint32_t __dtcm_bss_start;
+extern uint32_t __dtcm_bss_end;
+ #endif
+ #if BSP_CFG_DCACHE_ENABLED
+extern uint32_t __nocache_start;
+extern uint32_t __nocache_end;
+extern uint32_t __nocache_sdram_start;
+extern uint32_t __nocache_sdram_end;
  #endif
 #elif defined(__ICCARM__)
  #pragma section=".bss"
  #pragma section=".data"
  #pragma section=".data_init"
  #pragma section=".stack"
- #if BSP_FEATURE_BSP_HAS_DTCM == 1
-  #pragma section=".dtcm_data"
-  #pragma section=".dtcm_data_init"
+ #if BSP_FEATURE_BSP_HAS_ITCM
+extern uint32_t ITCM_DATA_INIT$$Base;
+extern uint32_t ITCM_DATA_INIT$$Limit;
+extern uint32_t ITCM_DATA$$Base;
  #endif
+ #if BSP_FEATURE_BSP_HAS_DTCM
+extern uint32_t DTCM_DATA_INIT$$Base;
+extern uint32_t DTCM_DATA_INIT$$Limit;
+extern uint32_t DTCM_DATA$$Base;
+extern uint32_t DTCM_BSS$$Base;
+extern uint32_t DTCM_BSS$$Limit;
+ #endif
+ #if BSP_CFG_DCACHE_ENABLED
+extern uint32_t NOCACHE$$Base;
+extern uint32_t NOCACHE$$Limit;
+extern uint32_t NOCACHE_SDRAM$$Base;
+extern uint32_t NOCACHE_SDRAM$$Limit;
+ #endif
+
 #endif
 
 /* Initialize static constructors */
@@ -146,6 +190,33 @@ static void bsp_init_uninitialized_vars(void);
 
 #endif
 
+#if BSP_CFG_C_RUNTIME_INIT
+ #if BSP_FEATURE_BSP_HAS_ITCM || BSP_FEATURE_BSP_HAS_DTCM
+static void memcpy_64(uint64_t * destination, const uint64_t * source, size_t count);
+
+ #endif
+ #if BSP_FEATURE_BSP_HAS_DTCM
+static void memset_64(uint64_t * destination, const uint64_t value, size_t count);
+
+ #endif
+#endif
+
+#if BSP_CFG_C_RUNTIME_INIT
+ #if BSP_FEATURE_BSP_HAS_ITCM
+static void bsp_init_itcm(void);
+
+ #endif
+ #if BSP_FEATURE_BSP_HAS_DTCM
+static void bsp_init_dtcm(void);
+
+ #endif
+#endif
+
+#if BSP_CFG_DCACHE_ENABLED
+static void bsp_init_mpu(void);
+
+#endif
+
 /*******************************************************************************************************************//**
  * Initialize the MCU and the runtime environment.
  **********************************************************************************************************************/
@@ -153,11 +224,23 @@ void SystemInit (void)
 {
 #if defined(RENESAS_CORTEX_M85)
 
-    /* Enable the ARM core instruction cache, branch prediction and low-overhead-branch extension.
-     * See Section 5.5 of the Cortex-M55 TRM and Section D1.2.9 in the ARMv8-M Architecture Reference Manual */
+    /* Enable the instruction cache, branch prediction, and the branch cache (required for Low Overhead Branch (LOB) extension).
+     * See sections 6.5, 6.6, and 6.7 in the Arm Cortex-M85 Processor Technical Reference Manual (Document ID: 101924_0002_05_en, Issue: 05)
+     * See section D1.2.9 in the Armv8-M Architecture Reference Manual (Document number: DDI0553B.w, Document version: ID07072023) */
     SCB->CCR = (uint32_t) CCR_CACHE_ENABLE;
     __DSB();
     __ISB();
+ #if !BSP_TZ_NONSECURE_BUILD
+
+    /* Apply Arm Cortex-M85 errata workarounds for D-Cache.
+     * See erratum 3175626 and 3190818 in the Cortex-M85 AT640 and Cortex-M85 with FPU AT641 Software Developer Errata Notice (Date of issue: March 07, 2024, Document version: 13.0, Document ID: SDEN-2236668). */
+    MEMSYSCTL->MSCR |= MEMSYSCTL_MSCR_FORCEWT_Msk;
+    __DSB();
+    __ISB();
+    ICB->ACTLR |= (1U << 16U);
+    __DSB();
+    __ISB();
+ #endif
 #endif
 
 #if __FPU_USED
@@ -187,7 +270,7 @@ void SystemInit (void)
     SCB->VTOR = (uint32_t) &__Vectors;
 #endif
 
-#if !BSP_TZ_CFG_SKIP_INIT
+#if !BSP_TZ_CFG_SKIP_INIT && !BSP_CFG_SKIP_INIT
  #if BSP_FEATURE_BSP_VBATT_HAS_VBTCR1_BPWSWSTP
 
     /* Unlock VBTCR1 register. */
@@ -209,6 +292,12 @@ void SystemInit (void)
     R_BSP_MODULE_START(FSP_IP_TFU, 0U);
 #endif
 
+#if BSP_FEATURE_MACL_SUPPORTED
+ #if __has_include("arm_math_types.h")
+    R_BSP_MODULE_START(FSP_IP_MACL, 0U);
+ #endif
+#endif
+
 #if BSP_CFG_EARLY_INIT
 
     /* Initialize uninitialized BSP variables early for use in R_BSP_WarmStart. */
@@ -218,10 +307,19 @@ void SystemInit (void)
     /* Call pre clock initialization hook. */
     R_BSP_WarmStart(BSP_WARM_START_RESET);
 
-#if BSP_TZ_CFG_SKIP_INIT
+#if BSP_TZ_CFG_SKIP_INIT || BSP_CFG_SKIP_INIT
 
     /* Initialize clock variables to be used with R_BSP_SoftwareDelay. */
     bsp_clock_freq_var_init();
+
+ #if BSP_CFG_SKIP_INIT && (defined(R_CACHE) || BSP_FEATURE_BSP_FLASH_CACHE)
+
+    /* Flush cache before enabling */
+    R_CACHE->CCAFCT_b.FC = 1;
+
+    /* Enable cache */
+    R_BSP_FlashCacheEnable();
+ #endif
 #else
 
     /* Configure system clocks. */
@@ -234,16 +332,6 @@ void SystemInit (void)
 
     bsp_reset_trng_circuit();
  #endif
-#endif
-
-#if BSP_FEATURE_BSP_HAS_GRAPHICS_DOMAIN
-
-    /* Turn on graphics power domain.
-     * This requires MOCO to be enabled, but MOCO is always enabled after bsp_clock_init(). */
-    R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_OM_LPC_BATT);
-    R_SYSTEM->PDCTRGD = 0;
-    (void) R_SYSTEM->PDCTRGD;
-    R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
 #endif
 
     /* Call post clock initialization hook. */
@@ -272,14 +360,7 @@ void SystemInit (void)
 #endif
 
 #if BSP_FEATURE_TZ_HAS_TRUSTZONE
- #if 33U == __CORTEX_M
-
-    /* Use CM33 stack monitor. */
     __set_MSPLIM(BSP_PRV_STACK_LIMIT);
- #else
-
-    /* CM85 stack monitor not yet supported. */
- #endif
 #endif
 
 #if BSP_CFG_C_RUNTIME_INIT
@@ -297,21 +378,10 @@ void SystemInit (void)
     /* Copy initialized RAM data from ROM to RAM. */
  #if defined(__ARMCC_VERSION)
     memcpy((uint8_t *) &Image$$DATA$$Base, (uint8_t *) &Load$$DATA$$Base, (uint32_t) &Image$$DATA$$Length);
-  #if BSP_FEATURE_BSP_HAS_DTCM == 1
-    memcpy((uint8_t *) &Image$$DTCM_DATA_INIT$$Base,
-           (uint8_t *) &Load$$DTCM_DATA_INIT$$Base,
-           (uint32_t) &Image$$DTCM_DATA_INIT$$Length);
-  #endif
  #elif defined(__GNUC__)
     memcpy(&__data_start__, &__etext, ((uint32_t) &__data_end__ - (uint32_t) &__data_start__));
-  #if BSP_FEATURE_BSP_HAS_DTCM == 1
-    memcpy(&__dtcm_data_start__,
-           &__dtcm_data_init_start,
-           ((uint32_t) &__dtcm_data_end__ - (uint32_t) &__dtcm_data_start__));
-  #endif
  #elif defined(__ICCARM__)
-    memcpy((uint32_t *) __section_begin(".data"),
-           (uint32_t *) __section_begin(".data_init"),
+    memcpy((uint32_t *) __section_begin(".data"), (uint32_t *) __section_begin(".data_init"),
            (uint32_t) __section_size(".data"));
 
     /* Copy functions to be executed from RAM. */
@@ -324,18 +394,37 @@ void SystemInit (void)
     /* Copy main thread TLS to RAM. */
   #pragma section="__DLIB_PERTHREAD_init"
   #pragma section="__DLIB_PERTHREAD"
-    memcpy((uint32_t *) __section_begin("__DLIB_PERTHREAD"),
-           (uint32_t *) __section_begin("__DLIB_PERTHREAD_init"),
+    memcpy((uint32_t *) __section_begin("__DLIB_PERTHREAD"), (uint32_t *) __section_begin("__DLIB_PERTHREAD_init"),
            (uint32_t) __section_size("__DLIB_PERTHREAD_init"));
-  #if BSP_FEATURE_BSP_HAS_DTCM == 1
-    memcpy((uint32_t *) __section_begin(".dtcm_data"),
-           (uint32_t *) __section_begin(".dtcm_data_init"),
-           (uint32_t) __section_size(".dtcm_data"));
-  #endif
+ #endif
+
+    /* Initialize TCM memory. */
+ #if BSP_FEATURE_BSP_HAS_ITCM
+    bsp_init_itcm();
+ #endif
+ #if BSP_FEATURE_BSP_HAS_DTCM
+    bsp_init_dtcm();
+ #endif
+
+ #if defined(RENESAS_CORTEX_M85)
+
+    /* Invalidate I-Cache after initializing the .code_in_ram section. */
+    SCB_InvalidateICache();
+ #endif
+
+ #if defined(__GNUC__) && defined(__llvm__) && !defined(__CLANG_TIDY__) && !(defined __ARMCC_VERSION)
+
+    /* Initialize TLS memory. */
+    _init_tls(&__tls_base);
+    _set_tls(&__tls_base);
  #endif
 
     /* Initialize static constructors */
  #if defined(__ARMCC_VERSION)
+  #if defined(__ARMCC_USING_STANDARDLIB)
+    __rt_lib_init((uint32_t) &Image$$ARM_LIB_HEAP$$ZI$$Base,
+                  (uint32_t) &Image$$ARM_LIB_HEAP$$ZI$$Base + (uint32_t) &Image$$ARM_LIB_HEAP$$ZI$$Length);
+  #else
     int32_t count = Image$$INIT_ARRAY$$Limit - Image$$INIT_ARRAY$$Base;
     for (int32_t i = 0; i < count; i++)
     {
@@ -343,12 +432,14 @@ void SystemInit (void)
             (void (*)(void))((uint32_t) &Image$$INIT_ARRAY$$Base + (uint32_t) Image$$INIT_ARRAY$$Base[i]);
         p_init_func();
     }
+  #endif
  #elif defined(__GNUC__)
     int32_t count = __init_array_end - __init_array_start;
     for (int32_t i = 0; i < count; i++)
     {
         __init_array_start[i]();
     }
+
  #elif defined(__ICCARM__)
     void const * pibase = __section_begin("SHT$$PREINIT_ARRAY");
     void const * ilimit = __section_end("SHT$$INIT_ARRAY");
@@ -362,15 +453,15 @@ void SystemInit (void)
 #if BSP_FEATURE_RTC_IS_AVAILABLE || BSP_FEATURE_RTC_HAS_TCEN || BSP_FEATURE_SYSC_HAS_VBTICTLR
 
     /* For TZ project, it should be called by the secure application, whether RTC module is to be configured as secure or not. */
- #if !BSP_TZ_NONSECURE_BUILD
+ #if !BSP_TZ_NONSECURE_BUILD && !BSP_CFG_BOOT_IMAGE && !BSP_CFG_SKIP_INIT
 
     /* Perform RTC reset sequence to avoid unintended operation. */
     R_BSP_Init_RTC();
  #endif
 #endif
 
-#if !BSP_CFG_PFS_PROTECT
- #if BSP_TZ_SECURE_BUILD || (BSP_CFG_MCU_PART_SERIES == 8)
+#if !BSP_CFG_PFS_PROTECT && defined(R_PMISC) && !BSP_CFG_SKIP_INIT
+ #if BSP_TZ_SECURE_BUILD || (BSP_FEATURE_TZ_VERSION == 2 && FSP_PRIV_TZ_USE_SECURE_REGS)
     R_PMISC->PWPRS = 0;                              ///< Clear BOWI bit - writing to PFSWE bit enabled
     R_PMISC->PWPRS = 1U << BSP_IO_PWPR_PFSWE_OFFSET; ///< Set PFSWE bit - writing to PFS register enabled
  #else
@@ -379,14 +470,18 @@ void SystemInit (void)
  #endif
 #endif
 
-#if FSP_PRIV_TZ_USE_SECURE_REGS
+#if FSP_PRIV_TZ_USE_SECURE_REGS && !BSP_CFG_SKIP_INIT
 
-    /* Ensure that the PMSAR registers are reset (Soft reset does not reset PMSAR). */
+    /* Ensure that the PMSAR registers are set to their default value. */
     R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_SAR);
 
-    for (uint32_t i = 0; i < 9; i++)
+    for (uint32_t i = 0; i < BSP_FEATURE_BSP_NUM_PMSAR; i++)
     {
+ #if BSP_FEATURE_TZ_VERSION == 2
+        R_PMISC->PMSAR[i].PMSAR = 0U;
+ #else
         R_PMISC->PMSAR[i].PMSAR = UINT16_MAX;
+ #endif
     }
     R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
 #endif
@@ -395,6 +490,42 @@ void SystemInit (void)
 
     /* Initialize security features. */
     R_BSP_SecurityInit();
+#else
+ #if FSP_PRIV_TZ_USE_SECURE_REGS
+
+    /* Initialize peripherals to secure mode for flat projects */
+    R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_SAR);
+    R_PSCU->PSARB = 0;
+    R_PSCU->PSARC = 0;
+    R_PSCU->PSARD = 0;
+    R_PSCU->PSARE = 0;
+    R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_SAR);
+ #endif
+#endif
+
+#if BSP_CFG_DCACHE_ENABLED
+    bsp_init_mpu();
+
+    SCB_EnableDCache();
+#endif
+
+#if BSP_FEATURE_BSP_HAS_GRAPHICS_DOMAIN && !BSP_CFG_SKIP_INIT
+    if ((((0 == R_SYSTEM->PGCSAR) && FSP_PRIV_TZ_USE_SECURE_REGS) ||
+         ((1 == R_SYSTEM->PGCSAR) && BSP_TZ_NONSECURE_BUILD)) && (0 != R_SYSTEM->PDCTRGD))
+    {
+        /* Turn on graphics power domain.
+         * This requires MOCO to be enabled, but MOCO is always enabled after bsp_clock_init(). */
+        R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_OM_LPC_BATT);
+        FSP_HARDWARE_REGISTER_WAIT((R_SYSTEM->PDCTRGD & (R_SYSTEM_PDCTRGD_PDCSF_Msk | R_SYSTEM_PDCTRGD_PDPGSF_Msk)),
+                                   R_SYSTEM_PDCTRGD_PDPGSF_Msk);
+        R_SYSTEM->PDCTRGD = 0;
+        FSP_HARDWARE_REGISTER_WAIT((R_SYSTEM->PDCTRGD & (R_SYSTEM_PDCTRGD_PDCSF_Msk | R_SYSTEM_PDCTRGD_PDPGSF_Msk)), 0);
+        R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
+    }
+#endif
+
+#if BSP_FEATURE_CGC_HAS_EXTRACLK2 && !BSP_CFG_SKIP_INIT
+    bsp_internal_prv_enable_extra_power_domain();
 #endif
 
     /* Call Post C runtime initialization hook. */
@@ -506,6 +637,245 @@ static void bsp_init_uninitialized_vars (void)
     /* Set SystemCoreClock to MOCO */
     SystemCoreClock = BSP_MOCO_HZ;
  #endif
+}
+
+#endif
+
+#if BSP_CFG_C_RUNTIME_INIT
+ #if (BSP_FEATURE_BSP_HAS_ITCM || BSP_FEATURE_BSP_HAS_DTCM)
+
+/*******************************************************************************************************************//**
+ * 64-bit memory copy for Armv8.1-M using low overhead loop instructions.
+ *
+ * @param[in] destination copy destination start address, word aligned
+ * @param[in] source copy source start address, word aligned
+ * @param[in] count number of doublewords to copy
+ **********************************************************************************************************************/
+static void memcpy_64 (uint64_t * destination, const uint64_t * source, size_t count)
+{
+    uint64_t temp;
+    __asm volatile (
+        "wls lr, %[count], memcpy_64_loop_end_%=\n"
+  #if (defined(__ARMCC_VERSION) || defined(__GNUC__))
+
+        /* Align the branch target to a 64-bit boundary, a CM85 specific optimization. */
+        /* IAR does not support alignment control within inline assembly. */
+        ".balign 8\n"
+  #endif
+        "memcpy_64_loop_start_%=:\n"
+        "ldrd %Q[temp], %R[temp], [%[source]], #+8\n"
+        "strd %Q[temp], %R[temp], [%[destination]], #+8\n"
+        "le lr, memcpy_64_loop_start_%=\n"
+        "memcpy_64_loop_end_%=:"
+        :[destination] "+&r" (destination), [source] "+&r" (source), [temp] "=r" (temp)
+        :[count] "r" (count)
+        : "lr", "memory"
+        );
+
+    /* Suppress IAR warning: "Error[Pe550]: variable "temp" was set but never used" */
+    /* "temp" triggers this warning when it lacks an early-clobber modifier, which was removed to allow register reuse with "count". */
+    (void) temp;
+}
+
+ #endif
+
+ #if BSP_FEATURE_BSP_HAS_DTCM
+
+/*******************************************************************************************************************//**
+ * 64-bit memory set for Armv8.1-M using low overhead loop instructions.
+ *
+ * @param[in] destination set destination start address, word aligned
+ * @param[in] value value to set
+ * @param[in] count number of doublewords to set
+ **********************************************************************************************************************/
+static void memset_64 (uint64_t * destination, const uint64_t value, size_t count)
+{
+    __asm volatile (
+        "wls lr, %[count], memset_64_loop_end_%=\n"
+  #if (defined(__ARMCC_VERSION) || defined(__GNUC__))
+
+        /* Align the branch target to a 64-bit boundary, a CM85 specific optimization. */
+        /* IAR does not support alignment control within inline assembly. */
+        ".balign 8\n"
+  #endif
+        "memset_64_loop_start_%=:\n"
+        "strd %Q[value], %R[value], [%[destination]], #+8\n"
+        "le lr, memset_64_loop_start_%=\n"
+        "memset_64_loop_end_%=:"
+        :[destination] "+&r" (destination)
+        :[count] "r" (count), [value] "r" (value)
+        : "lr", "memory"
+        );
+}
+
+ #endif
+#endif
+
+#if BSP_CFG_C_RUNTIME_INIT
+ #if BSP_FEATURE_BSP_HAS_ITCM
+
+/*******************************************************************************************************************//**
+ * Initialize ITCM RAM from ROM image.
+ **********************************************************************************************************************/
+static void bsp_init_itcm (void)
+{
+    uint64_t       * itcm_destination;
+    const uint64_t * itcm_source;
+    size_t           count;
+
+  #if defined(__ARMCC_VERSION)
+    itcm_destination = (uint64_t *) &Image$$ITCM_DATA$$Base;
+    itcm_source      = (uint64_t *) &Load$$ITCM_DATA$$Base;
+    count            = ((uint32_t) &Load$$ITCM_PAD$$Limit - (uint32_t) &Load$$ITCM_DATA$$Base) / sizeof(uint64_t);
+  #elif defined(__GNUC__)
+    itcm_destination = (uint64_t *) &__itcm_data_start;
+    itcm_source      = (uint64_t *) &__itcm_data_init_start;
+    count            = ((uint32_t) &__itcm_data_init_end - (uint32_t) &__itcm_data_init_start) / sizeof(uint64_t);
+  #elif defined(__ICCARM__)
+    itcm_destination = (uint64_t *) &ITCM_DATA$$Base;
+    itcm_source      = (uint64_t *) &ITCM_DATA_INIT$$Base;
+    count            = ((uint32_t) &ITCM_DATA_INIT$$Limit - (uint32_t) &ITCM_DATA_INIT$$Base) / sizeof(uint64_t);
+  #endif
+
+    memcpy_64(itcm_destination, itcm_source, count);
+}
+
+ #endif
+
+ #if BSP_FEATURE_BSP_HAS_DTCM
+
+/*******************************************************************************************************************//**
+ * Initialize DTCM RAM from ROM image and zero initialize DTCM RAM BSS section.
+ **********************************************************************************************************************/
+static void bsp_init_dtcm (void)
+{
+    uint64_t       * dtcm_destination;
+    const uint64_t * dtcm_source;
+    size_t           count;
+    uint64_t       * dtcm_zero_destination;
+    size_t           count_zero;
+
+  #if defined(__ARMCC_VERSION)
+    dtcm_destination      = (uint64_t *) &Image$$DTCM_DATA$$Base;
+    dtcm_source           = (uint64_t *) &Load$$DTCM_DATA$$Base;
+    count                 = ((uint32_t) &Load$$DTCM_PAD$$Limit - (uint32_t) &Load$$DTCM_DATA$$Base) / sizeof(uint64_t);
+    dtcm_zero_destination = (uint64_t *) &Image$$DTCM_BSS$$Base;
+    count_zero            = ((uint32_t) &Image$$DTCM_BSS_PAD$$ZI$$Limit - (uint32_t) &Image$$DTCM_BSS$$Base) /
+                            sizeof(uint64_t);
+  #elif defined(__GNUC__)
+    dtcm_destination      = (uint64_t *) &__dtcm_data_start;
+    dtcm_source           = (uint64_t *) &__dtcm_data_init_start;
+    count                 = ((uint32_t) &__dtcm_data_init_end - (uint32_t) &__dtcm_data_init_start) / sizeof(uint64_t);
+    dtcm_zero_destination = (uint64_t *) &__dtcm_bss_start;
+    count_zero            = ((uint32_t) &__dtcm_bss_end - (uint32_t) &__dtcm_bss_start) / sizeof(uint64_t);
+  #elif defined(__ICCARM__)
+    dtcm_destination      = (uint64_t *) &DTCM_DATA$$Base;
+    dtcm_source           = (uint64_t *) &DTCM_DATA_INIT$$Base;
+    count                 = ((uint32_t) &DTCM_DATA_INIT$$Limit - (uint32_t) &DTCM_DATA_INIT$$Base) / sizeof(uint64_t);
+    dtcm_zero_destination = (uint64_t *) &DTCM_BSS$$Base;
+    count_zero            = ((uint32_t) &DTCM_BSS$$Limit - (uint32_t) &DTCM_BSS$$Base) / sizeof(uint64_t);
+  #endif
+
+    memcpy_64(dtcm_destination, dtcm_source, count);
+    memset_64(dtcm_zero_destination, 0, count_zero);
+}
+
+ #endif
+#endif
+
+#if BSP_CFG_DCACHE_ENABLED
+
+/*******************************************************************************************************************//**
+ * Initialize MPU for Armv8-M devices.
+ **********************************************************************************************************************/
+static void bsp_init_mpu (void)
+{
+    uint32_t nocache_start;
+    uint32_t nocache_end;
+ #if BSP_FEATURE_SDRAM_START_ADDRESS
+    uint32_t nocache_sdram_start;
+    uint32_t nocache_sdram_end;
+ #endif
+
+ #if defined(__ARMCC_VERSION)
+    nocache_start       = (uint32_t) &Image$$NOCACHE$$ZI$$Base;
+    nocache_end         = (uint32_t) &Image$$NOCACHE_PAD$$ZI$$Limit;
+ #if BSP_FEATURE_SDRAM_START_ADDRESS
+    nocache_sdram_start = (uint32_t) &Image$$NOCACHE_SDRAM$$ZI$$Base;
+    nocache_sdram_end   = (uint32_t) &Image$$NOCACHE_SDRAM_PAD$$ZI$$Limit;
+ #endif
+ #elif defined(__GNUC__)
+    nocache_start       = (uint32_t) &__nocache_start;
+    nocache_end         = (uint32_t) &__nocache_end;
+ #if BSP_FEATURE_SDRAM_START_ADDRESS
+    nocache_sdram_start = (uint32_t) &__nocache_sdram_start;
+    nocache_sdram_end   = (uint32_t) &__nocache_sdram_end;
+ #endif
+ #elif defined(__ICCARM__)
+    nocache_start       = (uint32_t) &NOCACHE$$Base;
+    nocache_end         = (uint32_t) &NOCACHE$$Limit;
+ #if BSP_FEATURE_SDRAM_START_ADDRESS
+    nocache_sdram_start = (uint32_t) &NOCACHE_SDRAM$$Base;
+    nocache_sdram_end   = (uint32_t) &NOCACHE_SDRAM$$Limit;
+ #endif
+ #endif
+
+    /* Maximum of eight attributes. */
+    const uint8_t bsp_mpu_mair_attributes[] =
+    {
+        /* Normal, Non-cacheable */
+        ARM_MPU_ATTR(ARM_MPU_ATTR_NON_CACHEABLE, ARM_MPU_ATTR_NON_CACHEABLE)
+    };
+
+    /* Maximum of eight regions. */
+    /* A region start address and end address must each be aligned to 32 bytes. A region must be a minimum of 32 bytes to be valid. */
+    /* A region end address is inclusive. */
+    const ARM_MPU_Region_t bsp_mpu_regions[] =
+    {
+        /* No-Cache Section */
+        {
+            .RBAR = ARM_MPU_RBAR(nocache_start, ARM_MPU_SH_NON, 0U, 0U, 1U),
+            .RLAR = ARM_MPU_RLAR((nocache_end - ARMV8_MPU_REGION_MIN_SIZE), 0U)
+        },
+
+ #if BSP_FEATURE_SDRAM_START_ADDRESS
+        /* SDRAM No-Cache Section */
+        {
+            .RBAR = ARM_MPU_RBAR(nocache_sdram_start, ARM_MPU_SH_NON, 0U, 0U, 1U),
+            .RLAR = ARM_MPU_RLAR((nocache_sdram_end - ARMV8_MPU_REGION_MIN_SIZE), 0U)
+        }
+ #endif
+    };
+
+    /* Initialize MPU_MAIR0 and MPU_MAIR1 from attributes table. */
+    uint8_t num_attr = (sizeof(bsp_mpu_mair_attributes) / sizeof(bsp_mpu_mair_attributes[0]));
+    for (uint8_t i = 0; i < num_attr; i++)
+    {
+        ARM_MPU_SetMemAttr(i, bsp_mpu_mair_attributes[i]);
+    }
+
+    /* Initialize MPU from configuration table. */
+    uint8_t num_regions = (sizeof(bsp_mpu_regions) / sizeof(bsp_mpu_regions[0]));
+    for (uint8_t i = 0; i < num_regions; i++)
+    {
+        uint32_t rbar = bsp_mpu_regions[i].RBAR;
+        uint32_t rlar = bsp_mpu_regions[i].RLAR;
+
+        /* Only configure regions of non-zero size. */
+        if ((((rlar & MPU_RLAR_LIMIT_Msk) >> MPU_RLAR_LIMIT_Pos) + ARMV8_MPU_REGION_MIN_SIZE) >
+            ((rbar & MPU_RBAR_BASE_Msk) >> MPU_RBAR_BASE_Pos))
+        {
+            ARM_MPU_SetRegion(i, rbar, rlar);
+        }
+    }
+
+    /*
+     * SHCSR.MEMFAULTENA is set inside ARM_MPU_Enable().
+     * Leave SHPR1.PRI_4 at reset value of zero.
+     * Leave MPU_CTRL.HFNMIENA at reset value of zero.
+     * Provide MPU_CTRL_PRIVDEFENA_Msk to ARM_MPU_Enable() to set MPU_CTRL.PRIVDEFENA.
+     */
+    ARM_MPU_Enable(MPU_CTRL_PRIVDEFENA_Msk);
 }
 
 #endif
