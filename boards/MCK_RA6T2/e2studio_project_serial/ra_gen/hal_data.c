@@ -69,14 +69,14 @@ const uart_cfg_t g_uart0_cfg = { .channel = 0, .data_bits = UART_DATA_BITS_8,
 const uart_instance_t g_uart0 = { .p_ctrl = &g_uart0_ctrl,
 		.p_cfg = &g_uart0_cfg, .p_api = &g_uart_on_sci_b };
 agt_instance_ctrl_t g_timer0_ctrl;
-const agt_extended_cfg_t g_timer0_extend =
-		{ .count_source = AGT_CLOCK_PCLKB, .agto = AGT_PIN_CFG_DISABLED,
-				.agtoab_settings_b.agtoa = AGT_PIN_CFG_DISABLED,
-				.agtoab_settings_b.agtob = AGT_PIN_CFG_DISABLED,
-				.measurement_mode = AGT_MEASURE_DISABLED, .agtio_filter =
-						AGT_AGTIO_FILTER_NONE, .enable_pin =
-						AGT_ENABLE_PIN_NOT_USED, .trigger_edge =
-						AGT_TRIGGER_EDGE_RISING, };
+const agt_extended_cfg_t g_timer0_extend = { .count_source = AGT_CLOCK_PCLKB,
+		.agto = AGT_PIN_CFG_DISABLED, .agtoab_settings_b.agtoa =
+				AGT_PIN_CFG_DISABLED, .agtoab_settings_b.agtob =
+				AGT_PIN_CFG_DISABLED, .measurement_mode = AGT_MEASURE_DISABLED,
+		.agtio_filter = AGT_AGTIO_FILTER_NONE, .enable_pin =
+				AGT_ENABLE_PIN_NOT_USED,
+		.trigger_edge = AGT_TRIGGER_EDGE_RISING, .counter_bit_width =
+				AGT_COUNTER_BIT_WIDTH_32, };
 const timer_cfg_t g_timer0_cfg = { .mode = TIMER_MODE_PERIODIC,
 /* Actual period: 0.0001 seconds. Actual duty: 50%. */.period_counts =
 		(uint32_t) 0x1770, .duty_cycle_counts = 0xbb8, .source_div =
