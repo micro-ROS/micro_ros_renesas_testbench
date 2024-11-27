@@ -126,7 +126,7 @@
 #define RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS      (0xA500U)
 
 /* Determine which stack monitor to use. */
-#ifdef __ARM_ARCH_8M_MAIN__            // CM33
+#if defined(RENESAS_CORTEX_M33) || defined(RENESAS_CORTEX_M85)
  #define RM_FREERTOS_PORT_PSPLIM_PRESENT               (1)
  #define RM_FREERTOS_PORT_SPMON_PRESENT                (0)
 #else
@@ -171,7 +171,7 @@
 #endif
 
 /* CM23 does not support the IT instruction. */
-#if defined(__ARM_ARCH_7EM__) || defined(__ARM_ARCH_8M_MAIN__) // CM4 or CM33
+#if defined(RENESAS_CORTEX_M4) || defined(RENESAS_CORTEX_M33) || defined(RENESAS_CORTEX_M85)
  #define RM_FREERTOS_PORT_ISA_IT_SUPPORTED             (1)
 #else
  #define RM_FREERTOS_PORT_ISA_IT_SUPPORTED             (0)
@@ -263,18 +263,6 @@ static uint32_t ulTimerCountsForOneTick = 0;
  */
 #if (configUSE_TICKLESS_IDLE == 1)
 static uint32_t xMaximumPossibleSuppressedTicks = 0;
-#endif
-
-/*
- * Used by the portASSERT_IF_INTERRUPT_PRIORITY_INVALID() macro to ensure
- * FreeRTOS API functions are not called from interrupts that have been assigned
- * a priority above configMAX_SYSCALL_INTERRUPT_PRIORITY.
- */
-#if (configASSERT_DEFINED == 1)
-static uint8_t ucMaxSysCallPriority = 0;
- #ifdef __ARM_ARCH_7EM__
-static uint32_t ulMaxPRIGROUPValue = 0;
- #endif
 #endif
 
 /*-----------------------------------------------------------*/
@@ -874,10 +862,9 @@ void SysTick_Handler (void)
     /* Reset the SysTick reload value if it was reconfigured for a long sleep in tickless idle. */
     if (g_reset_systick)
     {
-        /* Subtract one because we are in the SysTick_Handler already and one will be added in xTaskIncrementTick. */
-        uint32_t completed_ticks         = (g_reset_systick / ulTimerCountsForOneTick) - 1U;
+        uint32_t completed_ticks         = (g_reset_systick / ulTimerCountsForOneTick);
         uint32_t tick_fraction_remaining = g_reset_systick - SysTick->VAL;
-        rm_freertos_port_reset_systick(tick_fraction_remaining, completed_ticks);
+        rm_freertos_port_reset_systick(ulTimerCountsForOneTick - tick_fraction_remaining, completed_ticks);
     }
 #endif
 
@@ -1139,75 +1126,6 @@ static void prvTaskExitError (void)
  **********************************************************************************************************************/
 BaseType_t xPortStartScheduler (void)
 {
-#if (configASSERT_DEFINED == 1)
- #ifdef __ARM_ARCH_7EM__               // CM4
-    {
-  #ifdef __ARM_ARCH_7EM__              // CM4
-        volatile uint8_t         ulOriginalPriority;
-        volatile uint8_t * const pucFirstUserPriorityRegister = &NVIC->IP[0];
-  #else
-        volatile uint32_t         ulOriginalPriority;
-        volatile uint32_t * const pucFirstUserPriorityRegister = &NVIC->IPR[0];
-  #endif
-        volatile uint32_t ucMaxPriorityValue;
-
-        /* Determine the maximum priority from which ISR safe FreeRTOS API
-         * functions can be called.  ISR safe functions are those that end in
-         * "FromISR".  FreeRTOS maintains separate thread and ISR API functions to
-         * ensure interrupt entry is as fast and simple as possible.
-         *
-         * Save the interrupt priority value that is about to be clobbered. */
-        ulOriginalPriority = *pucFirstUserPriorityRegister;
-
-        /* Determine the number of priority bits available.  First write to all
-         * possible bits. */
-        *pucFirstUserPriorityRegister = UINT8_MAX;
-
-        /* Read the value back to see how many bits stuck. */
-        ucMaxPriorityValue = *pucFirstUserPriorityRegister;
-
-        /* Use the same mask on the maximum system call priority. */
-        ucMaxSysCallPriority = (configMAX_SYSCALL_INTERRUPT_PRIORITY & ucMaxPriorityValue) >> (8 - __NVIC_PRIO_BITS);
-
-        /* Calculate the maximum acceptable priority group value for the number
-         * of bits read back. */
-        ulMaxPRIGROUPValue = SCB_AIRCR_PRIGROUP_Msk >> SCB_AIRCR_PRIGROUP_Pos;
-        while ((ucMaxPriorityValue & portTOP_BIT_OF_BYTE) == portTOP_BIT_OF_BYTE)
-        {
-            ulMaxPRIGROUPValue--;
-            ucMaxPriorityValue <<= 1U;
-        }
-
-  #ifdef __NVIC_PRIO_BITS
-        {
-            /* Check the CMSIS configuration that defines the number of
-             * priority bits matches the number of priority bits actually queried
-             * from the hardware. */
-            configASSERT((portMAX_PRIGROUP_BITS - ulMaxPRIGROUPValue) == __NVIC_PRIO_BITS);
-        }
-  #endif
-
-  #ifdef configPRIO_BITS
-        {
-            /* Check the FreeRTOS configuration that defines the number of
-             * priority bits matches the number of priority bits actually queried
-             * from the hardware. */
-            configASSERT((portMAX_PRIGROUP_BITS - ulMaxPRIGROUPValue) == configPRIO_BITS);
-        }
-  #endif
-
-        /* Shift the priority group value back to its position within the AIRCR
-         * register. */
-        ulMaxPRIGROUPValue <<= portPRIGROUP_SHIFT;
-        ulMaxPRIGROUPValue  &= portPRIORITY_GROUP_MASK;
-
-        /* Restore the clobbered interrupt priority register to its original
-         * value. */
-        *pucFirstUserPriorityRegister = ulOriginalPriority;
-    }
- #endif
-#endif
-
     /* Make PendSV the lowest priority interrupt. */
     NVIC_SetPriority(PendSV_IRQn, UINT8_MAX);
 
@@ -1298,7 +1216,9 @@ void vPortExitCritical (void)
  **********************************************************************************************************************/
 void rm_freertos_port_sleep_preserving_lpm (uint32_t xExpectedIdleTime)
 {
+ #if !defined(BSP_CFG_RTOS_IDLE_SLEEP) || BSP_CFG_RTOS_IDLE_SLEEP
     uint32_t saved_lpm_state = 0U;
+ #endif
 
     /* Sleep until something happens.  configPRE_SLEEP_PROCESSING() can
      * set its parameter to 0 to indicate that its implementation contains
@@ -1308,16 +1228,18 @@ void rm_freertos_port_sleep_preserving_lpm (uint32_t xExpectedIdleTime)
     configPRE_SLEEP_PROCESSING(xExpectedIdleTime);
     if (xExpectedIdleTime > 0)
     {
+ #if !defined(BSP_CFG_RTOS_IDLE_SLEEP) || BSP_CFG_RTOS_IDLE_SLEEP
+
         /* Save LPM Mode */
- #if BSP_FEATURE_LPM_HAS_SBYCR_SSBY
+  #if BSP_FEATURE_LPM_HAS_SBYCR_SSBY
         saved_lpm_state = R_SYSTEM->SBYCR;
- #elif BSP_FEATURE_LPM_HAS_LPSCR
+  #elif BSP_FEATURE_LPM_HAS_LPSCR
         saved_lpm_state = R_SYSTEM->LPSCR;
- #endif
+  #endif
 
         /** Check if the LPM peripheral is set to go to Software Standby mode with WFI instruction.
          *  If so, change the LPM peripheral to go to Sleep mode. */
- #if BSP_FEATURE_LPM_HAS_SBYCR_SSBY
+  #if BSP_FEATURE_LPM_HAS_SBYCR_SSBY
         if (R_SYSTEM_SBYCR_SSBY_Msk & saved_lpm_state)
         {
             /* Save register protect value */
@@ -1333,22 +1255,39 @@ void rm_freertos_port_sleep_preserving_lpm (uint32_t xExpectedIdleTime)
             R_SYSTEM->PRCR = (uint16_t) (RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS | saved_prcr);
         }
 
- #elif BSP_FEATURE_LPM_HAS_LPSCR
+  #elif BSP_FEATURE_LPM_HAS_LPSCR
         if (R_SYSTEM_LPSCR_LPMD_Msk & saved_lpm_state)
         {
+   #if BSP_TZ_NONSECURE_BUILD
+
+            /* Save register protect value */
+            uint32_t saved_prcr = R_SYSTEM->PRCR_NS;
+
+            /* Unlock LPM peripheral registers */
+            R_SYSTEM->PRCR_NS = RM_FREERTOS_PORT_UNLOCK_LPM_REGISTER_ACCESS;
+   #else
+
             /* Save register protect value */
             uint32_t saved_prcr = R_SYSTEM->PRCR;
 
             /* Unlock LPM peripheral registers */
             R_SYSTEM->PRCR = RM_FREERTOS_PORT_UNLOCK_LPM_REGISTER_ACCESS;
+   #endif
 
             /* Clear to set to sleep low power mode (not standby or deep standby) */
             R_SYSTEM->LPSCR = 0U;
 
+   #if BSP_TZ_NONSECURE_BUILD
+
+            /* Restore register lock */
+            R_SYSTEM->PRCR_NS = (uint16_t) (RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS | saved_prcr);
+   #else
+
             /* Restore register lock */
             R_SYSTEM->PRCR = (uint16_t) (RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS | saved_prcr);
+   #endif
         }
- #endif
+  #endif
 
         /**
          * DSB should be last instruction executed before WFI
@@ -1364,6 +1303,14 @@ void rm_freertos_port_sleep_preserving_lpm (uint32_t xExpectedIdleTime)
 
         /* Instruction Synchronization Barrier. */
         __ISB();
+ #else
+
+        /* Wait for an interrupt to be pending without going to sleep if BSP is configured to not sleep when idle for RTOS. */
+        while (0 == (SCB->ICSR & SCB_ICSR_VECTPENDING_Msk))
+        {
+            R_BSP_SoftwareDelay(1, BSP_DELAY_UNITS_MICROSECONDS);;
+        }
+ #endif                                /* !defined(BSP_CFG_RTOS_IDLE_SLEEP) || BSP_CFG_RTOS_IDLE_SLEEP */
 
         /* Re-enable interrupts to allow the interrupt that brought the MCU
          * out of sleep mode to execute immediately. This will not cause a
@@ -1377,9 +1324,11 @@ void rm_freertos_port_sleep_preserving_lpm (uint32_t xExpectedIdleTime)
 
     configPOST_SLEEP_PROCESSING(xExpectedIdleTime);
 
+ #if !defined(BSP_CFG_RTOS_IDLE_SLEEP) || BSP_CFG_RTOS_IDLE_SLEEP
+
     /** Check if the LPM peripheral was supposed to go to Software Standby mode with WFI instruction.
      *  If yes, restore the LPM peripheral setting. */
- #if BSP_FEATURE_LPM_HAS_SBYCR_SSBY
+  #if BSP_FEATURE_LPM_HAS_SBYCR_SSBY
     if (R_SYSTEM_SBYCR_SSBY_Msk & saved_lpm_state)
     {
         /* Save register protect value */
@@ -1395,21 +1344,39 @@ void rm_freertos_port_sleep_preserving_lpm (uint32_t xExpectedIdleTime)
         R_SYSTEM->PRCR = (uint16_t) (RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS | saved_prcr);
     }
 
- #elif BSP_FEATURE_LPM_HAS_LPSCR
+  #elif BSP_FEATURE_LPM_HAS_LPSCR
     if (R_SYSTEM_LPSCR_LPMD_Msk & saved_lpm_state)
     {
+   #if BSP_TZ_NONSECURE_BUILD
+
+        /* Save register protect value */
+        uint32_t saved_prcr = R_SYSTEM->PRCR_NS;
+
+        /* Unlock LPM peripheral registers */
+        R_SYSTEM->PRCR_NS = RM_FREERTOS_PORT_UNLOCK_LPM_REGISTER_ACCESS;
+   #else
+
         /* Save register protect value */
         uint32_t saved_prcr = R_SYSTEM->PRCR;
 
         /* Unlock LPM peripheral registers */
         R_SYSTEM->PRCR = RM_FREERTOS_PORT_UNLOCK_LPM_REGISTER_ACCESS;
+   #endif
 
         /* Restore LPM Mode */
         R_SYSTEM->LPSCR = (uint8_t) saved_lpm_state;
 
+   #if BSP_TZ_NONSECURE_BUILD
+
+        /* Restore register lock */
+        R_SYSTEM->PRCR_NS = (uint16_t) (RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS | saved_prcr);
+   #else
+
         /* Restore register lock */
         R_SYSTEM->PRCR = (uint16_t) (RM_FREERTOS_PORT_LOCK_LPM_REGISTER_ACCESS | saved_prcr);
+   #endif
     }
+  #endif
  #endif
 }
 
@@ -1581,10 +1548,10 @@ void vPortValidateInterruptPriority (void)
          * The following links provide detailed information:
          * http://www.freertos.org/RTOS-Cortex-M3-M4.html
          * http://www.freertos.org/FAQHelp.html */
-        configASSERT(ulCurrentPriority >= ucMaxSysCallPriority);
+        configASSERT(ulCurrentPriority >= (configMAX_SYSCALL_INTERRUPT_PRIORITY) >> (8 - __NVIC_PRIO_BITS));
     }
 
- #ifdef __ARM_ARCH_7EM__
+ #ifndef RENESAS_CORTEX_M23
 
     /* Priority grouping:  The interrupt controller (NVIC) allows the bits
      * that define each interrupt's priority to be split between bits that
@@ -1599,7 +1566,7 @@ void vPortValidateInterruptPriority (void)
      * scheduler.  Note however that some vendor specific peripheral libraries
      * assume a non-zero priority group setting, in which cases using a value
      * of zero will result in unpredictable behaviour. */
-    configASSERT(NVIC_GetPriorityGrouping() <= ulMaxPRIGROUPValue);
+    configASSERT(NVIC_GetPriorityGrouping() <= (8 - __NVIC_PRIO_BITS) - 1);
  #endif
 }
 

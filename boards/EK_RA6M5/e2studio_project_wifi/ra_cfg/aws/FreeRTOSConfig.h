@@ -12,6 +12,9 @@
  *
  * See http://www.freertos.org/a00110.html
  *----------------------------------------------------------*/
+#ifndef FREERTOS_CONFIG_H
+#define FREERTOS_CONFIG_H
+
 #include "bsp_api.h"
 
 /* Common macro for FSP header files. There is also a corresponding FSP_FOOTER macro at the end of this file. */
@@ -71,6 +74,9 @@ FSP_HEADER
 #ifndef configUSE_TASK_NOTIFICATIONS
 #define configUSE_TASK_NOTIFICATIONS (1)
 #endif
+#ifndef configTASK_NOTIFICATION_ARRAY_ENTRIES
+#define configTASK_NOTIFICATION_ARRAY_ENTRIES (1)
+#endif
 #ifndef configUSE_MUTEXES
 #define configUSE_MUTEXES (1)
 #endif
@@ -110,6 +116,9 @@ FSP_HEADER
 #ifndef configMESSAGE_BUFFER_LENGTH_TYPE
 #define configMESSAGE_BUFFER_LENGTH_TYPE size_t
 #endif
+#ifndef configHEAP_CLEAR_MEMORY_ON_FREE
+#define configHEAP_CLEAR_MEMORY_ON_FREE  0
+#endif
 #ifndef configSUPPORT_STATIC_ALLOCATION
 #define configSUPPORT_STATIC_ALLOCATION (1)
 #endif
@@ -127,6 +136,9 @@ FSP_HEADER
 #endif
 #ifndef configUSE_CO_ROUTINES
 #define configUSE_CO_ROUTINES (0)
+#endif
+#ifndef configMAX_CO_ROUTINE_PRIORITIES
+#define configMAX_CO_ROUTINE_PRIORITIES  (2)
 #endif
 #ifndef configUSE_TIMERS
 #define configUSE_TIMERS (1)
@@ -218,10 +230,15 @@ FSP_HEADER
 #ifndef configLOGGING_INCLUDE_TIME_AND_TASK_NAME
 #define configLOGGING_INCLUDE_TIME_AND_TASK_NAME   (0)
 #endif
-#ifndef configLOGGING_MAX_MESSAGE_LENGTH
-#define configLOGGING_MAX_MESSAGE_LENGTH           (192)
+#ifndef LIBRARY_LOG_NAME
+#define LIBRARY_LOG_NAME                           "Log Name"
+#endif
+#ifndef LIBRARY_LOG_LEVEL
+#define LIBRARY_LOG_LEVEL                          (LOG_NONE)
 #endif
 
 /* Common macro for FSP header files. There is also a corresponding FSP_HEADER macro at the top of this file. */
 FSP_FOOTER
+
+#endif /* FREERTOS_CONFIG_H */
 #endif /* FREERTOSCONFIG_H_ */
