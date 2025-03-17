@@ -25,8 +25,7 @@ if(BUILD_TESTING)
   set(ament_cmake_copyright_FOUND TRUE) # No copyright header check since link to NOTICE file is not recognized properly.
 
   find_package(fastcdr REQUIRED)
-  find_package(fastrtps REQUIRED)
-  find_package(fastrtps_cmake_module REQUIRED)
+  find_package(fastdds REQUIRED)
   find_package(microxrcedds_agent REQUIRED)
   find_package(rclcpp REQUIRED)
   find_package(rclcpp_action REQUIRED)
@@ -52,12 +51,12 @@ if(BUILD_TESTING)
 
   target_link_libraries(${PROJECT_NAME}_test
     fastcdr
-    fastrtps
+    fastdds
     microxrcedds_agent)
 
   ament_target_dependencies(${PROJECT_NAME}_test
     fastcdr
-    fastrtps
+    fastdds
     microxrcedds_agent
     rclcpp
     rclcpp_action
