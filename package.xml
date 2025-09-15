@@ -4,7 +4,8 @@
   <name>micro_ros_renesas_testbench</name>
   <version>0.0.1</version>
   <description>micro-ROS on-the-loop testing for Renesas MCU</description>
-  <maintainer email="pablogarrido@eprosima.com">Pablo Garrido</maintainer>
+  <maintainer email="eugeniocollado@eprosima.com">Eugenio Collado</maintainer>
+  <maintainer email="carlosespinoza@eprosima.com">Carlos Espinoza</maintainer>
   <license>Apache License 2.0</license>
 
   <depend>rosidl_typesupport_introspection_c</depend>
