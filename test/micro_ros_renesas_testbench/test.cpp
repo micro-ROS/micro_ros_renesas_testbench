@@ -400,7 +400,8 @@ TEST_P(HardwareTestAllTransports, ServiceServer) {
 
         auto result = client->async_send_request(request);
 
-        ASSERT_EQ(rclcpp::spin_until_future_complete(node, result, default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);
+        auto timeout = std::chrono::duration<int64_t, std::milli>(15000);
+        ASSERT_EQ(rclcpp::spin_until_future_complete(node, result, timeout), rclcpp::FutureReturnCode::SUCCESS);
         ASSERT_EQ(result.get()->sum, request->a + request->b);
     }
 }
@@ -666,10 +667,10 @@ INSTANTIATE_TEST_SUITE_P(
     PublisherRateTest,
         ::testing::Combine(
         ::testing::Values(
-            TestAgent::Transport::CAN_TRANSPORT, 
-            TestAgent::Transport::USB_TRANSPORT, 
-            TestAgent::Transport::SERIAL_TRANSPORT, 
-            TestAgent::Transport::UDP_THREADX_TRANSPORT, 
+            TestAgent::Transport::CAN_TRANSPORT,
+            TestAgent::Transport::USB_TRANSPORT,
+            TestAgent::Transport::SERIAL_TRANSPORT,
+            TestAgent::Transport::UDP_THREADX_TRANSPORT,
             TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
             TestAgent::Transport::TCP_FREERTOS_TRANSPORT),
         ::testing::Values(10, 50, 100)));
@@ -678,10 +679,10 @@ INSTANTIATE_TEST_SUITE_P(
     RenesasTest,
     HardwareTestAllTransports,
     ::testing::Values(
-        TestAgent::Transport::CAN_TRANSPORT, 
-        TestAgent::Transport::USB_TRANSPORT, 
-        TestAgent::Transport::SERIAL_TRANSPORT, 
-        TestAgent::Transport::UDP_THREADX_TRANSPORT, 
+        TestAgent::Transport::CAN_TRANSPORT,
+        TestAgent::Transport::USB_TRANSPORT,
+        TestAgent::Transport::SERIAL_TRANSPORT,
+        TestAgent::Transport::UDP_THREADX_TRANSPORT,
         TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
         TestAgent::Transport::TCP_FREERTOS_TRANSPORT));
 
@@ -697,10 +698,10 @@ INSTANTIATE_TEST_SUITE_P(
     ContinousFragment,
         ::testing::Combine(
         ::testing::Values(
-            TestAgent::Transport::CAN_TRANSPORT, 
-            TestAgent::Transport::USB_TRANSPORT, 
-            TestAgent::Transport::SERIAL_TRANSPORT, 
-            TestAgent::Transport::UDP_THREADX_TRANSPORT, 
+            TestAgent::Transport::CAN_TRANSPORT,
+            TestAgent::Transport::USB_TRANSPORT,
+            TestAgent::Transport::SERIAL_TRANSPORT,
+            TestAgent::Transport::UDP_THREADX_TRANSPORT,
             TestAgent::Transport::UDP_FREERTOS_TRANSPORT,
             TestAgent::Transport::TCP_FREERTOS_TRANSPORT),
         ::testing::Values(4095, 30000, 100000)));
