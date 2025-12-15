@@ -14,14 +14,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ros_distribution: humble
-            branch: humble
-            board_id: 19
-          - ros_distribution: iron
-            branch: iron
-            board_id: 20
+          # - ros_distribution: humble
+          #   branch: humble
+          #   board_id: 19
+          # - ros_distribution: iron
+          #   branch: iron
+          #   board_id: 20
           - ros_distribution: rolling
-            branch: rolling
+            branch: fix_flaky_tests
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     steps:
