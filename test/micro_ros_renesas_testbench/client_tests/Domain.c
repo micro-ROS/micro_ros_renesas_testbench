@@ -16,14 +16,15 @@
 #include <time.h>
 
 void microros_app(void);
-void timer_callback(rcl_timer_t * timer, int64_t last_call_time);
+void timer_callback(rcl_timer_t * timer, int64_t last_call_time, uintptr_t arg);
 
 rcl_publisher_t publisher;
 std_msgs__msg__Int32 msg;
 
-void timer_callback(rcl_timer_t * timer, int64_t last_call_time)
+void timer_callback(rcl_timer_t * timer, int64_t last_call_time, uintptr_t arg)
 {
 	(void) last_call_time;
+	(void) arg;
 	if (timer != NULL) {
 		rcl_publish(&publisher, &msg, NULL);
 		msg.data++;

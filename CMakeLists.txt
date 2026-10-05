@@ -52,19 +52,14 @@ if(BUILD_TESTING)
   target_link_libraries(${PROJECT_NAME}_test
     fastcdr
     fastdds
-    microxrcedds_agent)
-
-  ament_target_dependencies(${PROJECT_NAME}_test
-    fastcdr
-    fastdds
     microxrcedds_agent
-    rclcpp
-    rclcpp_action
-    rmw
-    std_msgs
-    sensor_msgs
-    tf2_msgs
-    example_interfaces
+    rclcpp::rclcpp
+    rclcpp_action::rclcpp_action
+    rmw::rmw
+    ${std_msgs_TARGETS}
+    ${sensor_msgs_TARGETS}
+    ${tf2_msgs_TARGETS}
+    ${example_interfaces_TARGETS}
   )
 endif()
 
