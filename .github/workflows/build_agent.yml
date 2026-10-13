@@ -24,7 +24,14 @@ jobs:
             branch: rolling
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
+    timeout-minutes: 60
     steps:
+    - name: Runner health
+      run: |
+        uptime
+        free -h
+        swapon --show
+        df -h . /dev/shm
     - uses: actions/checkout@v4
       with:
         path: ros_ws/src/micro_ros_renesas_testbench
@@ -38,11 +45,16 @@ jobs:
         rm -rf src/micro_ros_msgs
         vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS agent
+      timeout-minutes: 45
+      env:
+        # The runners have 4 GB of RAM and no swap: limit to one package and two compile jobs at a time
+        # to avoid running out of memory, which stalls the board and takes the runner offline.
+        MAKEFLAGS: "-j2"
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
         # The P2P profile builds a Micro XRCE-DDS Client and micro-CDR that the tests do not use,
         # and their pinned versions change with each agent release. micro-ROS-Agent disables it too.
-        colcon build --cmake-clean-cache --cmake-force-configure --packages-up-to microxrcedds_agent --cmake-args -DUAGENT_P2P_PROFILE=OFF
+        colcon build --parallel-workers 1 --cmake-clean-cache --cmake-force-configure --packages-up-to microxrcedds_agent --cmake-args -DUAGENT_P2P_PROFILE=OFF
         source install/local_setup.bash
-        colcon build --packages-up-to micro_ros_agent --cmake-args -DMICROROSAGENT_SUPERBUILD=OFF
+        colcon build --parallel-workers 1 --packages-up-to micro_ros_agent --cmake-args -DMICROROSAGENT_SUPERBUILD=OFF
