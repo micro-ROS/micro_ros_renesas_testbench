@@ -24,7 +24,20 @@ jobs:
             branch: rolling
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
+    timeout-minutes: 240
     steps:
+    - name: Runner health
+      run: |
+        uptime
+        free -h
+        swapon --show
+        df -h . /dev/shm
+    # Clean shm segments (RAM) in /dev/shm left by previous runs killed by a crash, timeout or cancellation
+    - name: Clean stale Fast DDS shared memory
+      run: |
+        source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
+        fastdds shm clean || true
+        du -sh /dev/shm
     - name: Create ROS 2 workspace
       run: |
         rm -rf ros_ws/src ros_ws/log
@@ -39,9 +52,15 @@ jobs:
         cd ros_ws
         vcs import --force --shallow --input src/micro_ros_renesas_testbench/requirements.repos src
     - name: Build micro-ROS library
+      timeout-minutes: 90
       run: |
         bash ros_ws/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/build_microros.sh
     - name: Build and run tests
+      timeout-minutes: 60
+      env:
+        # The runners have 4 GB of RAM and no swap, compiling the tests with one job per core can run
+        # out of memory, which stalls the board and takes the runner offline
+        MAKEFLAGS: "-j2"
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
@@ -50,6 +69,7 @@ jobs:
         # colcon test --event-handlers console_direct+ --packages-select=micro_ros_renesas_testbench --return-code-on-test-failure --ctest-args -E "(cpplint)|(lint_cmake)|(uncrustify)|(xmllint)"
         RMW_IMPLEMENTATION=rmw_fastrtps_cpp ./build/micro_ros_renesas_testbench/micro_ros_renesas_testbench_test --gtest_filter=-HardwareTestMemoryProfiling*:*ThroughputTest*:*BenchmarkTestAllTransports*
     - name: Run profiling
+      timeout-minutes: 60
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
@@ -61,3 +81,10 @@ jobs:
       with:
         name: benchmark-results-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
         path: ros_ws/*.txt
+    - name: Post-run cleanup
+      if: always()
+      run: |
+        source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
+        fastdds shm clean || true
+        du -sh /dev/shm
+        free -h
