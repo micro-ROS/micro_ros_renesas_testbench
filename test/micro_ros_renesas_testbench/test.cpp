@@ -464,43 +464,63 @@ TEST_P(HardwareTestAllTransports, Parameters) {
 
     ASSERT_EQ(check_string_vector(list_params.names, param_names, true), param_names.size());
 
-    bool param_bool_value = parameters_client->get_parameter("param1", false);
-    ASSERT_EQ(param_bool_value, true);
+    // Bound every service call: the client defaults to an infinite timeout, so a lost
+    // reply would block the whole test binary. On timeout an empty vector is returned.
+    const auto param_timeout = std::chrono::duration<int64_t, std::milli>(5000);
+
+    std::cout << "Getting param1" << std::endl;
+    auto params = parameters_client->get_parameters({"param1"}, param_timeout);
+    ASSERT_EQ(params.size(), 1u) << "No reply getting param1";
+    ASSERT_EQ(params[0].as_bool(), true);
 
     // External set bool
+    std::cout << "Setting param1 to false" << std::endl;
     std::vector<rclcpp::Parameter> new_params = {rclcpp::Parameter("param1", false)};
-    auto result = parameters_client->set_parameters(new_params);
+    auto result = parameters_client->set_parameters(new_params, param_timeout);
+    ASSERT_EQ(result.size(), 1u) << "No reply setting param1";
     ASSERT_TRUE(result[0].successful);
 
     // Check set param
-    param_bool_value = parameters_client->get_parameter("param1", false);
-    ASSERT_EQ(param_bool_value, false);
+    std::cout << "Getting param1" << std::endl;
+    params = parameters_client->get_parameters({"param1"}, param_timeout);
+    ASSERT_EQ(params.size(), 1u) << "No reply getting param1";
+    ASSERT_EQ(params[0].as_bool(), false);
 
     // External fail type
+    std::cout << "Setting param1 to a double" << std::endl;
     new_params.clear();
     new_params.push_back(rclcpp::Parameter("param1", static_cast<double>(12.2)));
-    result = parameters_client->set_parameters(new_params);
+    result = parameters_client->set_parameters(new_params, param_timeout);
+    ASSERT_EQ(result.size(), 1u) << "No reply setting param1";
     ASSERT_FALSE(result[0].successful);
 
     // External set int
+    std::cout << "Setting param2 to 12" << std::endl;
     new_params.clear();
     new_params.push_back(rclcpp::Parameter("param2", 12));
-    result = parameters_client->set_parameters(new_params);
+    result = parameters_client->set_parameters(new_params, param_timeout);
+    ASSERT_EQ(result.size(), 1u) << "No reply setting param2";
     ASSERT_TRUE(result[0].successful);
 
     // Check set param
-    int param_int_value = parameters_client->get_parameter("param2", 0);
-    ASSERT_EQ(param_int_value, 12);
+    std::cout << "Getting param2" << std::endl;
+    params = parameters_client->get_parameters({"param2"}, param_timeout);
+    ASSERT_EQ(params.size(), 1u) << "No reply getting param2";
+    ASSERT_EQ(params[0].as_int(), 12);
 
     // External set double
+    std::cout << "Setting param3 to 12.12" << std::endl;
     new_params.clear();
     new_params.push_back(rclcpp::Parameter("param3", 12.12));
-    result = parameters_client->set_parameters(new_params);
+    result = parameters_client->set_parameters(new_params, param_timeout);
+    ASSERT_EQ(result.size(), 1u) << "No reply setting param3";
     ASSERT_TRUE(result[0].successful);
 
     // Check set param
-    double param_double_value = parameters_client->get_parameter("param3", 0.0);
-    ASSERT_EQ(param_double_value, 12.12);
+    std::cout << "Getting param3" << std::endl;
+    params = parameters_client->get_parameters({"param3"}, param_timeout);
+    ASSERT_EQ(params.size(), 1u) << "No reply getting param3";
+    ASSERT_EQ(params[0].as_double(), 12.12);
 
     // External get types
     const std::vector<std::string> types_query = {
@@ -508,8 +528,9 @@ TEST_P(HardwareTestAllTransports, Parameters) {
         "param2",
         "param3"
     };
-    auto types = parameters_client->get_parameter_types(types_query);
-    ASSERT_EQ(types.size(), 3u);
+    std::cout << "Getting parameter types" << std::endl;
+    auto types = parameters_client->get_parameter_types(types_query, param_timeout);
+    ASSERT_EQ(types.size(), 3u) << "No reply getting parameter types";
     ASSERT_EQ(types[0], rclcpp::ParameterType::PARAMETER_BOOL);
     ASSERT_EQ(types[1], rclcpp::ParameterType::PARAMETER_INTEGER);
     ASSERT_EQ(types[2], rclcpp::ParameterType::PARAMETER_DOUBLE);
@@ -530,10 +551,12 @@ TEST_P(HardwareTestAllTransports, Parameters) {
             promise->set_value();
         });
 
-    // External set double
+    // External set int
+    std::cout << "Setting param2 to 49" << std::endl;
     new_params.clear();
     new_params.push_back(rclcpp::Parameter("param2", 49));
-    result = parameters_client->set_parameters(new_params);
+    result = parameters_client->set_parameters(new_params, param_timeout);
+    ASSERT_EQ(result.size(), 1u) << "No reply setting param2";
     ASSERT_TRUE(result[0].successful);
 
     ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout), rclcpp::FutureReturnCode::SUCCESS);

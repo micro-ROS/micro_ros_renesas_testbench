@@ -408,6 +408,7 @@ public:
         log_file << std::endl;
 
         // Dynamic memory usage should be zero when micro-ROS app ends.
+        ASSERT_EQ(board_sizes.size(), 3U) << "No profiling data received from the board";
         ASSERT_EQ(board_sizes[2], 0U);
     }
 
@@ -444,6 +445,10 @@ public:
         auto subscription = node->create_subscription<std_msgs::msg::UInt32MultiArray>(
             "/profiling_output", 1,
             [&](std_msgs::msg::UInt32MultiArray::UniquePtr msg) {
+                // The board publishes periodically, keep only the first sample
+                if (!out.empty()) {
+                    return;
+                }
                 ASSERT_EQ(msg->data.size(), 3U);
                 out.push_back(msg->data[0]);
                 out.push_back(msg->data[1]);
