@@ -58,4 +58,7 @@ void micro_ros_thread_entry(void *pvParameters)
     }
 
     microros_app();
+
+    // A FreeRTOS task must not return, delete it when the micro-ROS app ends
+    vTaskDelete(NULL);
 }
