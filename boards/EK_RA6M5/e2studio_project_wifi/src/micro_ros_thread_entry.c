@@ -24,7 +24,7 @@ void micro_ros_thread_entry(void *pvParameters)
     // Configure wifi network
     WIFINetworkParams_t network_conf = {
         .ucChannel                  = 0,
-        .ucSSID                     = "eProsimaWifi_archer",
+        .ucSSID                     = "eprosima_raspfarm_asus",
         .xPassword.xWPA.cPassphrase = "Micro-ROS",
         .xSecurity               = eWiFiSecurityWPA2,
     };
