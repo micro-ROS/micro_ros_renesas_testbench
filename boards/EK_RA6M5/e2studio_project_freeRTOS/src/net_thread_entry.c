@@ -123,6 +123,9 @@ void net_thread_entry(void *pvParameters)
 #ifdef MICROROS_PROFILING
     send_micro_ros_profiling_data();
 #endif
+
+    // A FreeRTOS task must not return, delete it when the micro-ROS app ends
+    vTaskDelete(NULL);
 }
 
 #ifdef MICROROS_PROFILING
