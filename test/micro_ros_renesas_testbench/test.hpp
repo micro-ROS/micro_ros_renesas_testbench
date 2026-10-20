@@ -211,6 +211,26 @@ public:
         return access(port.c_str(), W_OK | R_OK ) == 0;
     }
 
+    // Check if any client has an established TCP connection to the given local port
+    bool is_tcp_client_connected(uint16_t port) {
+        std::ifstream tcp_table("/proc/net/tcp");
+        std::string line;
+        std::getline(tcp_table, line); // Skip header
+
+        while (std::getline(tcp_table, line)) {
+            std::istringstream fields(line);
+            std::string slot, local_address, remote_address, state;
+            fields >> slot >> local_address >> remote_address >> state;
+
+            // Addresses are IP:PORT in hex, state 01 is ESTABLISHED
+            uint16_t local_port = std::stoul(local_address.substr(local_address.find(':') + 1), nullptr, 16);
+            if (local_port == port && state == "01") {
+                return true;
+            }
+        }
+        return false;
+    }
+
     bool is_interface_up(std::string can_interface) {
         struct ifreq ifr;
         int sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -276,8 +296,16 @@ public:
 
         if (TestAgent::Transport::TCP_FREERTOS_TRANSPORT == transport_)
         {
-            // Add extra time for board wifi connection
-            std::this_thread::sleep_for(10000ms);
+            // Wait for the board to join the WiFi network and connect to the agent,
+            // which usually takes 11-12 s but can be slower
+            auto start = std::chrono::steady_clock::now();
+            while (!is_tcp_client_connected(agent_port) &&
+                   std::chrono::steady_clock::now() - start < 30s) {
+                std::this_thread::sleep_for(500ms);
+            }
+            auto waited = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+            std::cout << "Board TCP connection " << (is_tcp_client_connected(agent_port) ? "established" : "not established")
+                      << " after " << waited.count() << " ms" << std::endl;
         }
     }
 
