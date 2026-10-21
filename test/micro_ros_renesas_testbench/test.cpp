@@ -72,7 +72,7 @@ TEST_P(HardwareTestAllTransports, EntityCreation) {
   });
 
   rclcpp::spin_until_future_complete(node, future.share(), default_spin_timeout);
-  ASSERT_EQ(nodes_found, node_list.size()) << "Node creation failed, found " << check_string_vector(node->get_node_names(), node_list, true) << " nodes";
+  EXPECT_EQ(nodes_found, node_list.size()) << "Node creation failed, found " << check_string_vector(node->get_node_names(), node_list, true) << " nodes";
   ASSERT_EQ(topics_found, topic_list.size()) << "Topic creation failed, found " << check_string_vector(node->get_topic_names_and_types(), topic_list, true) << " topics";
 }
 
