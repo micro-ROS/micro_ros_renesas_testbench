@@ -297,15 +297,24 @@ public:
         if (TestAgent::Transport::TCP_FREERTOS_TRANSPORT == transport_)
         {
             // Wait for the board to join the WiFi network and connect to the agent,
-            // which usually takes 11-12 s but can be slower
+            // which usually takes 9-13 s
             auto start = std::chrono::steady_clock::now();
             while (!is_tcp_client_connected(agent_port) &&
                    std::chrono::steady_clock::now() - start < 30s) {
                 std::this_thread::sleep_for(500ms);
             }
             auto waited = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
-            std::cout << "Board TCP connection " << (is_tcp_client_connected(agent_port) ? "established" : "not established")
+            bool connected = is_tcp_client_connected(agent_port);
+            std::cout << "Board TCP connection " << (connected ? "established" : "not established")
                       << " after " << waited.count() << " ms" << std::endl;
+
+            if (!connected)
+            {
+                // Show if the board recently reached this host (neighbour entry ages in seconds)
+                // and if any TCP handshake to the agent port was started
+                std::string command = "ip -s neigh show dev eth0; ss -tan '( sport = :" + std::to_string(agent_port) + " )'";
+                system(command.c_str());
+            }
         }
     }
 
