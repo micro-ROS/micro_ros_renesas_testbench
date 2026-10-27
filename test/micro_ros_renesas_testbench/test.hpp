@@ -29,6 +29,7 @@
 #include <std_msgs/msg/u_int32_multi_array.hpp>
 
 #include <sstream>
+#include <iomanip>
 #include <string>
 #include <memory>
 #include <vector>
@@ -356,6 +357,51 @@ public:
         );
 
         return check_string_vector(result, required, assert);
+    }
+
+    // Print which nodes of node_list are in the graph each time that set changes, with the time since start
+    void log_nodes_in_graph(const std::vector<std::string> & node_list, std::string & last_seen, std::chrono::steady_clock::time_point start)
+    {
+        std::string seen;
+        auto names = node->get_node_names();
+        for (const auto & name : node_list)
+        {
+            if (std::find(names.begin(), names.end(), name) != names.end())
+            {
+                seen += " " + name;
+            }
+        }
+
+        if (seen != last_seen)
+        {
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+            std::cout << elapsed.count() << " ms, board nodes in the graph:" << (seen.empty() ? " none" : seen) << std::endl;
+            last_seen = seen;
+        }
+    }
+
+    // Print the node each /ns_N/test_pub_N publisher is attributed to and its GID, which starts with its
+    // participant GUID prefix. /rosout includes the publisher of this test node
+    void print_board_publishers_info(size_t node_count)
+    {
+        std::vector<std::string> publisher_topics = {"/rosout"};
+        for (size_t i = 0; i < node_count; i++)
+        {
+            publisher_topics.push_back("/ns_" + std::to_string(i) + "/test_pub_" + std::to_string(i));
+        }
+        for (const auto & topic : publisher_topics)
+        {
+            for (const auto & info : node->get_publishers_info_by_topic(topic))
+            {
+                std::cout << topic << " publisher: node " << info.node_namespace() << " " << info.node_name() << ", gid ";
+                std::cout << std::hex << std::setfill('0');
+                for (auto byte : info.endpoint_gid())
+                {
+                    std::cout << std::setw(2) << static_cast<int>(byte);
+                }
+                std::cout << std::dec << std::setfill(' ') << std::endl;
+            }
+        }
     }
 
 protected:
