@@ -60,8 +60,11 @@ TEST_P(HardwareTestAllTransports, EntityCreation) {
   auto future = promise->get_future();
   size_t nodes_found = 0;
   size_t topics_found = 0;
+  auto test_start = std::chrono::steady_clock::now();
+  std::string nodes_seen;
 
   auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
+        log_nodes_in_graph(node_list, nodes_seen, test_start);
         nodes_found = check_string_vector(node->get_node_names(), node_list);
         topics_found = check_string_vector(node->get_topic_names_and_types(), topic_list);
 
@@ -82,6 +85,16 @@ TEST_P(HardwareTestAllTransports, EntityCreation) {
           std::cout << " " << name;
       }
       std::cout << std::endl;
+
+      print_board_publishers_info(node_list.size());
+
+      // Keep watching the graph, without changing the result, to tell node info that arrives late from node info that never arrives
+      while (check_string_vector(node->get_node_names(), node_list) != node_list.size() &&
+             std::chrono::steady_clock::now() - test_start < 60s)
+      {
+          std::this_thread::sleep_for(200ms);
+          log_nodes_in_graph(node_list, nodes_seen, test_start);
+      }
   }
 
   EXPECT_EQ(nodes_found, node_list.size()) << "Node creation failed, found " << check_string_vector(node->get_node_names(), node_list, true) << " nodes";
@@ -120,20 +133,35 @@ TEST_P(HardwareTestAllTransports, EntityDestruction) {
   bool created = false;
   size_t nodes_found = 0;
   size_t topics_found = 0;
+  auto test_start = std::chrono::steady_clock::now();
+  std::string nodes_seen;
+  bool partial_graph_printed = false;
 
   auto publisher = node->create_publisher<std_msgs::msg::Int32>("ns_0/test_subscriber_delete", 10);
 
   auto timer_found = node->create_wall_timer(std::chrono::milliseconds(200), [&]() {
+        log_nodes_in_graph(node_list, nodes_seen, test_start);
         nodes_found = check_string_vector(node->get_node_names(), node_list);
         topics_found = check_string_vector(node->get_topic_names_and_types(), topic_list);
 
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - test_start);
+
+        // Same symptom as the EntityCreation failures: some board nodes are in the graph but not all of them
+        if (!created && !partial_graph_printed && nodes_found > 0 && nodes_found < node_list.size() && elapsed > 2s)
+        {
+            print_board_publishers_info(node_list.size());
+            partial_graph_printed = true;
+        }
+
         if (!created && nodes_found == node_list.size() && topics_found == topic_list.size())
         {
+            std::cout << "All nodes and topics found after " << elapsed.count() << " ms" << std::endl;
             promise->set_value();
             created = true;
         }
         else if (created && nodes_found == 0 && topics_found == 0)
         {
+            std::cout << "All nodes and topics gone after " << elapsed.count() << " ms" << std::endl;
             promise->set_value();
         }
   });
