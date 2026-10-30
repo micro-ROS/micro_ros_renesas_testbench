@@ -381,7 +381,8 @@ public:
     }
 
     // Print the node each /ns_N/test_pub_N publisher is attributed to and its GID, which starts with its
-    // participant GUID prefix. /rosout includes the publisher of this test node
+    // participant GUID prefix. /rosout includes the publisher of this test node. ros_discovery_info lists
+    // the agent's node info writers this test node has discovered
     void print_board_publishers_info(size_t node_count)
     {
         std::vector<std::string> publisher_topics = {"/rosout"};
@@ -389,9 +390,12 @@ public:
         {
             publisher_topics.push_back("/ns_" + std::to_string(i) + "/test_pub_" + std::to_string(i));
         }
+        // Raw DDS topic where the agent publishes the node info, one writer per board node
+        publisher_topics.push_back("ros_discovery_info");
         for (const auto & topic : publisher_topics)
         {
-            for (const auto & info : node->get_publishers_info_by_topic(topic))
+            bool no_mangle = topic == "ros_discovery_info";
+            for (const auto & info : node->get_publishers_info_by_topic(topic, no_mangle))
             {
                 std::cout << topic << " publisher: node " << info.node_namespace() << " " << info.node_name() << ", gid ";
                 std::cout << std::hex << std::setfill('0');
