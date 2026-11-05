@@ -301,7 +301,7 @@ public:
             // which usually takes 9-13 s
             auto start = std::chrono::steady_clock::now();
             while (!is_tcp_client_connected(agent_port) &&
-                   std::chrono::steady_clock::now() - start < 30s) {
+                   std::chrono::steady_clock::now() - start < 45s) {  // A retried join takes 26-31 s
                 std::this_thread::sleep_for(500ms);
             }
             auto waited = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
