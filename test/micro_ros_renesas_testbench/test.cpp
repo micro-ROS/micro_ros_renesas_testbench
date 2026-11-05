@@ -564,7 +564,7 @@ TEST_P(HardwareTestAllTransports, Parameters) {
     ASSERT_EQ(on_parameter_calls, 1u);
 }
 
-#if defined(ROS_DISTRO_HUMBLE) || defined(ROS_DISTRO_ROLLING)
+#if defined(ROS_DISTRO_HUMBLE) || defined(ROS_DISTRO_ROLLING) || defined(ROS_DISTRO_LYRICAL)
 TEST_P(HardwareTestAllTransports, ActionServer) {
     auto action_client = rclcpp_action::create_client<example_interfaces::action::Fibonacci>(
         node,
@@ -603,7 +603,7 @@ TEST_P(HardwareTestAllTransports, ActionServer) {
         expected_result += result.result->sequence[i-1];
     }
 }
-#endif  // defined(ROS_DISTRO_HUMBLE) || defined(ROS_DISTRO_ROLLING)
+#endif  // defined(ROS_DISTRO_HUMBLE) || defined(ROS_DISTRO_ROLLING) || defined(ROS_DISTRO_LYRICAL)
 
 class DomainTest : public HardwareTestBase, public ::testing::WithParamInterface<std::tuple<TestAgent::Transport, int>>
 {
