@@ -17,11 +17,11 @@ jobs:
           - ros_distribution: humble
             branch: humble
             board_id: 19
-          - ros_distribution: iron
-            branch: iron
+          - ros_distribution: jazzy
+            branch: jazzy
             board_id: 20
-          - ros_distribution: rolling
-            branch: rolling
+          - ros_distribution: lyrical
+            branch: lyrical
             board_id: 21
     runs-on: rpi-ros2-${{ matrix.ros_distribution }}-${{ matrix.board_id }}
     timeout-minutes: 240
