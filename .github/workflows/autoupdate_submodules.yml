@@ -16,8 +16,10 @@ jobs:
         include:
           - distro: humble
             branch: humble
-          - distro: iron
-            branch: iron
+          - distro: jazzy
+            branch: jazzy
+          - distro: lyrical
+            branch: lyrical
           - distro: rolling
             branch: rolling
     steps:
