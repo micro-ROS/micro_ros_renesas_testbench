@@ -60,7 +60,7 @@ jobs:
       env:
         # The runners have 4 GB of RAM and no swap, compiling the tests with one job per core can run
         # out of memory, which stalls the board and takes the runner offline
-        MAKEFLAGS: "-j2"
+        MAKEFLAGS: "-j1"
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
