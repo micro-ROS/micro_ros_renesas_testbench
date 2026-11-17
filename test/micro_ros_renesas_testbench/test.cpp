@@ -413,11 +413,46 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
     auto promise = std::make_shared<std::promise<void>>();
     auto future = promise->get_future();
 
+    // The board sends a single request a fixed time after creating its entities,
+    // log when its endpoints are discovered to find out if that time is too short
+    auto test_start = std::chrono::steady_clock::now();
+    auto elapsed_ms = [&]() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - test_start).count();
+    };
+    bool client_discovered = false;
+    bool publisher_discovered = false;
+
+    auto timer_discovery = node->create_wall_timer(100ms, [&]() {
+        if (!client_discovered)
+        {
+            try
+            {
+                auto clients = node->get_node_graph_interface()->get_client_names_and_types_by_node("test_node", "/");
+                if (clients.count("/test_add_two_ints") > 0)
+                {
+                    client_discovered = true;
+                    std::cout << "Board service client discovered after " << elapsed_ms() << " ms" << std::endl;
+                }
+            }
+            catch (const std::exception &)
+            {
+                // The board node is not discovered yet
+            }
+        }
+
+        if (!publisher_discovered && node->count_publishers("test_aux_pub") > 0)
+        {
+            publisher_discovered = true;
+            std::cout << "Board publisher discovered after " << elapsed_ms() << " ms" << std::endl;
+        }
+    });
+
     auto service = node->create_service<example_interfaces::srv::AddTwoInts>(
         "test_add_two_ints",
         [&] (const std::shared_ptr<example_interfaces::srv::AddTwoInts::Request> request,
              std::shared_ptr<example_interfaces::srv::AddTwoInts::Response> response)
             {
+                std::cout << "Request received after " << elapsed_ms() << " ms" << std::endl;
                 answer = request->a + request->b;
                 response->sum = answer;
             }
@@ -433,7 +468,9 @@ TEST_P(HardwareTestAllTransports, ServiceClient) {
     );
 
     auto timeout = std::chrono::duration<int64_t, std::milli>(15000);
-    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), timeout), rclcpp::FutureReturnCode::SUCCESS);
+    ASSERT_EQ(rclcpp::spin_until_future_complete(node, future.share(), timeout), rclcpp::FutureReturnCode::SUCCESS)
+        << "Board service client " << (client_discovered ? "was" : "was not") << " discovered, board publisher "
+        << (publisher_discovered ? "was" : "was not") << " discovered";
     ASSERT_TRUE(received);
 }
 
