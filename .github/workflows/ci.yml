@@ -42,6 +42,14 @@ jobs:
       run: |
         bash ros_ws/src/micro_ros_renesas_testbench/test/micro_ros_renesas_testbench/scripts/build_microros.sh
     - name: Build and run tests
+<<<<<<< HEAD
+=======
+      timeout-minutes: 60
+      env:
+        # The runners have 4 GB of RAM and no swap, compiling the tests with one job per core can run
+        # out of memory, which stalls the board and takes the runner offline
+        MAKEFLAGS: "-j1"
+>>>>>>> 310c558 (Improve HIL test robustness and diagnostics (#240))
       run: |
         source /opt/ros/${{ matrix.ros_distribution }}/setup.sh
         cd ros_ws
